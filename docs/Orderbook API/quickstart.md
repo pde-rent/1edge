@@ -1,9 +1,9 @@
-# 🚀 Quickstart Guide
+# Quickstart Guide
 
 > **Get started with 1inch Limit Orders in minutes!**  
 > This comprehensive guide walks you through creating, signing, and submitting your first Limit Order v4.
 
-## 📋 What You'll Learn
+## What You'll Learn
 
 This guide demonstrates how to create and submit a Limit Order v4 using the `@1inch/limit-order-sdk` in a JavaScript environment. You'll learn how to:
 
@@ -14,7 +14,7 @@ This guide demonstrates how to create and submit a Limit Order v4 using the `@1i
 
 ---
 
-## 📦 Step 1: Install Dependencies
+## Step 1: Install Dependencies
 
 > **Prerequisites:** Ensure you have Node.js installed (v18 or higher recommended)
 
@@ -28,7 +28,7 @@ bun init -y
 bun add @1inch/limit-order-sdk ethers
 ```
 
-### 📚 Dependencies Overview
+### Dependencies Overview
 
 | Package | Purpose | Version |
 |---------|---------|---------|
@@ -37,7 +37,7 @@ bun add @1inch/limit-order-sdk ethers
 
 ---
 
-## ⚙️ Step 2: Set Up Wallet and Network Configuration
+## Step 2: Set Up Wallet and Network Configuration
 
 Create a new file (e.g., `limitOrder.js`) and set up the basic configuration:
 
@@ -58,7 +58,7 @@ const erc20AbiFragment = [
 ];
 ```
 
-### 🔐 Secure Wallet Setup
+### Secure Wallet Setup
 
 > **⚠️ Security Warning**  
 > Never hardcode private keys in your code. Always use environment variables or secure key management systems.
@@ -72,7 +72,7 @@ const provider = new JsonRpcProvider("https://cloudflare-eth.com/");
 const wallet = new Wallet(privateKey, provider);
 ```
 
-### 💰 Token Configuration
+### Token Configuration
 
 Configure the trading pair and amounts for your limit order:
 
@@ -97,7 +97,7 @@ const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 
 ---
 
-## 🔒 Step 3: Check Allowance and Approve Token
+## Step 3: Check Allowance and Approve Token
 
 > **💡 Important Note**  
 > The 1inch Limit Order smart contract must be authorized to transfer your tokens. This requires an ERC-20 approval transaction.
@@ -134,7 +134,7 @@ if (currentAllowance < makingAmount) {
 }
 ```
 
-### 💡 Pro Tips
+### Pro Tips
 
 > **Tip: One-time Approval**  
 > To avoid repeated approvals, you can approve the maximum amount:
@@ -147,11 +147,11 @@ if (currentAllowance < makingAmount) {
 
 ---
 
-## 🎯 Step 4: Define Order Parameters and Traits
+## Step 4: Define Order Parameters and Traits
 
 The `MakerTraits` define how your order behaves. Configure rules for partial fills, expiration, and reusability:
 
-### 🔧 Available Trait Methods
+### Available Trait Methods
 
 | Method | Description | Use Case |
 |--------|-------------|----------|
@@ -184,7 +184,7 @@ const order = new LimitOrder({
 
 ---
 
-## ✍️ Step 5: Sign the Order (EIP-712)
+## Step 5: Sign the Order (EIP-712)
 
 > **🔐 Security Feature**  
 > EIP-712 signing ensures the order can only be executed exactly as specified by the maker.
@@ -210,7 +210,7 @@ const signature = await wallet.signTypedData(
 console.log("✅ Order signed successfully!");
 ```
 
-### 🔍 What's Being Signed
+### What's Being Signed
 
 The signature includes:
 - Order details (amounts, tokens, expiration)
@@ -220,11 +220,11 @@ The signature includes:
 
 ---
 
-## 📡 Step 6: Submit the Signed Order
+## Step 6: Submit the Signed Order
 
 Submit your order to the 1inch Orderbook to make it discoverable by resolvers:
 
-### 🔑 API Setup
+### API Setup
 
 > **📝 Get Your API Key**  
 > Register at the [1inch Developer Portal](https://portal.1inch.dev/) to obtain your API key.
@@ -239,7 +239,7 @@ const api = new Api({
 });
 ```
 
-### 🚀 Order Submission
+### Order Submission
 
 ```javascript
 try {
@@ -263,14 +263,14 @@ try {
 }
 ```
 
-### ⚠️ Frontend Considerations
+### Frontend Considerations
 
 > **CORS Warning**  
 > When calling the API directly from a browser, you may encounter CORS errors. For frontend applications, use a backend proxy server to forward requests securely.
 
 ---
 
-## 🎯 Network Support
+## Network Support
 
 The 1inch Limit Order Protocol supports multiple networks:
 
@@ -285,7 +285,7 @@ The 1inch Limit Order Protocol supports multiple networks:
 
 ---
 
-## 🎉 Conclusion
+## Conclusion
 
 Congratulations! You've successfully:
 
@@ -297,13 +297,13 @@ Congratulations! You've successfully:
 
 Your order is now live and discoverable by resolvers across the network!
 
-### 🔗 Next Steps
+### Next Steps
 
 - [📖 API Reference](./api-reference/) - Explore all available endpoints
 - [🏗️ Advanced Integration](../1inch%20LOP/limit-order-maker-contract.md) - Learn about contract interactions
 - [🔧 SDK Documentation](../1inch%20LOP/Limit%20Order%20SDK/) - Dive deeper into the SDK features
 
-### 🆘 Need Help?
+### Need Help?
 
 - 📚 [Documentation Portal](https://docs.1inch.io/)
 - 💬 [Developer Community](https://discord.gg/1inch)

@@ -1,87 +1,245 @@
 # Limit Order Maker Contract
 
-This document describes the functions and classes used for creating and managing limit orders in the 1inch Limit Order Protocol.
+> **⚙️ Core Protocol Engine**  
+> Deep dive into the essential functions and classes that power limit order creation and management in the 1inch Limit Order Protocol v4.
 
-## Functions
+---
 
-### calcTakingAmount
+## Core Calculation Functions
 
-Calculates taker amount by linear proportion.
+> **📊 Precision Mathematics**  
+> These utility functions handle the precise calculations required for proportional order fills and amount conversions.
 
-| Function | Type |
-| -------- | ---- |
-| `calcTakingAmount` | `(swapMakerAmount: bigint, orderMakerAmount: bigint, orderTakerAmount: bigint) => bigint` |
+### Amount Calculation Methods
 
-### calcMakingAmount
+| Function | 🎯 Purpose | 📝 Signature | 💡 Use Case |
+|----------|------------|--------------|-------------|
+| **📈 calcTakingAmount** | Calculate proportional taker amount | `(swapMakerAmount, orderMakerAmount, orderTakerAmount) => bigint` | Partial fills |
+| **📊 calcMakingAmount** | Calculate proportional maker amount | `(swapTakerAmount, orderMakerAmount, orderTakerAmount) => bigint` | Reverse calculations |
 
-Calculates maker amount by linear proportion.
+### Function Details
 
-| Function | Type |
-| -------- | ---- |
-| `calcMakingAmount` | `(swapTakerAmount: bigint, orderMakerAmount: bigint, orderTakerAmount: bigint) => bigint` |
+#### calcTakingAmount
+> **⚖️ Proportional Taker Calculation**  
+> Determines the exact taker amount required for a given maker amount using linear proportion.
+
+```typescript
+import { calcTakingAmount } from "@1inch/limit-order-sdk";
+
+// Example: Partial fill calculation
+const orderMakerAmount = 100_000000n; // 100 USDT (6 decimals)
+const orderTakerAmount = 10_000000000000000000n; // 10 1INCH (18 decimals)
+const swapMakerAmount = 50_000000n; // Fill 50 USDT
+
+const requiredTakerAmount = calcTakingAmount(
+  swapMakerAmount,   // 50 USDT - amount being filled
+  orderMakerAmount,  // 100 USDT - total order size
+  orderTakerAmount   // 10 1INCH - total taker amount
+);
+// Result: 5_000000000000000000n (5 1INCH)
+```
+
+#### calcMakingAmount
+> **🔄 Reverse Proportion Calculation**  
+> Determines the maker amount that will be provided for a given taker amount.
+
+```typescript
+import { calcMakingAmount } from "@1inch/limit-order-sdk";
+
+// Example: Calculate maker amount for specific taker input
+const orderMakerAmount = 100_000000n; // 100 USDT (6 decimals)
+const orderTakerAmount = 10_000000000000000000n; // 10 1INCH (18 decimals)
+const swapTakerAmount = 3_000000000000000000n; // Taker provides 3 1INCH
+
+const receivedMakerAmount = calcMakingAmount(
+  swapTakerAmount,   // 3 1INCH - taker input
+  orderMakerAmount,  // 100 USDT - total order size
+  orderTakerAmount   // 10 1INCH - total taker amount
+);
+// Result: 30_000000n (30 USDT)
+```
+
+#### Mathematical Formula
+
+Both functions use linear proportion:
+```
+calcTakingAmount = (swapMakerAmount × orderTakerAmount) ÷ orderMakerAmount
+calcMakingAmount = (swapTakerAmount × orderMakerAmount) ÷ orderTakerAmount
+```
+
+---
 
 ## MakerTraits
 
-The MakerTraits type is an uint256, and different parts of the number are used to encode different traits.
+> **🧬 Order DNA System**  
+> MakerTraits is a sophisticated bit-packed uint256 that encodes order behavior, permissions, and metadata in a single value for gas-efficient storage and processing.
 
-### High bits (flags)
-- **255 bit**: `NO_PARTIAL_FILLS_FLAG` - if set, the order does not allow partial fills
-- **254 bit**: `ALLOW_MULTIPLE_FILLS_FLAG` - if set, the order permits multiple fills
-- **253 bit**: unused
-- **252 bit**: `PRE_INTERACTION_CALL_FLAG` - if set, the order requires pre-interaction call
-- **251 bit**: `POST_INTERACTION_CALL_FLAG` - if set, the order requires post-interaction call
-- **250 bit**: `NEED_CHECK_EPOCH_MANAGER_FLAG` - if set, the order requires to check the epoch manager
-- **249 bit**: `HAS_EXTENSION_FLAG` - if set, the order has extension(s)
-- **248 bit**: `USE_PERMIT2_FLAG` - if set, the order uses permit2
-- **247 bit**: `UNWRAP_WETH_FLAG` - if set, the order requires to unwrap WETH
+### Bit Structure Overview
 
-### Low 200 bits (data fields)
-- **uint80**: last 10 bytes of allowed sender address (0 if any)
-- **uint40**: expiration timestamp (0 if none)
-- **uint40**: nonce or epoch
-- **uint40**: series
+```
+ Bit Position │ Purpose                 │ Type     │ Description
+──────────────┼────────────────────────┼──────────┼─────────────────────────
+ 255          │ NO_PARTIAL_FILLS_FLAG  │ Flag     │ Disable partial fills
+ 254          │ ALLOW_MULTIPLE_FILLS   │ Flag     │ Enable multiple fills  
+ 253          │ (unused)               │ Reserved │ Future expansion
+ 252          │ PRE_INTERACTION_CALL   │ Flag     │ Execute pre-hooks
+ 251          │ POST_INTERACTION_CALL  │ Flag     │ Execute post-hooks
+ 250          │ NEED_CHECK_EPOCH       │ Flag     │ Validate epoch manager
+ 249          │ HAS_EXTENSION_FLAG     │ Flag     │ Order has extensions
+ 248          │ USE_PERMIT2_FLAG       │ Flag     │ Use Permit2 authorization
+ 247          │ UNWRAP_WETH_FLAG       │ Flag     │ Unwrap WETH to ETH
+ 200-246      │ (reserved)             │ Reserved │ Future flags
+ 120-199      │ Allowed Sender         │ uint80   │ Last 10 bytes of address
+ 80-119       │ Expiration             │ uint40   │ Timestamp deadline
+ 40-79        │ Nonce/Epoch            │ uint40   │ Unique identifier
+ 0-39         │ Series                 │ uint40   │ Epoch series grouping
+```
 
-### Methods
+### High Bits (Control Flags)
+
+| Bit | 🎯 Flag Name | ✅ When Set | ❌ When Clear | 💡 Use Case |
+|-----|--------------|-------------|---------------|-------------|
+| **255** | `NO_PARTIAL_FILLS_FLAG` | Partial fills disabled | Partial fills allowed | All-or-nothing orders |
+| **254** | `ALLOW_MULTIPLE_FILLS_FLAG` | Multiple fills enabled | Single fill only | Market maker orders |
+| **252** | `PRE_INTERACTION_CALL_FLAG` | Pre-hooks executed | No pre-execution | DeFi integrations |
+| **251** | `POST_INTERACTION_CALL_FLAG` | Post-hooks executed | No post-execution | Automated workflows |
+| **250** | `NEED_CHECK_EPOCH_MANAGER_FLAG` | Epoch validation required | No epoch checking | Advanced invalidation |
+| **249** | `HAS_EXTENSION_FLAG` | Extensions included | No extensions | Custom functionality |
+| **248** | `USE_PERMIT2_FLAG` | Permit2 authorization | Standard approvals | Gasless interactions |
+| **247** | `UNWRAP_WETH_FLAG` | WETH → ETH conversion | Keep as WETH | Native ETH delivery |
+
+### Low Bits (Data Fields)
+
+| Bits | 📝 Field | 🎯 Purpose | 💡 Details |
+|------|----------|------------|------------|
+| **120-199** | **Allowed Sender** | Restrict order fills to specific address | Last 10 bytes of address (80 bits) |
+| **80-119** | **Expiration** | Order deadline timestamp | Unix timestamp (40 bits, max ~35k years) |
+| **40-79** | **Nonce/Epoch** | Unique order identifier | For cancellation and tracking |
+| **0-39** | **Series** | Epoch series grouping | Used with epoch manager |
+
+> **⚡ Gas Optimization**  
+> By packing all configuration into a single uint256, MakerTraits minimizes storage costs and enables efficient bitwise operations.
+
+---
+
+## MakerTraits Methods
+
+> **🔧 Fluent Configuration API**  
+> Comprehensive methods for configuring and querying order behavior with a developer-friendly interface.
+
+### Creation & Configuration
+
+| Method | 🎯 Purpose | 📝 Signature | 🔗 Chainable |
+|--------|------------|---------------|--------------|
+| **🆕 default** | Create default instance | `() => MakerTraits` | ❌ Static |
+| **👤 withAllowedSender** | Restrict to specific taker | `(sender: Address) => this` | ✅ |
+| **🌐 withAnySender** | Allow any taker | `() => this` | ✅ |
+| **⏰ withExpiration** | Set deadline | `(expiration: bigint) => this` | ✅ |
+| **🎲 withNonce** | Set unique identifier | `(nonce: bigint) => this` | ✅ |
+| **📅 withEpoch** | Enable epoch management | `(series: bigint, epoch: bigint) => this` | ✅ |
+
+### Query Methods
+
+| Method | 🎯 Purpose | 📝 Returns | 💡 Description |
+|--------|------------|-------------|----------------|
+| **👤 allowedSender** | Get restricted address | `string` | Last 10 bytes of allowed taker |
+| **🔒 isPrivate** | Check if restricted | `boolean` | True if specific taker only |
+| **⏰ expiration** | Get deadline | `bigint \| null` | Unix timestamp or null |
+| **🎲 nonceOrEpoch** | Get identifier | `bigint` | Current nonce or epoch value |
+| **📅 series** | Get epoch series | `bigint` | Series grouping value |
+
+### Feature Toggles
+
+| Method | 🎯 Purpose | 📝 Signature | 💡 Effect |
+|--------|------------|---------------|-----------|
+| **✂️ disablePartialFills** | Require full execution | `() => this` | All-or-nothing |
+| **🔄 allowPartialFills** | Enable partial execution | `() => this` | Default behavior |
+| **🔁 allowMultipleFills** | Enable reusable orders | `() => this` | Market maker mode |
+| **1️⃣ disableMultipleFills** | Single use only | `() => this` | Default behavior |
+| **🔧 withExtension** | Mark extension usage | `() => this` | Required for extensions |
+
+### Detailed Method Documentation
 
 #### default
+> **🏗️ Foundation Builder**  
+> Creates a new MakerTraits instance with sensible defaults.
 
-Creates default MakerTraits instance.
+```typescript
+import { MakerTraits } from "@1inch/limit-order-sdk";
 
-| Method | Type |
-| ------ | ---- |
-| `default` | `() => MakerTraits` |
+const traits = MakerTraits.default();
+// Default: Partial fills enabled, single fill, no expiration, public order
+```
 
-#### allowedSender
+#### Access Control Methods
 
-Returns last 10 bytes of address.
+##### withAllowedSender
+> **🔒 Private Order Creation**  
+> Restricts order fills to a specific address.
 
-| Method | Type |
-| ------ | ---- |
-| `allowedSender` | `() => string` |
+```typescript
+import { Address } from "@1inch/limit-order-sdk";
 
-#### isPrivate
+const traits = MakerTraits.default()
+  .withAllowedSender(new Address("0x1234567890123456789012345678901234567890"));
+// Only the specified address can fill this order
+```
 
-Checks if order is private.
+##### withAnySender  
+> **🌍 Public Order Creation**  
+> Removes any sender restrictions (default behavior).
 
-| Method | Type |
-| ------ | ---- |
-| `isPrivate` | `() => boolean` |
+```typescript
+const traits = MakerTraits.default()
+  .withAnySender(); // Anyone can fill this order
+```
 
-#### withAllowedSender
+##### allowedSender
+> **🔍 Get Restricted Address**  
+> Returns the last 10 bytes of the allowed sender address.
 
-Sets allowed sender.
+```typescript
+const address = traits.allowedSender();
+// Returns: "1234567890123456789012345678901234567890" (last 10 bytes)
+```
 
-| Method | Type |
-| ------ | ---- |
-| `withAllowedSender` | `(sender: Address) => this` |
+##### isPrivate
+> **✅ Privacy Check**  
+> Determines if the order is restricted to a specific taker.
 
-#### withAnySender
+```typescript
+if (traits.isPrivate()) {
+  console.log("Order is private - restricted taker");
+} else {
+  console.log("Order is public - any taker allowed");
+}
+```
 
-Removes sender check on contract.
+#### Time Management
 
-| Method | Type |
-| ------ | ---- |
-| `withAnySender` | `() => this` |
+##### withExpiration
+> **⏰ Deadline Setting**  
+> Sets when the order becomes invalid.
+
+```typescript
+const futureTimestamp = BigInt(Math.floor(Date.now() / 1000)) + 3600n; // 1 hour
+
+const traits = MakerTraits.default()
+  .withExpiration(futureTimestamp);
+```
+
+##### expiration
+> **🔍 Get Deadline**  
+> Retrieves the order expiration timestamp.
+
+```typescript
+const deadline = traits.expiration();
+if (deadline === null) {
+  console.log("Order never expires");
+} else {
+  console.log(`Order expires at: ${new Date(Number(deadline) * 1000)}`);
+}
+```
 
 #### expiration
 
