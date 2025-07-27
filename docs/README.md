@@ -21,84 +21,54 @@
 
 ```mermaid
 flowchart TD
-    A[User Connects Wallet] --> B[Select Order Type]
-    B --> C{Order Type}
+    A[User Connects Wallet] --> B{Order Type}
     
-    C -->|TWAP| D[Configure TWAP Parameters]
-    C -->|Range| E[Configure Range Parameters]
-    C -->|Iceberg| F[Configure Iceberg Parameters]
+    B -->|TWAP| C[Configure TWAP: Time Intervals & Amount]
+    B -->|Range| D[Configure Range: Price Levels & Amounts]
+    B -->|Iceberg| E[Configure Iceberg: Chunk Size & Intervals]
     
-    D --> G[Set Time Intervals & Amount]
-    E --> H[Set Price Levels & Amounts]
-    F --> I[Set Chunk Size & Intervals]
+    C --> F[User Signs Delegation]
+    D --> F
+    E --> F
     
-    G --> J[User Signs Delegation]
-    H --> J
-    I --> J
+    F --> G[Deploy Smart Account & Grant Keeper Permissions]
     
-    J --> K[Deploy/Update Smart Account]
-    K --> L[Grant Session Key to Keeper]
+    G --> H[Keeper Monitors Triggers]
+    H --> I{Trigger Activated?}
     
-    L --> M[Keeper Monitors Triggers]
-    M --> N{Trigger Activated?}
+    I -->|Yes| J[Keeper Submits Order & Executes on 1inch]
+    I -->|No| H
     
-    N -->|Yes| O[Keeper Submits Order to 1inch LOP]
-    N -->|No| M
-    
-    O --> P[1inch Orderbook Matching]
-    P --> Q[Order Execution]
-    Q --> R[Update User Portfolio]
-    
-    R --> S{More Orders?}
-    S -->|Yes| M
-    S -->|No| T[Strategy Complete]
+    J --> K{More Orders?}
+    K -->|Yes| H
+    K -->|No| L[Strategy Complete]
 ```
 
 ### Market Making Strategy Flow
 
 ```mermaid
 flowchart TD
-    A[User Connects Wallet] --> B[Select Strategy Type]
-    B --> C{Strategy Type}
+    A[User Connects Wallet] --> B{Strategy Type}
     
-    C -->|Naive Reversion| D[Configure Grid Parameters]
-    C -->|Momentum Reversion| E[Configure Momentum Indicators]
-    C -->|Trend Following| F[Configure Trend Parameters]
+    B -->|Naive Reversion| C[Configure Grid: Price Range & Spacing + Risk Management]
+    B -->|Momentum Reversion| D[Configure Momentum: RSI/MA Parameters + Risk Management]
+    B -->|Trend Following| E[Configure Trend: Indicators & Signals + Risk Management]
     
-    D --> G[Set Price Range & Grid Spacing]
-    E --> H[Set RSI/MA Parameters]
-    F --> I[Set Trend Indicators]
+    C --> F[User Signs Strategy Delegation]
+    D --> F
+    E --> F
     
-    G --> J[Define Risk Management]
-    H --> J
-    I --> J
+    F --> G[Deploy Strategy Contract & Grant Keeper Permissions]
     
-    J --> K[Set Stop Loss & Take Profit]
-    K --> L[User Signs Strategy Delegation]
+    G --> H[Keeper Monitors Market Data & Evaluates Conditions]
+    H --> I{Strategy Signal?}
     
-    L --> M[Deploy Strategy Contract]
-    M --> N[Grant Keeper Permissions]
+    I -->|Buy/Sell Signal| J[Create & Execute Orders on 1inch]
+    I -->|No Signal| H
     
-    N --> O[Keeper Monitors Market Data]
-    O --> P[Evaluate Strategy Conditions]
-    
-    P --> Q{Strategy Signal?}
-    Q -->|Buy Signal| R[Create Buy Orders]
-    Q -->|Sell Signal| S[Create Sell Orders]
-    Q -->|No Signal| O
-    
-    R --> T[Submit Orders to 1inch LOP]
-    S --> T
-    
-    T --> U[Monitor Order Status]
-    U --> V{Order Filled?}
-    
-    V -->|Yes| W[Update Portfolio]
-    V -->|No| U
-    
-    W --> X{Continue Strategy?}
-    X -->|Yes| O
-    X -->|No| Y[Strategy Stopped]
+    J --> K{Continue Strategy?}
+    K -->|Yes| H
+    K -->|No| L[Strategy Stopped]
 ```
 
 ## Technical Implementation
@@ -107,12 +77,12 @@ flowchart TD
 
 #### Smart Account Architecture
 ```
-User Wallet ’ ERC4337 Smart Account ’ Session Keys ’ Keeper Contract
+User Wallet ï¿½ ERC4337 Smart Account ï¿½ Session Keys ï¿½ Keeper Contract
 ```
 
 #### Order Execution Flow
 ```
-Trigger Condition ’ Keeper Validates ’ Sign Order ’ Submit to 1inch LOP ’ Execution
+Trigger Condition ï¿½ Keeper Validates ï¿½ Sign Order ï¿½ Submit to 1inch LOP ï¿½ Execution
 ```
 
 ### Off-Chain Components
