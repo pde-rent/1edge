@@ -1,0 +1,39 @@
+build/
+package-lock.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
+# Dependency directories
+node_modules/
+
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# dotenv environment variable files
+.env
+.env.*
+!.env.example
+
+# Database files
+data/db.*
+
+# Next.js build output
+front/.next
+
+# Bun cache
+.bun/
+
+# Lock files
+bun.lock
+front/bun.lock
+scripts/data/
