@@ -33,7 +33,7 @@ This repository is experimental
 
 ## Contributing
 
-We welcome contributions to BTR Swap! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on how to contribute, including:
+We welcome contributions to 1edge! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on how to contribute, including:
 
 - Branch naming and commit message conventions
 - Pull request process
