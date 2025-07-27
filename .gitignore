@@ -1,23 +1,44 @@
+# Build output
 build/
+dist/
+out/
+coverage/
+coverage-final.json
+
+# Dependency directories
+node_modules/
+.pnp/
+.pnp.js
+
+# Package manager lock files
 package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+front/bun.lock
 
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
-node_modules/
-
-
 # TypeScript cache
 *.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Bun cache
+.bun/
+.bun-install-cache/
 
 # Optional npm cache directory
-.npm
+.npm/
+.npmrc
 
 # dotenv environment variable files
 .env
@@ -30,10 +51,58 @@ data/db.*
 # Next.js build output
 front/.next
 
-# Bun cache
-.bun/
-
-# Lock files
-bun.lock
-front/bun.lock
+# Scripts/data
 scripts/data/
+
+# Editor directories and files
+.idea/
+.vscode/
+.cursor/
+.claude/
+.cursorrules
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+*.swp
+*.swo
+*.DS_Store
+*.iml
+*.editorconfig
+*.orig
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Claude AI folders
+.claude/
+claude/
+
+# Mac system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VSCode settings
+.vscode/
+.history/
+
+# JetBrains IDEs (IntelliJ, WebStorm, etc.)
+.idea/
+*.iws
+*.ipr
+*.iml
+
+# Misc
+*.bak
+*.tmp
+*.temp
+*.log.[0-9]*
+*.tgz
+npm-packages-offline-cache/
+bower_components/
+jspm_packages/
+typings/
+# End of Selection
