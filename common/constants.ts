@@ -9,6 +9,16 @@ export const NEXT_PORT = Number(process.env.NEXT_PORT) || 40006;
 /** API server hostname */
 export const API_HOST = process.env.API_HOST || "localhost";
 
+/** Service ports configuration */
+export const SERVICE_PORTS = {
+  API: 40005,
+  WEBSOCKET: 40007,
+  COLLECTOR: 40008,
+  ORDER_EXECUTOR: 40009,
+  KEEPER: 40010,
+  STATUS_CHECKER: 40011,
+} as const;
+
 /** Next.js server hostname */
 export const NEXT_HOST = process.env.NEXT_HOST || "localhost";
 
