@@ -84,7 +84,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
   );
 
   // WebSocket connection for real-time price updates
-  const { subscribe, unsubscribe, isConnected } = useWebSocket('ws://localhost:40006/ws', {
+  const { subscribe, unsubscribe, isConnected } = useWebSocket('ws://localhost:40007/ws', {
     onMessage: (message) => {
       if (message.type === 'price_update' && message.symbol === feedId) {
         setRealtimePrice(message.data);

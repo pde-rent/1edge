@@ -110,7 +110,7 @@ export default function FeedsPanel({ onSelect }: { onSelect: (feedId: string) =>
   const [realtimePrices, setRealtimePrices] = useState(new Map());
 
   // WebSocket connection for real-time price updates
-  const { subscribe, isConnected } = useWebSocket('ws://localhost:40006/ws', {
+  const { subscribe, isConnected } = useWebSocket('ws://localhost:40007/ws', {
     onMessage: (message) => {
       if (message.type === 'price_update' && message.symbol) {
         setRealtimePrices(prev => new Map(prev.set(message.symbol, message.data)));
