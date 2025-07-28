@@ -158,6 +158,19 @@ export interface IcebergConfig {
 }
 
 /**
+ * Momentum Reversion strategy configuration
+ */
+export interface MomentumReversionConfig {
+  asset: string; // Token address of the asset to trade
+  quoteAsset: string; // Token address of the quote asset
+  buyThresholdRSI: number; // RSI level to trigger a buy
+  sellThresholdRSI: number; // RSI level to trigger a sell
+  buyAmount: string; // Amount of asset to buy
+  sellAmount: string; // Amount of asset to sell
+  rsiPeriod: number; // Period for RSI calculation
+}
+
+/**
  * Market making strategy configuration
  */
 export interface MarketMakingConfig {
@@ -211,6 +224,7 @@ export interface StrategyConfig {
   twapConfig?: TwapConfig;
   rangeConfig?: RangeOrderConfig;
   icebergConfig?: IcebergConfig;
+  momentumReversionConfig?: MomentumReversionConfig;
   marketMakingConfig?: MarketMakingConfig;
   // Triggers and conditions
   triggers?: TriggerCondition[];

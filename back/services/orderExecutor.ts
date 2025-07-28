@@ -148,8 +148,10 @@ class OrderExecutorService {
       case "ICEBERG":
         await this.executeIcebergOrder(strategy);
         break;
-      case "NAIVE_REVERSION":
       case "MOMENTUM_REVERSION":
+        await this.executeMomentumReversion(strategy);
+        break;
+      case "NAIVE_REVERSION":
       case "TREND_FOLLOWING":
         await this.executeMarketMaking(strategy);
         break;
@@ -348,6 +350,61 @@ class OrderExecutorService {
     logger.warn("Iceberg orders not yet implemented");
   }
 
+  private async executeMomentumReversion(strategy: Strategy) {
+    if (!strategy.momentumReversionConfig) {
+      logger.error(`Momentum Reversion strategy ${strategy.id} missing config`);
+      return;
+    }
+
+    const { asset, quoteAsset, buyThresholdRSI, sellThresholdRSI, buyAmount, sellAmount } = strategy.momentumReversionConfig;
+
+    // Get RSI signal
+    const ticker = await getTicker(strategy.symbols[0]);
+    if (!ticker || !ticker.analysis || !ticker.analysis.rsi) {
+      logger.warn(`RSI signal not available for ${strategy.symbols[0]}`);
+      return;
+    }
+
+    const rsi = ticker.analysis.rsi[ticker.analysis.rsi.length - 1];
+
+    let order: Order | null = null;
+
+    // Check for buy signal
+    if (rsi > buyThresholdRSI) {
+      order = {
+        id: generateId(),
+        strategyId: strategy.id,
+        type: OrderType.MOMENTUM_REVERSION,
+        status: OrderStatus.PENDING,
+        makerAsset: quoteAsset,
+        takerAsset: asset,
+        makingAmount: buyAmount,
+        takingAmount: "0", // Market order
+        maker: this.wallets.get(strategy.network)?.address || "",
+        createdAt: Date.now(),
+      };
+    }
+    // Check for sell signal
+    else if (rsi < sellThresholdRSI) {
+      order = {
+        id: generateId(),
+        strategyId: strategy.id,
+        type: OrderType.MOMENTUM_REVERSION,
+        status: OrderStatus.PENDING,
+        makerAsset: asset,
+        takerAsset: quoteAsset,
+        makingAmount: sellAmount,
+        takingAmount: "0", // Market order
+        maker: this.wallets.get(strategy.network)?.address || "",
+        createdAt: Date.now(),
+      };
+    }
+
+    if (order) {
+      await this.createAndExecuteOrder(order, strategy.network);
+    }
+  }
+
   private async executeMarketMaking(strategy: Strategy) {
     // TODO: Implement market making strategies
     logger.warn("Market making strategies not yet implemented");
@@ -365,7 +422,6 @@ class OrderExecutorService {
         timestamp: Date.now(),
       });
 
-      // TODO: Re-enable after fixing 1inch SDK imports
       // Get SDK and API for network
       // const sdk = this.sdks.get(networkId);
       // const api = this.apis.get(networkId);
@@ -375,7 +431,6 @@ class OrderExecutorService {
         throw new Error(`Network ${networkId} not initialized`);
       }
 
-      // TODO: Implement 1inch order creation
       // Create limit order
       // const limitOrder = new LimitOrder({
       //   makerAsset: order.makerAsset,
