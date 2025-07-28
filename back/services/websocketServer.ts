@@ -2,7 +2,7 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
-import { getServiceConfig } from './config';
+import { getConfig } from './config';
 import { getTicker, getActiveTickers } from './marketData';
 import { logger } from '@back/utils/logger';
 import type { Symbol, AggregatedTicker, TickerFeed } from '@common/types';
@@ -18,8 +18,8 @@ class WebSocketService {
   private port: number;
   
   constructor() {
-    const config = getServiceConfig('apiServer');
-    this.port = (config.port || 40005) + 1; // WS server on API port + 1
+    const config = getConfig();
+    this.port = config.services?.websocketServer?.port || 40007; // Default WebSocket server port
   }
   
   async start() {
