@@ -10,9 +10,10 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-    "@common/*": ["common/*"],
-    "@back/*": ["back/*"],
-    "@front/*": ["front/*"]
+      "@common/*": ["common/*"],
+      "@back/*": ["back/*"],
+      "@front/*": ["front/*"],
+      "@contracts/*": ["contracts/*"]
     },
     "types": ["@types/bun"],
     "allowImportingTsExtensions": false,
@@ -30,5 +31,5 @@
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
   "include": ["common/**/*.ts", "back/**/*.ts", "front/**/*.ts", "package.json"],
-  "exclude": ["node_modules", "dist", "build"]
+  "exclude": ["node_modules", "dist", "build", "contracts"]
   }
