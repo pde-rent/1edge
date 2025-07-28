@@ -1,0 +1,67 @@
+{
+  "storage": {
+    "defaultTtl": 300,
+    "dbPath": "./data/1edge.db"
+  },
+  "services": {
+    "collector": {
+      "pollIntervalMs": 1000,
+      "tickers": {
+        "agg:spot:ETHUSDC": {
+          "id": "agg:spot:ETHUSDC",
+          "name": "ETH/USDC Aggregate",
+          "tf": 60,
+          "lookback": 86400,
+          "sources": {
+            "binance:spot:ETHUSDC": { "weight": 0.35 },
+            "bybit:spot:ETHUSDC": { "weight": 0.20 },
+            "okx:spot:ETH-USDC": { "weight": 0.15 },
+            "bitget:spot:ETHUSDC": { "weight": 0.15 },
+            "coinbase:spot:ETH-USDC": { "weight": 0.15 }
+          }
+        },
+        "agg:spot:BTCUSDC": {
+          "id": "agg:spot:BTCUSDC",
+          "name": "BTC/USDC Aggregate",
+          "tf": 60,
+          "lookback": 86400,
+          "sources": {
+            "binance:spot:BTCUSDC": { "weight": 0.35 },
+            "bybit:spot:BTCUSDC": { "weight": 0.20 },
+            "okx:spot:BTC-USDC": { "weight": 0.15 },
+            "bitget:spot:BTCUSDC": { "weight": 0.15 },
+            "coinbase:spot:BTC-USDC": { "weight": 0.15 }
+          }
+        }
+      }
+    },
+    "orderExecutor": {
+      "strategies": {},
+      "defaultNetwork": 1
+    },
+    "keeper": {
+      "pollIntervalMs": 5000,
+      "networks": {
+        "1": {
+          "chainId": 1,
+          "name": "Ethereum",
+          "rpcUrl": "https://eth.llamarpc.com",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "ETH",
+          "blockExplorer": "https://etherscan.io"
+        }
+      },
+      "maxGasPrice": "100"
+    },
+    "statusChecker": {
+      "pollIntervalMs": 10000,
+      "ttlSeconds": 30,
+      "timeoutMs": 5000
+    },
+    "apiServer": {
+      "port": 40005,
+      "corsOrigins": ["http://localhost:40006", "http://localhost:3000"]
+    }
+  }
+}

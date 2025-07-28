@@ -1,0 +1,405 @@
+import { Database } from "bun:sqlite";
+import { join } from "path";
+import { mkdir } from "fs/promises";
+import type { 
+  Order, 
+  Position, 
+  Strategy, 
+  TickerFeed, 
+  AggregatedTicker,
+  OrderEvent,
+  Config
+} from "@common/types";
+import { logger } from "@back/utils/logger";
+
+class StorageService {
+  private db: Database;
+  private ttlMap: Map<string, number> = new Map();
+  
+  constructor(private config: Config["storage"]) {
+    const dbPath = config.dbPath || "./data/1edge.db";
+    this.initDatabase(dbPath);
+    this.db = new Database(dbPath);
+    this.setupTables();
+  }
+  
+  private async initDatabase(dbPath: string) {
+    const dir = join(process.cwd(), "data");
+    await mkdir(dir, { recursive: true });
+  }
+  
+  private setupTables() {
+    // Orders table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS orders (
+        id TEXT PRIMARY KEY,
+        order_hash TEXT UNIQUE,
+        strategy_id TEXT,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        maker_asset TEXT NOT NULL,
+        taker_asset TEXT NOT NULL,
+        making_amount TEXT NOT NULL,
+        taking_amount TEXT NOT NULL,
+        maker TEXT NOT NULL,
+        receiver TEXT,
+        salt TEXT,
+        signature TEXT,
+        trigger_price REAL,
+        filled_amount TEXT DEFAULT '0',
+        remaining_amount TEXT,
+        created_at INTEGER NOT NULL,
+        executed_at INTEGER,
+        cancelled_at INTEGER,
+        tx_hash TEXT,
+        network INTEGER NOT NULL,
+        expiry INTEGER,
+        raw_data TEXT
+      )
+    `);
+    
+    // Order events table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS order_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id TEXT NOT NULL,
+        order_hash TEXT,
+        type TEXT NOT NULL,
+        timestamp INTEGER NOT NULL,
+        tx_hash TEXT,
+        filled_amount TEXT,
+        remaining_amount TEXT,
+        gas_used TEXT,
+        error TEXT,
+        FOREIGN KEY (order_id) REFERENCES orders(id)
+      )
+    `);
+    
+    // Positions table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS positions (
+        id TEXT PRIMARY KEY,
+        strategy_id TEXT NOT NULL,
+        symbol TEXT NOT NULL,
+        side TEXT NOT NULL,
+        entry_price REAL NOT NULL,
+        current_price REAL,
+        size TEXT NOT NULL,
+        size_usd REAL NOT NULL,
+        pnl REAL,
+        pnl_percent REAL,
+        opened_at INTEGER NOT NULL,
+        closed_at INTEGER
+      )
+    `);
+    
+    // Strategies table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS strategies (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        network INTEGER NOT NULL,
+        enabled INTEGER NOT NULL,
+        config TEXT NOT NULL,
+        started_at INTEGER,
+        paused_at INTEGER,
+        stopped_at INTEGER,
+        order_count INTEGER DEFAULT 0,
+        filled_count INTEGER DEFAULT 0,
+        total_volume TEXT DEFAULT '0',
+        pnl REAL DEFAULT 0,
+        pnl_percent REAL DEFAULT 0
+      )
+    `);
+    
+    // Market data cache table
+    this.db.run(`
+      CREATE TABLE IF NOT EXISTS market_data (
+        symbol TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        updated_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL
+      )
+    `);
+    
+    // Create indexes
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_orders_strategy ON orders(strategy_id)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_positions_strategy ON positions(strategy_id)`);
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(closed_at)`);
+  }
+  
+  // Order methods
+  async saveOrder(order: Order): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO orders (
+        id, order_hash, strategy_id, type, status,
+        maker_asset, taker_asset, making_amount, taking_amount,
+        maker, receiver, salt, signature, trigger_price,
+        filled_amount, remaining_amount, created_at, executed_at,
+        cancelled_at, tx_hash, network, expiry, raw_data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      order.id,
+      order.orderHash || null,
+      order.strategyId || null,
+      order.type,
+      order.status,
+      order.makerAsset,
+      order.takerAsset,
+      order.makingAmount,
+      order.takingAmount,
+      order.maker,
+      order.receiver || null,
+      order.salt || null,
+      order.signature || null,
+      order.triggerPrice || null,
+      order.filledAmount || "0",
+      order.remainingAmount || order.makingAmount,
+      order.createdAt,
+      order.executedAt || null,
+      order.cancelledAt || null,
+      order.txHash || null,
+      1, // Default to Ethereum mainnet
+      order.expiry || null,
+      JSON.stringify(order)
+    );
+    
+    logger.debug(`Saved order ${order.id}`);
+  }
+  
+  async getOrder(id: string): Promise<Order | null> {
+    const stmt = this.db.prepare(`SELECT raw_data FROM orders WHERE id = ?`);
+    const result = stmt.get(id) as { raw_data: string } | null;
+    return result ? JSON.parse(result.raw_data) : null;
+  }
+  
+  async getOrderByHash(hash: string): Promise<Order | null> {
+    const stmt = this.db.prepare(`SELECT raw_data FROM orders WHERE order_hash = ?`);
+    const result = stmt.get(hash) as { raw_data: string } | null;
+    return result ? JSON.parse(result.raw_data) : null;
+  }
+  
+  async getOrdersByStrategy(strategyId: string): Promise<Order[]> {
+    const stmt = this.db.prepare(`
+      SELECT raw_data FROM orders 
+      WHERE strategy_id = ? 
+      ORDER BY created_at DESC
+    `);
+    const results = stmt.all(strategyId) as { raw_data: string }[];
+    return results.map((r) => JSON.parse(r.raw_data));
+  }
+  
+  async getActiveOrders(): Promise<Order[]> {
+    const stmt = this.db.prepare(`
+      SELECT raw_data FROM orders 
+      WHERE status IN ('PENDING', 'SUBMITTED', 'ACTIVE', 'PARTIALLY_FILLED')
+      ORDER BY created_at DESC
+    `);
+    const results = stmt.all() as { raw_data: string }[];
+    return results.map((r) => JSON.parse(r.raw_data));
+  }
+  
+  // Order event methods
+  async saveOrderEvent(event: OrderEvent): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT INTO order_events (
+        order_id, order_hash, type, timestamp,
+        tx_hash, filled_amount, remaining_amount,
+        gas_used, error
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      event.orderId,
+      event.orderHash || null,
+      event.type,
+      event.timestamp,
+      event.txHash || null,
+      event.filledAmount || null,
+      event.remainingAmount || null,
+      event.gasUsed || null,
+      event.error || null
+    );
+    
+    logger.debug(`Saved order event for ${event.orderId}`);
+  }
+  
+  async getOrderEvents(orderId: string): Promise<OrderEvent[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM order_events 
+      WHERE order_id = ? 
+      ORDER BY timestamp DESC
+    `);
+    return stmt.all(orderId) as OrderEvent[];
+  }
+  
+  // Position methods
+  async savePosition(position: Position): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO positions (
+        id, strategy_id, symbol, side, entry_price,
+        current_price, size, size_usd, pnl, pnl_percent,
+        opened_at, closed_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      position.id,
+      position.strategyId,
+      position.symbol,
+      position.side,
+      position.entryPrice,
+      position.currentPrice || null,
+      position.size,
+      position.sizeUsd,
+      position.pnl || null,
+      position.pnlPercent || null,
+      position.openedAt,
+      position.closedAt || null
+    );
+    
+    logger.debug(`Saved position ${position.id}`);
+  }
+  
+  async getPosition(id: string): Promise<Position | null> {
+    const stmt = this.db.prepare(`SELECT * FROM positions WHERE id = ?`);
+    return stmt.get(id) as Position | null;
+  }
+  
+  async getOpenPositions(strategyId?: string): Promise<Position[]> {
+    let query = `SELECT * FROM positions WHERE closed_at IS NULL`;
+    const params: any[] = [];
+    
+    if (strategyId) {
+      query += ` AND strategy_id = ?`;
+      params.push(strategyId);
+    }
+    
+    query += ` ORDER BY opened_at DESC`;
+    
+    const stmt = this.db.prepare(query);
+    return stmt.all(...params) as Position[];
+  }
+  
+  // Strategy methods
+  async saveStrategy(strategy: Strategy): Promise<void> {
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO strategies (
+        id, name, type, status, network, enabled, config,
+        started_at, paused_at, stopped_at, order_count,
+        filled_count, total_volume, pnl, pnl_percent
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      strategy.id,
+      strategy.name,
+      strategy.type,
+      strategy.status,
+      strategy.network,
+      strategy.enabled ? 1 : 0,
+      JSON.stringify(strategy),
+      strategy.startedAt || null,
+      strategy.pausedAt || null,
+      strategy.stoppedAt || null,
+      strategy.orderCount || 0,
+      strategy.filledCount || 0,
+      strategy.totalVolume || "0",
+      strategy.pnl || 0,
+      strategy.pnlPercent || 0
+    );
+    
+    logger.debug(`Saved strategy ${strategy.id}`);
+  }
+  
+  async getStrategy(id: string): Promise<Strategy | null> {
+    const stmt = this.db.prepare(`SELECT config FROM strategies WHERE id = ?`);
+    const result = stmt.get(id) as { config: string } | null;
+    return result ? JSON.parse(result.config) : null;
+  }
+  
+  async getActiveStrategies(): Promise<Strategy[]> {
+    const stmt = this.db.prepare(`
+      SELECT config FROM strategies 
+      WHERE status = 'Running' AND enabled = 1
+    `);
+    const results = stmt.all() as { config: string }[];
+    return results.map((r) => JSON.parse(r.config));
+  }
+  
+  // Market data cache methods
+  async cacheTicker(symbol: string, data: TickerFeed | AggregatedTicker, ttl?: number): Promise<void> {
+    const expiresAt = Date.now() + (ttl || this.config.defaultTtl) * 1000;
+    
+    const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO market_data (symbol, data, updated_at, expires_at)
+      VALUES (?, ?, ?, ?)
+    `);
+    
+    stmt.run(symbol, JSON.stringify(data), Date.now(), expiresAt);
+    logger.debug(`Cached ticker data for ${symbol}`);
+  }
+  
+  async getCachedTicker(symbol: string): Promise<TickerFeed | AggregatedTicker | null> {
+    const stmt = this.db.prepare(`
+      SELECT data FROM market_data 
+      WHERE symbol = ? AND expires_at > ?
+    `);
+    
+    const result = stmt.get(symbol, Date.now()) as { data: string } | null;
+    return result ? JSON.parse(result.data) : null;
+  }
+  
+  async cleanExpiredCache(): Promise<void> {
+    const stmt = this.db.prepare(`DELETE FROM market_data WHERE expires_at < ?`);
+    const result = stmt.run(Date.now());
+    if (result.changes > 0) {
+      logger.info(`Cleaned ${result.changes} expired cache entries`);
+    }
+  }
+  
+  close() {
+    this.db.close();
+  }
+}
+
+// Export singleton instance
+let storageInstance: StorageService | null = null;
+
+export function initStorage(config: Config["storage"]) {
+  if (!storageInstance) {
+    storageInstance = new StorageService(config);
+  }
+  return storageInstance;
+}
+
+export function getStorage(): StorageService {
+  if (!storageInstance) {
+    throw new Error("Storage not initialized. Call initStorage first.");
+  }
+  return storageInstance;
+}
+
+// Export convenience methods
+export const saveOrder = (order: Order) => getStorage().saveOrder(order);
+export const getOrder = (id: string) => getStorage().getOrder(id);
+export const getOrderByHash = (hash: string) => getStorage().getOrderByHash(hash);
+export const getOrdersByStrategy = (strategyId: string) => getStorage().getOrdersByStrategy(strategyId);
+export const getActiveOrders = () => getStorage().getActiveOrders();
+export const saveOrderEvent = (event: OrderEvent) => getStorage().saveOrderEvent(event);
+export const getOrderEvents = (orderId: string) => getStorage().getOrderEvents(orderId);
+export const savePosition = (position: Position) => getStorage().savePosition(position);
+export const getPosition = (id: string) => getStorage().getPosition(id);
+export const getOpenPositions = (strategyId?: string) => getStorage().getOpenPositions(strategyId);
+export const saveStrategy = (strategy: Strategy) => getStorage().saveStrategy(strategy);
+export const getStrategy = (id: string) => getStorage().getStrategy(id);
+export const getActiveStrategies = () => getStorage().getActiveStrategies();
+export const cacheTicker = (symbol: string, data: TickerFeed | AggregatedTicker, ttl?: number) => 
+  getStorage().cacheTicker(symbol, data, ttl);
+export const getCachedTicker = (symbol: string) => getStorage().getCachedTicker(symbol);
