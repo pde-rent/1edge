@@ -2,6 +2,30 @@
 
 Retrieve all orders with optional filtering parameters.
 
+```mermaid
+graph LR
+    subgraph "Query Parameters"
+        PAGE[page] --> FILTER[Filter Engine]
+        LIMIT[limit] --> FILTER
+        STATUS[statuses] --> FILTER
+        MAKER[makerAsset] --> FILTER
+        TAKER[takerAsset] --> FILTER
+    end
+    
+    subgraph "Processing"
+        FILTER --> DB[(Orderbook DB)]
+        DB --> SORT[Sort by Creation Time]
+        SORT --> PAGINATE[Apply Pagination]
+    end
+    
+    subgraph "Response"
+        PAGINATE --> ORDERS[Order List]
+        PAGINATE --> META[Pagination Meta]
+        ORDERS --> JSON[JSON Response]
+        META --> JSON
+    end
+```
+
 ## Endpoint
 
 ```

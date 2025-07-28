@@ -3,6 +3,29 @@
 > **⚡ Order Execution Engine**  
 > Master the LimitOrderContract class and its methods for filling limit orders in the 1inch Limit Order Protocol. From simple fills to complex contract interactions.
 
+```mermaid
+sequenceDiagram
+    participant T as Taker
+    participant SDK as 1inch SDK
+    participant BC as Blockchain
+    participant M as Maker
+
+    T->>SDK: Query Available Orders
+    SDK->>T: Return Order List
+    T->>T: Select Order to Fill
+    T->>SDK: Generate Fill Calldata
+    SDK->>T: Return Optimized Calldata
+    T->>BC: Submit Transaction
+    BC->>BC: Validate Order Signature
+    BC->>BC: Check Predicate (if exists)
+    BC->>BC: Execute Pre-Interaction
+    BC->>BC: Transfer Tokens
+    BC->>BC: Execute Post-Interaction
+    BC->>M: Transfer Taker Tokens
+    BC->>T: Transfer Maker Tokens
+    BC->>SDK: Emit OrderFilled Event
+```
+
 ---
 
 ## LimitOrderContract Overview
@@ -12,12 +35,12 @@
 
 ### Execution Scenarios
 
-| Scenario | 🏷️ Order Type | 🔧 Extensions | 🎯 Method |
-|----------|---------------|---------------|-----------|
-| **Simple Fill** | EOA Order | ❌ None | `getFillOrderCalldata` |
-| **Contract Fill** | Contract Order | ❌ None | `getFillContractOrderCalldata` |
-| **Extended Fill** | EOA Order | ✅ Has Extensions/Interactions | `getFillOrderArgsCalldata` |
-| **Extended Contract Fill** | Contract Order | ✅ Has Extensions/Interactions | `getFillContractOrderArgsCalldata` |
+| Scenario | Order Type | Extensions | Method |
+|----------|------------|------------|---------|
+| Simple Fill | EOA Order | None | `getFillOrderCalldata` |
+| Contract Fill | Contract Order | None | `getFillContractOrderCalldata` |
+| Extended Fill | EOA Order | Has Extensions/Interactions | `getFillOrderArgsCalldata` |
+| Extended Contract Fill | Contract Order | Has Extensions/Interactions | `getFillContractOrderArgsCalldata` |
 
 ---
 
@@ -28,12 +51,12 @@
 
 ### Method Reference
 
-| Method | 🎯 Purpose | 📝 Signature | 💡 Best For |
-|--------|------------|---------------|-------------|
-| **🚀 getFillOrderCalldata** | Simple EOA order filling | `(order, signature, traits, amount) => string` | Basic trading |
-| **🏢 getFillContractOrderCalldata** | Simple contract order filling | `(order, signature, traits, amount) => string` | Smart contract makers |
-| **⚡ getFillOrderArgsCalldata** | Advanced EOA order filling | `(order, signature, traits, amount) => string` | Complex strategies |
-| **🏗️ getFillContractOrderArgsCalldata** | Advanced contract order filling | `(order, signature, traits, amount) => string` | Enterprise integrations |
+| Method | Purpose | Signature | Best For |
+|--------|---------|-----------|----------|
+| getFillOrderCalldata | Simple EOA order filling | `(order, signature, traits, amount) => string` | Basic trading |
+| getFillContractOrderCalldata | Simple contract order filling | `(order, signature, traits, amount) => string` | Smart contract makers |
+| getFillOrderArgsCalldata | Advanced EOA order filling | `(order, signature, traits, amount) => string` | Complex strategies |
+| getFillContractOrderArgsCalldata | Advanced contract order filling | `(order, signature, traits, amount) => string` | Enterprise integrations |
 
 ### Method Details
 

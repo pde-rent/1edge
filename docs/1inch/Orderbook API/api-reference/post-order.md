@@ -3,6 +3,31 @@
 > **Submit a new limit order to the 1inch Orderbook**  
 > This endpoint allows you to submit a cryptographically signed limit order for discovery by takers and resolvers.
 
+```mermaid
+sequenceDiagram
+    participant M as Maker
+    participant API as 1inch API
+    participant DB as Orderbook DB
+    participant V as Validator
+
+    M->>M: Create & Sign Order
+    M->>API: POST /orderbook/v4.0/{chain}
+    API->>V: Validate Signature
+    V->>V: Check Order Structure
+    V->>V: Verify Chain Parameters
+    V-->>API: Validation Result
+    
+    alt Valid Order
+        API->>DB: Store Order
+        DB-->>API: Success
+        API-->>M: 201 Created
+    else Invalid Order  
+        API-->>M: 400 Bad Request
+    end
+    
+    Note over DB: Order now discoverable by takers
+```
+
 ---
 
 ## Endpoint Details
@@ -13,10 +38,10 @@ POST https://api.1inch.dev/orderbook/v4.0/{chain}
 
 | Component | Description |
 |-----------|-------------|
-| **Method** | `POST` |
-| **Base URL** | `https://api.1inch.dev/orderbook/v4.0` |
-| **Authentication** | Bearer token required |
-| **Content-Type** | `application/json` |
+| Method | `POST` |
+| Base URL | `https://api.1inch.dev/orderbook/v4.0` |
+| Authentication | Bearer token required |
+| Content-Type | `application/json` |
 
 ---
 

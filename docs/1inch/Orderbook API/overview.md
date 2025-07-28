@@ -3,6 +3,32 @@
 > **🏗️ Your gateway to decentralized limit order trading**  
 > The 1inch Orderbook API provides RESTful access to limit orders, enabling efficient discovery and execution while maintaining the decentralized nature of the protocol.
 
+```mermaid
+graph TD
+    subgraph "Orderbook API Architecture"
+        CLIENT[Client Application] --> API[Orderbook API]
+        API --> DB[(Order Database)]
+        API --> EVENTS[Event Processor]
+        API --> VALIDATOR[Order Validator]
+    end
+    
+    subgraph "Order Flow"
+        MAKER[Maker] -->|Submit Signed Order| API
+        API -->|Store| DB
+        TAKER[Taker] -->|Query Orders| API
+        API -->|Return Matches| TAKER
+        TAKER -->|Execute on-chain| BLOCKCHAIN[Blockchain]
+        BLOCKCHAIN -->|Emit Events| EVENTS
+        EVENTS -->|Update Status| DB
+    end
+    
+    subgraph "Data Access"
+        DB --> SEARCH[Order Search]
+        DB --> STATS[Market Statistics]
+        DB --> HISTORY[Event History]
+    end
+```
+
 ---
 
 ## Purpose & Mission
@@ -11,10 +37,10 @@ The Orderbook API bridges the gap between off-chain order creation and on-chain 
 
 | Function | Description | Benefit |
 |----------|-------------|---------|
-| 📝 **Order Storage** | Store signed limit orders from makers | Centralized discovery |
-| 🔍 **Order Discovery** | Enable takers and resolvers to find orders | Efficient matching |
-| 📊 **Status Tracking** | Monitor order lifecycle and events | Real-time insights |
-| 💰 **Price Discovery** | Facilitate market depth analysis | Better pricing |
+| Order Storage | Store signed limit orders from makers | Centralized discovery |
+| Order Discovery | Enable takers and resolvers to find orders | Efficient matching |
+| Status Tracking | Monitor order lifecycle and events | Real-time insights |
+| Price Discovery | Facilitate market depth analysis | Better pricing |
 
 ---
 
@@ -24,28 +50,28 @@ The Orderbook API bridges the gap between off-chain order creation and on-chain 
 
 > **Complete order lifecycle management**
 
-- **📤 Submit Orders**: Store cryptographically signed orders for public discovery
-- **🔎 Query Orders**: Advanced search with filters for maker, assets, status, and more
-- **📊 Order Status**: Real-time tracking from creation to completion or cancellation
-- **🔄 Batch Operations**: Efficient handling of multiple orders
+- **Submit Orders**: Store cryptographically signed orders for public discovery
+- **Query Orders**: Advanced search with filters for maker, assets, status, and more
+- **Order Status**: Real-time tracking from creation to completion or cancellation
+- **Batch Operations**: Efficient handling of multiple orders
 
 ### Event Tracking
 
 > **Stay updated with real-time order events**
 
-- **✅ Fill Events**: Monitor partial and complete order executions
-- **❌ Cancel Events**: Track order cancellations and invalidations  
-- **🔔 Real-time Updates**: WebSocket support for live order state changes
-- **📜 Historical Data**: Access complete event history for analysis
+- **Fill Events**: Monitor partial and complete order executions
+- **Cancel Events**: Track order cancellations and invalidations  
+- **Real-time Updates**: WebSocket support for live order state changes
+- **Historical Data**: Access complete event history for analysis
 
 ### Market Data & Analytics
 
 > **Deep market insights at your fingertips**
 
-- **💱 Active Pairs**: Discover all trading pairs with active liquidity
-- **📊 Order Statistics**: Comprehensive metrics on order distribution
-- **📉 Market Depth**: Analyze liquidity across different price levels
-- **📈 Volume Metrics**: Track trading volume and activity trends
+- **Active Pairs**: Discover all trading pairs with active liquidity
+- **Order Statistics**: Comprehensive metrics on order distribution
+- **Market Depth**: Analyze liquidity across different price levels
+- **Volume Metrics**: Track trading volume and activity trends
 
 ---
 

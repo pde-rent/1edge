@@ -3,6 +3,29 @@
 > **⚡ Supercharge Your Orders**  
 > Extensions unlock advanced functionality for 1inch Limit Order Protocol, enabling custom behaviors, interactions, and sophisticated trading strategies.
 
+```mermaid
+graph TD
+    subgraph "Extension System Architecture"
+        ORDER[Base Order] --> EXT[Extension]
+        EXT --> PRE[Pre-Interaction]
+        EXT --> POST[Post-Interaction]
+        EXT --> PRED[Predicate]
+        EXT --> MAKER[Maker Amount Data]
+        EXT --> TAKER[Taker Amount Data]
+        EXT --> CUSTOM[Custom Data]
+    end
+    
+    subgraph "Order Execution Flow"
+        START[Order Fill Initiated] --> CHECK{Predicate Check}
+        CHECK -->|Pass| PRE_EXEC[Execute Pre-Interaction]
+        CHECK -->|Fail| REJECT[Reject Order]
+        PRE_EXEC --> CALC[Calculate Dynamic Amounts]
+        CALC --> FILL[Execute Order Fill]
+        FILL --> POST_EXEC[Execute Post-Interaction]
+        POST_EXEC --> COMPLETE[Order Completed]
+    end
+```
+
 ---
 
 ## Overview
@@ -11,12 +34,12 @@ Extensions provide a powerful plugin system that allows developers to customize 
 
 ### Extension Capabilities
 
-| Feature | 📝 Description | 🚀 Use Case |
-|---------|----------------|-------------|
-| **🔄 Pre/Post Interactions** | Execute custom logic before/after fills | Complex trading strategies |
-| **💰 Dynamic Pricing** | Calculate amounts based on external data | Oracle-based pricing |
-| **🎯 Conditional Execution** | Orders execute only when conditions are met | Automated trading triggers |
-| **🔒 Custom Permissions** | Advanced authorization mechanisms | Enterprise integrations |
+| Feature | Description | Use Case |
+|---------|-------------|----------|
+| Pre/Post Interactions | Execute custom logic before/after fills | Complex trading strategies |
+| Dynamic Pricing | Calculate amounts based on external data | Oracle-based pricing |
+| Conditional Execution | Orders execute only when conditions are met | Automated trading triggers |
+| Custom Permissions | Advanced authorization mechanisms | Enterprise integrations |
 
 ---
 
@@ -25,13 +48,13 @@ Extensions provide a powerful plugin system that allows developers to customize 
 > **🔧 Core Extension Engine**  
 > The Extension class provides comprehensive functionality for encoding, decoding, and managing order extensions.
 
-| Method | 🎯 Purpose | 📝 Signature | 💡 Usage |
-|--------|------------|--------------|----------|
-| **🔧 decode** | Parse extension from bytes | `(bytes: string) => Extension` | Load existing extensions |
-| **🆕 default** | Create empty extension | `() => Extension` | Start building extensions |
-| **🔐 keccak256** | Calculate extension hash | `() => bigint` | Verification and indexing |
-| **❓ isEmpty** | Check if extension is empty | `() => boolean` | Validation logic |
-| **📦 encode** | Convert to hex string | `() => string` | Blockchain submission |
+| Method | Purpose | Signature | Usage |
+|--------|---------|-----------|-------|
+| decode | Parse extension from bytes | `(bytes: string) => Extension` | Load existing extensions |
+| default | Create empty extension | `() => Extension` | Start building extensions |
+| keccak256 | Calculate extension hash | `() => bigint` | Verification and indexing |
+| isEmpty | Check if extension is empty | `() => boolean` | Validation logic |
+| encode | Convert to hex string | `() => string` | Blockchain submission |
 
 ### Method Details
 

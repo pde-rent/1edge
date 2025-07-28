@@ -3,27 +3,56 @@
 > **🚀 Comprehensive DeFi Trading Toolkit**  
 > The 1inch Limit Order SDK is a powerful JavaScript/TypeScript library designed for seamless interaction with the 1inch Limit Order Protocol v4. Build sophisticated trading applications with enterprise-grade tools and precision control.
 
+```mermaid
+graph TB
+    subgraph "SDK Architecture"
+        APP[Your Application] --> SDK[1inch SDK]
+        SDK --> BUILDER[Order Builder]
+        SDK --> SIGNER[EIP-712 Signer]
+        SDK --> CONNECTOR[Web3 Connector]
+        SDK --> HTTP[HTTP Client]
+    end
+    
+    subgraph "Order Types"
+        BUILDER --> LIMIT[Limit Order]
+        BUILDER --> RFQ[RFQ Order]
+        BUILDER --> FEE[Order with Fee]
+    end
+    
+    subgraph "External Integrations"
+        HTTP --> API[1inch API]
+        CONNECTOR --> WALLET[Wallet Provider]
+        CONNECTOR --> BLOCKCHAIN[Blockchain]
+    end
+    
+    subgraph "Data Flow"
+        CREATE[Create Order] --> SIGN[Sign Order]
+        SIGN --> SUBMIT[Submit to API]
+        SUBMIT --> EXECUTE[Execute on-chain]
+    end
+```
+
 ---
 
 ## Key Features
 
 ### Core Capabilities
 
-| Feature | 🎯 Description | 💫 Benefit |
-|---------|----------------|------------|
-| **📝 Order Creation** | Build limit orders with customizable parameters | Precise trade control |
-| **✍️ EIP-712 Signing** | Cryptographic signing using Ethereum standards | Maximum security |
-| **🌐 Orderbook Integration** | Submit and query orders via 1inch API | Global liquidity access |
-| **📘 TypeScript Support** | Full type definitions and IntelliSense | Enhanced developer experience |
-| **🔌 HTTP Flexibility** | Multiple connector options (Fetch, Axios) | Adaptable architecture |
+| Feature | Description | Benefit |
+|---------|-------------|----------|
+| Order Creation | Build limit orders with customizable parameters | Precise trade control |
+| EIP-712 Signing | Cryptographic signing using Ethereum standards | Maximum security |
+| Orderbook Integration | Submit and query orders via 1inch API | Global liquidity access |
+| TypeScript Support | Full type definitions and IntelliSense | Enhanced developer experience |
+| HTTP Flexibility | Multiple connector options (Fetch, Axios) | Adaptable architecture |
 
 ### Advanced Features
 
-- **⚡ Gas Optimization**: Efficient smart contract interactions
-- **🔧 Extensible Architecture**: Plugin system for custom functionality  
-- **🌍 Multi-Network Support**: Deploy across multiple blockchains
-- **🛡️ Security First**: Battle-tested cryptographic implementations
-- **📊 Real-time Monitoring**: Order status tracking and updates
+- **Gas Optimization**: Efficient smart contract interactions
+- **Extensible Architecture**: Plugin system for custom functionality  
+- **Multi-Network Support**: Deploy across multiple blockchains
+- **Security First**: Battle-tested cryptographic implementations
+- **Real-time Monitoring**: Order status tracking and updates
 
 ---
 
@@ -34,11 +63,11 @@
 
 ### Order Types
 
-| Order Type | 🎯 Purpose | ⚡ Performance | 🔧 Features |
-|------------|------------|---------------|-------------|
-| **💼 LimitOrder** | Standard trading orders | 🟡 Moderate | ✅ Full feature set |
-| **⚡ RfqOrder** | Market maker optimization | 🟢 High performance | 🔒 Lightweight, gas-efficient |
-| **💰 LimitOrderWithFee** | Fee-integrated orders | 🟡 Moderate | 💳 Built-in fee mechanisms |
+| Order Type | Purpose | Performance | Features |
+|------------|---------|-------------|----------|
+| LimitOrder | Standard trading orders | Moderate | Full feature set |
+| RfqOrder | Market maker optimization | High performance | Lightweight, gas-efficient |
+| LimitOrderWithFee | Fee-integrated orders | Moderate | Built-in fee mechanisms |
 
 #### Order Type Details
 

@@ -3,14 +3,38 @@
 > **Get started with 1inch Limit Orders in minutes!**  
 > This comprehensive guide walks you through creating, signing, and submitting your first Limit Order v4.
 
+```mermaid
+flowchart TD
+    START[Start] --> SETUP[Setup Environment]
+    SETUP --> APPROVE[Approve Tokens]
+    APPROVE --> CREATE[Create Order]
+    CREATE --> SIGN[Sign Order]
+    SIGN --> SUBMIT[Submit to API]
+    SUBMIT --> WAIT[Wait for Taker]
+    WAIT --> EXECUTE[Order Executed]
+    
+    subgraph "Development Steps"
+        SETUP --> INSTALL[Install Dependencies]
+        SETUP --> CONFIG[Configure Wallet]
+        SETUP --> CONNECT[Connect to Network]
+    end
+    
+    subgraph "Order Lifecycle"
+        SUBMIT --> PENDING[Order Pending]
+        PENDING --> PARTIAL[Partial Fill]
+        PENDING --> COMPLETE[Complete Fill]
+        PENDING --> CANCEL[Cancel Order]
+    end
+```
+
 ## What You'll Learn
 
 This guide demonstrates how to create and submit a Limit Order v4 using the `@1inch/limit-order-sdk` in a JavaScript environment. You'll learn how to:
 
-- ✅ Configure your development environment  
-- ✅ Approve token transfers securely  
-- ✅ Construct and sign a limit order  
-- ✅ Submit the signed order to the 1inch Orderbook API  
+- Configure your development environment  
+- Approve token transfers securely  
+- Construct and sign a limit order  
+- Submit the signed order to the 1inch Orderbook API  
 
 ---
 

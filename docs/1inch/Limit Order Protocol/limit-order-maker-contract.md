@@ -3,6 +3,31 @@
 > **⚙️ Core Protocol Engine**  
 > Deep dive into the essential functions and classes that power limit order creation and management in the 1inch Limit Order Protocol v4.
 
+```mermaid
+graph TD
+    subgraph "Order Creation Flow"
+        MAKER[Maker] --> BUILD[Build Order]
+        BUILD --> SIGN[Sign Order]
+        SIGN --> SUBMIT[Submit to Orderbook]
+    end
+    
+    subgraph "Order Components"
+        ORDER[Order Struct] --> MAKER_ASSET[Maker Asset]
+        ORDER --> TAKER_ASSET[Taker Asset]
+        ORDER --> AMOUNTS[Making/Taking Amounts]
+        ORDER --> RECEIVER[Receiver Address]
+        ORDER --> TRAITS[Maker Traits]
+        ORDER --> EXTENSION[Extension Data]
+    end
+    
+    subgraph "Amount Calculations"
+        PARTIAL[Partial Fill] --> CALC_TAKING[calcTakingAmount]
+        REVERSE[Reverse Calc] --> CALC_MAKING[calcMakingAmount]
+        CALC_TAKING --> PROPORTION[Linear Proportion]
+        CALC_MAKING --> PROPORTION
+    end
+```
+
 ---
 
 ## Core Calculation Functions
@@ -12,10 +37,10 @@
 
 ### Amount Calculation Methods
 
-| Function | 🎯 Purpose | 📝 Signature | 💡 Use Case |
-|----------|------------|--------------|-------------|
-| **📈 calcTakingAmount** | Calculate proportional taker amount | `(swapMakerAmount, orderMakerAmount, orderTakerAmount) => bigint` | Partial fills |
-| **📊 calcMakingAmount** | Calculate proportional maker amount | `(swapTakerAmount, orderMakerAmount, orderTakerAmount) => bigint` | Reverse calculations |
+| Function | Purpose | Signature | Use Case |
+|----------|---------|-----------|----------|
+| calcTakingAmount | Calculate proportional taker amount | `(swapMakerAmount, orderMakerAmount, orderTakerAmount) => bigint` | Partial fills |
+| calcMakingAmount | Calculate proportional maker amount | `(swapTakerAmount, orderMakerAmount, orderTakerAmount) => bigint` | Reverse calculations |
 
 ### Function Details
 
