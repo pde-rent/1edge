@@ -35,7 +35,7 @@ export default function StatusPanel() {
     );
   }
 
-  const services = data.data;
+  const services = data.data || [];
   // Split into internal and external categories
   const internalServices = services.filter(s => s.pingUrl?.startsWith('internal:'));
   const externalServices = services.filter(s => !s.pingUrl?.startsWith('internal:'));
@@ -243,7 +243,7 @@ export default function StatusPanel() {
                   <Typography variant="subtitle2" sx={{ fontSize: THEME.font.size.xs, textTransform: 'uppercase', color: THEME.text.secondary }}>
                     External Services
                   </Typography>
-                  <InfoTooltip title="External Services: Prediction Market APIs, Exchanges APIs etc." placement="right" />
+                  <InfoTooltip title="External Services: 1inch API, Exchanges APIs etc." placement="right" />
                 </Box>
               </TableCell>
             </TableRow>
