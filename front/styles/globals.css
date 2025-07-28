@@ -1,0 +1,179 @@
+/* Simple reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter Variable', system-ui, sans-serif;
+  background-color: var(--background-main);
+  color: var(--text-primary);
+}
+
+#__next {
+  height: 100%;
+}
+
+/* CSS variables - will be set by constants.ts via JS */
+:root {
+  /* These are just fallbacks, real values will be set by JS */
+  --background-main: #202020;
+  --background-secondary: #131313;
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --primary-color: #F0B90B;
+  --secondary-color: #0ECB81;
+  --border-color: #333333;
+  --success-color: #0ECB81;
+  --error-color: #F6465D;
+
+  /* Shadow fallbacks */
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.2);
+  --shadow-dark: rgba(0, 0, 0, 0.3);
+
+  /* Font fallbacks */
+  --font-family: 'Inter Variable', system-ui, sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+
+  /* Border radius */
+  --radius: 0.5rem;
+
+  /* Custom variables for MUI components consistency */
+  --mui-tooltip-bg: #1C1C1C; /* Match main background */
+  --mui-shadow-opacity: 0.3;
+  --mui-shadow: 0px 4px 6px rgba(0,0,0,var(--mui-shadow-opacity));
+
+  /* Force dark mode at the HTML level using direct CSS */
+  color-scheme: dark;
+}
+
+/* For the grid layout container */
+.layout {
+  min-height: 100%;
+}
+
+/* Layout helpers */
+.h-full {
+  height: 100%;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+/* Table styling */
+.table {
+  width: 100%;
+}
+
+.table th {
+  background-color: var(--background-secondary) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  border-top: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  font-size: 0.875rem;
+  padding: 0.5rem;
+}
+
+/* Status colors */
+.status-up {
+  color: #10b981; /* Green */
+}
+
+.status-down {
+  color: #ef4444; /* Red */
+}
+
+.status-unknown {
+  color: #f59e0b; /* Amber */
+}
+
+/* Custom MUI overrides for consistent styling */
+.MuiTooltip-tooltip {
+  background-color: var(--mui-tooltip-bg) !important;
+  border: none !important;
+  box-shadow: var(--mui-shadow) !important;
+  font-size: var(--font-size-xs) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Target all MUI menu and popover components using more specific selectors */
+.MuiPaper-root.MuiMenu-paper,
+.MuiPaper-root.MuiPopover-paper,
+div.MuiMenu-paper,
+div.MuiPopover-paper,
+.MuiPaper-elevation,
+.MuiPaper-elevation1,
+.MuiPaper-rounded,
+.MuiPopover-paper,
+.MuiMenu-paper {
+  background-color: var(--mui-tooltip-bg) !important;
+  border: none !important;
+  /* box-shadow: var(--mui-shadow) !important; */
+  color: var(--text-primary) !important;
+}
+
+/* Target menu list and items */
+.MuiMenu-list,
+.MuiList-root,
+.MuiMenuItem-root,
+.MuiListItem-root,
+ul.MuiList-padding {
+  background-color: var(--mui-tooltip-bg) !important;
+  border: none !important;
+}
+
+/* Ensure menu items hover state is consistent */
+.MuiMenuItem-root:hover,
+.MuiListItem-root:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Override MUI TableCell horizontal padding */
+.MuiTableCell-root {
+  padding-left: 0.5rem !important;
+  padding-right: 0.5rem !important;
+}
+
+/* Section header titles: slightly bigger and less grey */
+.MuiTypography-subtitle1 {
+  font-size: var(--font-size-sm) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+}
+
+/* Table styling: applied via className="table" on MUI Table components */
+.table {
+  width: 100%;
+}
+.table th {
+  /* Uniform header background and text style */
+  background-color: var(--background-secondary) !important;
+  color: var(--text-secondary) !important;
+}
+.table td {
+  /* Uniform cell borders and text */
+  border-top: 1px solid var(--border) !important;
+  color: var(--text-primary) !important;
+}
