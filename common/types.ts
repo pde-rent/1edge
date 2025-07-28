@@ -33,6 +33,7 @@ export interface Service {
 export const services: Service[] = [
   { id: "collector", name: "Collector", path: "back/services/collector.ts" },
   { id: "api", name: "API Server", path: "back/services/apiServer.ts" },
+  { id: "websocket", name: "WebSocket Server", path: "back/services/websocketServer.ts" },
   { id: "order-executor", name: "Order Executor", path: "back/services/orderExecutor.ts" },
   { id: "keeper", name: "Keeper", path: "back/services/keeper.ts" },
   { id: "status-checker", name: "Status Checker", path: "back/services/statusChecker.ts" },
