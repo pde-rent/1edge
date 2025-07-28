@@ -49,6 +49,8 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/all
 | `statuses` | `string` | No | Comma-separated order statuses (1,2,3) |
 | `takerAsset` | `string` | No | Filter by taker asset address |
 | `makerAsset` | `string` | No | Filter by maker asset address |
+| `sortBy` | `string` | No | Sort field. One of: `createDateTime`, `takerRate`, `makerRate`, `makerAmount`, `takerAmount` |
+
 
 ## Request Example
 

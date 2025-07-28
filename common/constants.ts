@@ -19,6 +19,9 @@ export const SERVICE_PORTS = {
   STATUS_CHECKER: 40011,
 } as const;
 
+/** ZeroMQ internal messaging port */
+export const ZMQ_PRICE_FEED_PORT = 5555;
+
 /** Next.js server hostname */
 export const NEXT_HOST = process.env.NEXT_HOST || "localhost";
 

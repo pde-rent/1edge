@@ -11,9 +11,11 @@ import {
 } from "./storage";
 import { getTicker, getActiveTickers } from "./marketData";
 import { getActiveTickers as getActiveTickersFromMemory } from "./memoryStorage";
+import { orderbookReconstructor } from "./orderbookReconstructor";
 import { logger } from "@back/utils/logger";
 import type { ApiServerConfig, ApiResponse } from "@common/types";
 import { services } from "@common/types";
+import { priceCache } from "./priceCache";
 
 class ApiServer {
   private config: ApiServerConfig;
@@ -25,6 +27,9 @@ class ApiServer {
   
   async start() {
     const port = this.config.port || 40005;
+    
+    // Connect to price cache
+    await priceCache.connect();
     
     this.server = serve({
       port,
@@ -97,6 +102,9 @@ class ApiServer {
           
         case path === "/ping":
           return this.jsonResponse({ success: true, data: { pong: Date.now() } }, headers);
+          
+        case path.startsWith("/orderbook/"):
+          return this.handleOrderbook(path, url, headers);
           
         default:
           return this.jsonResponse(
@@ -185,17 +193,27 @@ class ApiServer {
     const config = getConfig();
     const tickerConfigs = config.services?.collector?.tickers || {};
     
-    // Get live data from memory
-    const activeTickersData = getActiveTickersFromMemory();
+    // Get live data from price cache
+    const activePrices = priceCache.getAllPrices();
     
     // Combine config with live data like bet-bot does
-    const feeds = Object.entries(tickerConfigs).map(([symbol, config]) => ({
-      symbol,
-      config,
-      last: activeTickersData[symbol]?.last || null,
-      history: activeTickersData[symbol]?.history || { ts: [], o: [], h: [], l: [], c: [], v: [] },
-      analysis: activeTickersData[symbol]?.analysis || null,
-    }));
+    const feeds = Object.entries(tickerConfigs).map(([symbol, config]) => {
+      const priceData = activePrices[symbol] || {};
+      return {
+        symbol,
+        config,
+        last: priceData.last || priceData.mid ? {
+          bid: priceData.bid || 0,
+          ask: priceData.ask || 0,
+          mid: priceData.mid || 0,
+          last: priceData.last || priceData.mid || 0,
+          volume: priceData.volume || 0,
+          timestamp: priceData.timestamp || Date.now()
+        } : null,
+        history: priceData.history || { ts: [], o: [], h: [], l: [], c: [], v: [] },
+        analysis: priceData.analysis || null,
+      };
+    });
     
     return this.jsonResponse({ success: true, data: feeds }, headers);
   }
@@ -237,6 +255,88 @@ class ApiServer {
     const strategyId = url.searchParams.get("strategyId") || undefined;
     const positions = await getOpenPositions(strategyId);
     return this.jsonResponse({ success: true, data: positions }, headers);
+  }
+  
+  /**
+   * Handle orderbook reconstruction requests
+   * Routes:
+   * - /orderbook/{chain} - Full market overview
+   * - /orderbook/{chain}/{baseAsset}/{quoteAsset} - Specific pair
+   */
+  private async handleOrderbook(path: string, url: URL, headers: any): Promise<Response> {
+    try {
+      const pathParts = path.split('/').filter(p => p); // ['orderbook', chain, baseAsset?, quoteAsset?]
+      
+      if (pathParts.length < 2) {
+        return this.jsonResponse(
+          { success: false, error: "Chain ID required" },
+          headers,
+          400
+        );
+      }
+
+      const chain = parseInt(pathParts[1]);
+      if (isNaN(chain)) {
+        return this.jsonResponse(
+          { success: false, error: "Invalid chain ID" },
+          headers,
+          400
+        );
+      }
+
+      // Get query parameters
+      const limitParam = url.searchParams.get("limit");
+      const limit = limitParam ? Math.min(parseInt(limitParam), 1000) : 1000;
+
+      let orderbook;
+
+      if (pathParts.length === 4) {
+        // Specific pair: /orderbook/{chain}/{baseAsset}/{quoteAsset}
+        const baseAsset = pathParts[2];
+        const quoteAsset = pathParts[3];
+        
+        logger.info(`Reconstructing orderbook for ${chain}:${baseAsset}/${quoteAsset} (limit: ${limit})`);
+        orderbook = await orderbookReconstructor.getOrderbookForPair(chain, baseAsset, quoteAsset, limit);
+        
+      } else if (pathParts.length === 2) {
+        // Market overview: /orderbook/{chain}
+        logger.info(`Reconstructing market overview for chain ${chain} (limit: ${limit})`);
+        orderbook = await orderbookReconstructor.getMarketOverview(chain, limit);
+        
+      } else {
+        return this.jsonResponse(
+          { success: false, error: "Invalid orderbook request format" },
+          headers,
+          400
+        );
+      }
+
+      return this.jsonResponse({ success: true, data: orderbook }, headers);
+
+    } catch (error: any) {
+      logger.error(`Orderbook reconstruction failed: ${error.message}`);
+      
+      // Handle specific error types
+      if (error.message.includes('HTTP 401')) {
+        return this.jsonResponse(
+          { success: false, error: "1inch API authentication failed" },
+          headers,
+          401
+        );
+      } else if (error.message.includes('HTTP 429')) {
+        return this.jsonResponse(
+          { success: false, error: "Rate limit exceeded" },
+          headers,
+          429
+        );
+      } else {
+        return this.jsonResponse(
+          { success: false, error: "Failed to reconstruct orderbook" },
+          headers,
+          500
+        );
+      }
+    }
   }
 }
 

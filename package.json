@@ -45,7 +45,8 @@
     "glob": "^11.0.3",
     "technicalindicators": "^3.1.0",
     "viem": "^2.33.1",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "zeromq": "^6.5.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

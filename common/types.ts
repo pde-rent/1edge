@@ -98,6 +98,60 @@ export interface Order extends LimitOrderParams {
   txHash?: string; // Transaction hash if executed
 }
 
+/**
+ * 1inch Limit Order structure from API
+ */
+export interface OneInchOrder {
+  orderHash: string;
+  createDateTime: string;
+  remainingMakerAmount: string;
+  makerBalance: string;
+  makerAllowance: string;
+  data: {
+    makerAsset: string;
+    takerAsset: string;
+    salt: string;
+    receiver?: string;
+    makingAmount: string;
+    takingAmount: string;
+    maker: string;
+    extension?: string;
+    makerTraits?: string;
+  };
+  makerRate: string;
+  takerRate: string;
+  isMakerContract: boolean;
+  orderInvalidReason: string | null;
+  signature: string;
+}
+
+/**
+ * Reconstructed orderbook structure
+ */
+export interface OrderbookLevel {
+  price: string;
+  amount: string;
+  total: string;
+  count: number;
+  orders: OneInchOrder[];
+}
+
+export interface ReconstructedOrderbook {
+  chain: number;
+  makerAsset: string;
+  takerAsset: string;
+  bids: OrderbookLevel[]; // Orders sorted by makerRate (descending)
+  asks: OrderbookLevel[]; // Orders sorted by takerRate (ascending)
+  timestamp: number;
+  summary: {
+    totalBidOrders: number;
+    totalAskOrders: number;
+    bestBid: string | null;
+    bestAsk: string | null;
+    spread: string | null;
+  };
+}
+
 export enum OrderType {
   // Basic limit orders
   LIMIT = "LIMIT",
