@@ -62,6 +62,9 @@
     "apiServer": {
       "port": 40005,
       "corsOrigins": ["http://localhost:40006", "http://localhost:3000"]
+    },
+    "websocketServer": {
+      "port": 40007
     }
   }
 }
