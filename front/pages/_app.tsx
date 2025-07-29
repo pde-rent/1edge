@@ -11,6 +11,7 @@ import {
   syncThemeWithCSSVars
 } from '@common/constants';
 import { useEffect } from 'react';
+import { WebSocketProvider } from '../contexts/WebSocketContext';
 
 // Poppins font, adjust as needed
 
@@ -124,7 +125,9 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Component {...pageProps} />
+      <WebSocketProvider url="ws://localhost:40007/ws">
+        <Component {...pageProps} />
+      </WebSocketProvider>
     </ThemeProvider>
   );
 };

@@ -1,7 +1,7 @@
 // @ts-nocheck
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
-import { useWebSocket } from '../utils/useWebSocket';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
 // import styled from 'styled-components'; // No longer needed for PanelContainer and Title
 import { useState, useEffect } from 'react';
 import { BaseSection } from './common/LayoutPrimitives';
@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import LayersIcon from '@mui/icons-material/Layers';
 import PanelHeader from './common/PanelHeader';
-import { roundSig } from '@common/utils';
+import { roundSig, formatPrice } from '../lib/utils';
 import InfoTooltip from './common/InfoTooltip';
+import { useTheme } from '@mui/material/styles';
 
 // const PanelContainer = styled.section` // Removed
 // width: 100%;
@@ -87,54 +88,52 @@ function parseFeedSymbol(symbol: string): ParsedSymbol {
  */
 function formatMidValue(value: number | undefined): string {
   if (value === undefined || value === null) return '-';
-
-  // Use scientific notation for values less than 0.001
-  if (Math.abs(value) < 0.001 && value !== 0) {
-    return roundSig(value, 7).toExponential();
-  }
-
-  return roundSig(value, 7).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 8
-  });
+  return formatPrice(value);
 }
 
 /**
  * FeedsPanel displays a list of available feeds with spread and mid values.
  * @param onSelect - Callback when a feed is selected.
+ * @param selectedFeedId - The currently selected feed ID.
  */
-export default function FeedsPanel({ onSelect }: { onSelect: (feedId: string) => void }) {
+export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (feedId: string) => void, selectedFeedId: string | null }) {
   const { data: apiResponse, error, isValidating } = useSWR('/api/feeds', fetcher, { refreshInterval: 10000 });
-
+  const theme = useTheme();
   const [feedsToDisplay, setFeedsToDisplay] = useState([]);
   const [realtimePrices, setRealtimePrices] = useState(new Map());
 
   // WebSocket connection for real-time price updates
-  const { subscribe, isConnected } = useWebSocket('ws://localhost:40007/ws', {
-    onMessage: (message) => {
-      if (message.type === 'price_update' && message.symbol) {
-        setRealtimePrices(prev => new Map(prev.set(message.symbol, message.data)));
-      }
-    },
-    onConnect: () => {
-      console.log('FeedsPanel connected to 1edge WebSocket');
-    }
-  });
+  const { subscribe, isConnected } = useWebSocketContext();
 
+  // Set feeds data only - don't handle default selection here
   useEffect(() => {
     if (apiResponse?.success && apiResponse.data) {
       const fetchedFeeds = Array.isArray(apiResponse.data) ? apiResponse.data : Object.values(apiResponse.data);
       setFeedsToDisplay(fetchedFeeds);
+    }
+  }, [apiResponse]);
 
-      // Subscribe to all feed symbols for real-time updates
-      if (isConnected && fetchedFeeds.length > 0) {
-        const symbols = fetchedFeeds.map(feed => feed.symbol).filter(Boolean);
-        if (symbols.length > 0) {
-          subscribe(symbols);
-        }
+  // Subscribe to real-time updates
+  useEffect(() => {
+    if (isConnected && feedsToDisplay.length > 0) {
+      const symbols = feedsToDisplay.map(feed => feed.symbol).filter(Boolean);
+      if (symbols.length > 0) {
+        console.log('FeedsPanel subscribing to symbols:', symbols);
+        const handleMessage = (message) => {
+          if (message.type === 'price_update' && message.symbol) {
+            setRealtimePrices(prev => new Map(prev.set(message.symbol, message.data)));
+          }
+        };
+
+        subscribe(symbols, handleMessage);
+
+        return () => {
+          // Note: In a real app, you might want to unsubscribe here
+          // but for feeds panel, we want to keep getting updates
+        };
       }
     }
-  }, [apiResponse, isConnected, subscribe]);
+  }, [isConnected, subscribe, feedsToDisplay]);
 
   if (error && feedsToDisplay.length === 0)
     return (
@@ -234,7 +233,8 @@ export default function FeedsPanel({ onSelect }: { onSelect: (feedId: string) =>
           <TableBody>
             {feedsToDisplay.map((feed: any) => {
               const parsed = parseFeedSymbol(feed.symbol);
-              
+              const isSelected = feed.symbol === selectedFeedId;
+
               // Use real-time data if available, fallback to API data
               const realtimeData = realtimePrices.get(feed.symbol);
               const midPrice = realtimeData?.mid || feed.last?.mid;
@@ -243,13 +243,14 @@ export default function FeedsPanel({ onSelect }: { onSelect: (feedId: string) =>
 
               // Compute absolute and relative spread, clamp negative to zero
               let spreadVal = 0;
-              let absSpread: string = '0.00';
-              let relativeSpread: string = '0.000%';
+              let absSpread: string = '0';
+              let relativeSpread: string = '0%';
               if (typeof askPrice === 'number' && typeof bidPrice === 'number') {
                 spreadVal = Math.max(0, askPrice - bidPrice);
-                absSpread = spreadVal.toFixed(Math.max(2, (midPrice?.toString().split('.')[1] || '').length));
+                absSpread = formatPrice(spreadVal);
                 if (typeof midPrice === 'number' && midPrice > 0) {
-                  relativeSpread = ((spreadVal / midPrice) * 100).toFixed(3) + '%';
+                  const relativeSpreadValue = (spreadVal / midPrice) * 100;
+                  relativeSpread = roundSig(relativeSpreadValue, 3) + '%';
                 }
               }
 
@@ -259,7 +260,19 @@ export default function FeedsPanel({ onSelect }: { onSelect: (feedId: string) =>
                   onClick={() => onSelect(feed.symbol)}
                   title={`Select ${feed.symbol}`}
                   hover
-                  sx={{ cursor: 'pointer' }}
+                  selected={isSelected}
+                  sx={{
+                    cursor: 'pointer',
+                    backgroundColor: isSelected 
+                      ? 'rgba(255, 140, 0, 0.15)' // Dark orange shade with transparency
+                      : 'transparent',
+                    borderLeft: isSelected ? '3px solid #ff8c00' : '3px solid transparent',
+                    '&:hover': {
+                      backgroundColor: isSelected 
+                        ? 'rgba(255, 140, 0, 0.25)' 
+                        : theme.palette.action.hover,
+                    },
+                  }}
                 >
                   <TableCell align="left" sx={{ whiteSpace: 'nowrap', py: 0.5 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center' }}>

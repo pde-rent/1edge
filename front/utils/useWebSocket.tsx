@@ -72,13 +72,16 @@ export function useWebSocket(url: string, options: UseWebSocketOptions = {}) {
         onDisconnect?.();
 
         // Attempt to reconnect if under max attempts
-        if (reconnectAttempts < maxReconnectAttempts) {
-          console.log(`Attempting to reconnect (${reconnectAttempts + 1}/${maxReconnectAttempts})...`);
-          reconnectTimeoutRef.current = setTimeout(() => {
-            setReconnectAttempts(prev => prev + 1);
-            connect();
-          }, reconnectInterval);
-        }
+        setReconnectAttempts(prev => {
+          if (prev < maxReconnectAttempts) {
+            console.log(`Attempting to reconnect (${prev + 1}/${maxReconnectAttempts})...`);
+            reconnectTimeoutRef.current = setTimeout(() => {
+              connect();
+            }, reconnectInterval);
+            return prev + 1;
+          }
+          return prev;
+        });
       };
 
       ws.onerror = (error) => {
@@ -88,7 +91,7 @@ export function useWebSocket(url: string, options: UseWebSocketOptions = {}) {
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
     }
-  }, [url, onMessage, onError, onConnect, onDisconnect, reconnectInterval, maxReconnectAttempts, reconnectAttempts]);
+  }, [url, onMessage, onError, onConnect, onDisconnect, reconnectInterval, maxReconnectAttempts]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

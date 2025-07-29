@@ -3,10 +3,6 @@ import {
   Paper,
   Box,
   Typography,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
   ToggleButtonGroup,
   ToggleButton,
   Tooltip
@@ -14,9 +10,7 @@ import {
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import SaveIcon from '@mui/icons-material/Save';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import { useState } from 'react';
 import packageInfo from '../../package.json';
 
 /**
@@ -26,7 +20,6 @@ interface AppInfoPanelProps {
   isLocked: boolean;
   onToggleLock: () => void;
   onResetLayout: () => void;
-  onSaveLayout: () => void;
   onLoadLayout: () => void;
   className?: string;
 }
@@ -39,20 +32,9 @@ export default function AppInfoPanel({
   isLocked,
   onToggleLock,
   onResetLayout,
-  onSaveLayout,
   onLoadLayout,
   className
 }: AppInfoPanelProps) {
-  const [anchorSaveLoadEl, setAnchorSaveLoadEl] = useState<null | HTMLElement>(null);
-  const openSaveLoad = Boolean(anchorSaveLoadEl);
-
-  const handleSaveLoadClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorSaveLoadEl(event.currentTarget);
-  };
-
-  const handleSaveLoadClose = () => {
-    setAnchorSaveLoadEl(null);
-  };
 
   // Simplified version string (v0.1 instead of Version 0.1.0-beta)
   const versionString = `v${packageInfo.version.split('.').slice(0, 2).join('.')}`;
@@ -121,17 +103,17 @@ export default function AppInfoPanel({
                 {isLocked ? <LockIcon fontSize="small" /> : <LockOpenIcon fontSize="small" />}
               </ToggleButton>
             </Tooltip>
-            <Tooltip title="Save or load custom layout" placement="left">
+            {/* <Tooltip title="Load custom layout" placement="left">
               <ToggleButton
-                value="saveLoad"
-                onClick={handleSaveLoadClick}
-                aria-label="save or load layout"
+                value="load"
+                onClick={onLoadLayout}
+                aria-label="load layout"
                 onMouseDown={(e) => e.stopPropagation()}
                 sx={{ p: 0, minWidth: 'auto', width: 28, height: 28 }}
               >
-                <SaveIcon fontSize="small" />
+                <UploadFileIcon fontSize="small" />
               </ToggleButton>
-            </Tooltip>
+            </Tooltip> */}
             <Tooltip title="Reset to default layout" placement="left">
               <ToggleButton
                 value="reset"
@@ -145,23 +127,6 @@ export default function AppInfoPanel({
             </Tooltip>
           </ToggleButtonGroup>
 
-          <Menu
-            id="save-load-menu"
-            anchorEl={anchorSaveLoadEl}
-            open={openSaveLoad}
-            onClose={handleSaveLoadClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <MenuItem onClick={() => { onSaveLayout(); handleSaveLoadClose(); }}>
-              <ListItemIcon><SaveIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Save Layout</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => { onLoadLayout(); handleSaveLoadClose(); }}>
-              <ListItemIcon><UploadFileIcon fontSize="small" /></ListItemIcon>
-              <ListItemText>Load Layout</ListItemText>
-            </MenuItem>
-          </Menu>
         </Box>
       </Box>
     </Paper>

@@ -5,7 +5,8 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import AppInfoPanel from '../components/AppInfoPanel';
 import FeedsPanel from '../components/FeedsPanel';
 import ActiveFeedPanel from '../components/ActiveFeedPanel';
-import ConfigPanel from '../components/ConfigPanel';
+// import ConfigPanel from '../components/ConfigPanel'; // Hidden from dashboard
+import OrderBookPanel from '../components/OrderBookPanel';
 import StatusPanel from '../components/StatusPanel';
 import PositionsPanel from '../components/PositionsPanel';
 import useSWR from 'swr'; // Added for fetching feeds
@@ -95,19 +96,36 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Set the first feed as selected by default
+    // Set BTCUSDC as default selected feed, fallback to first feed
+    // Only run when feedsResponse changes, not when selectedFeed changes
     if (feedsResponse?.success && feedsResponse.data && feedsResponse.data.length > 0 && selectedFeed === null) {
-      const firstFeed = feedsResponse.data[0];
-      if (firstFeed && firstFeed.symbol) {
-        setSelectedFeed(firstFeed.symbol);
+      // Look for BTCUSDC first
+      const btcFeed = feedsResponse.data.find(feed => 
+        feed.symbol && feed.symbol.includes('BTCUSDC')
+      );
+      
+      if (btcFeed && btcFeed.symbol) {
+        setSelectedFeed(btcFeed.symbol);
+      } else {
+        // Fallback to first feed if BTCUSDC not found
+        const firstFeed = feedsResponse.data[0];
+        if (firstFeed && firstFeed.symbol) {
+          setSelectedFeed(firstFeed.symbol);
+        }
       }
     }
-  }, [feedsResponse, selectedFeed]);
+  }, [feedsResponse]);
 
   const handleLayoutChange = (layout, allLayouts) => {
     // Only update if mounted to avoid SSR mismatch
     if (mounted) {
       setCurrentLayouts(allLayouts);
+      // Automatically save layout changes
+      try {
+        localStorage.setItem('customLayouts', JSON.stringify(allLayouts));
+      } catch (e) {
+        console.error('Failed to auto-save layout', e);
+      }
     }
   };
 
@@ -245,7 +263,6 @@ export default function Home() {
             isLocked={isLayoutLocked}
             onToggleLock={() => setIsLayoutLocked(!isLayoutLocked)}
             onResetLayout={handleResetLayout}
-            onSaveLayout={handleSaveLayout}
             onLoadLayout={handleLoadLayout}
           />
         </div>
@@ -261,7 +278,7 @@ export default function Home() {
         </div>
         <div key="config" style={gridItemStyle}>
           <Paper sx={paperStyle} elevation={2}>
-            <ConfigPanel />
+            <OrderBookPanel selectedFeed={selectedFeed} />
           </Paper>
         </div>
         <div key="services" style={gridItemStyle}>
