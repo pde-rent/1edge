@@ -52,7 +52,12 @@ contract StrategyExecutor is Ownable, IERC1271 {
      * This function is called by the 1inch settlement contract to verify that a trade is authorized.
      * It checks if the signature was made by the designated keeper.
      */
-    function isValidSignature(bytes32 hash, bytes memory signature) external view override returns (bytes4 magicValue) {
+    function isValidSignature(bytes32 hash, bytes memory signature)
+        external
+        view
+        override
+        returns (bytes4 magicValue)
+    {
         // Replicate the EIP-191 signed message hash construction
         bytes32 prefixedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
         address signer = ECDSA.recover(prefixedHash, signature);

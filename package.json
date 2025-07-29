@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@1inch/limit-order-sdk": "^4.13.0",
+    "@1inch/solidity-utils": "^6.6.0",
     "@types/glob": "^8.1.0",
     "@types/ws": "^8.18.1",
     "ccxt": "^4.4.96",

@@ -3,6 +3,8 @@ build/
 dist/
 out/
 coverage/
+artifacts/
+cache/
 coverage-final.json
 
 # Dependency directories
