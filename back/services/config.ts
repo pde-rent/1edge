@@ -16,7 +16,7 @@ class ConfigService {
       // Load default config
       const defaultConfigPath = join(process.cwd(), "back/default-config.json");
       const defaultConfig = JSON.parse(
-        readFileSync(defaultConfigPath, "utf-8")
+        readFileSync(defaultConfigPath, "utf-8"),
       ) as Config;
 
       // Try to load user config
@@ -24,7 +24,7 @@ class ConfigService {
       try {
         const userConfigPath = join(process.cwd(), "config.json");
         userConfig = JSON.parse(
-          readFileSync(userConfigPath, "utf-8")
+          readFileSync(userConfigPath, "utf-8"),
         ) as DeepPartial<Config>;
         logger.info("Loaded user configuration");
       } catch {
@@ -65,7 +65,8 @@ class ConfigService {
 
     if (process.env.POLYGON_RPC_URL) {
       if (config.services.keeper.networks[137]) {
-        config.services.keeper.networks[137].rpcUrl = process.env.POLYGON_RPC_URL;
+        config.services.keeper.networks[137].rpcUrl =
+          process.env.POLYGON_RPC_URL;
       }
     }
 
@@ -85,7 +86,7 @@ class ConfigService {
   }
 
   getService<K extends keyof Config["services"]>(
-    service: K
+    service: K,
   ): Config["services"][K] {
     return this.config.services[service];
   }
@@ -105,7 +106,9 @@ class ConfigService {
   }
 
   getTickerConfig(symbol: string) {
-    return this.config.services.collector.tickers[symbol as `${string}:${string}:${string}`];
+    return this.config.services.collector.tickers[
+      symbol as `${string}:${string}:${string}`
+    ];
   }
 
   getStrategyConfig(id: string) {
@@ -117,12 +120,16 @@ class ConfigService {
 const configService = new ConfigService();
 
 export const getConfig = () => configService.get();
-export const getServiceConfig = <K extends keyof Config["services"]>(service: K) =>
-  configService.getService(service);
+export const getServiceConfig = <K extends keyof Config["services"]>(
+  service: K,
+) => configService.getService(service);
 export const getStorageConfig = () => configService.getStorage();
 export const reloadConfig = () => configService.reload();
-export const getNetworkConfig = (chainId: number) => configService.getNetworkConfig(chainId);
-export const getTickerConfig = (symbol: string) => configService.getTickerConfig(symbol);
-export const getStrategyConfig = (id: string) => configService.getStrategyConfig(id);
+export const getNetworkConfig = (chainId: number) =>
+  configService.getNetworkConfig(chainId);
+export const getTickerConfig = (symbol: string) =>
+  configService.getTickerConfig(symbol);
+export const getStrategyConfig = (id: string) =>
+  configService.getStrategyConfig(id);
 
 export default configService;

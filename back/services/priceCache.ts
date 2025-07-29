@@ -1,94 +1,102 @@
 import { logger } from "@back/utils/logger";
 import type { Symbol } from "@common/types";
-import { ZMQ_PRICE_FEED_PORT } from "@common/constants";
-import * as zmq from "zeromq";
+import { PubSubClient } from "./pubSubClient";
 
 /**
- * Shared price cache service that subscribes to ZeroMQ price feed
+ * Shared price cache service that subscribes to pub/sub price feed
  * and provides current prices to API and WebSocket servers
  */
 class PriceCacheService {
   private static instance: PriceCacheService;
   private priceCache: Map<Symbol, any> = new Map();
-  private subscriber: zmq.Subscriber | null = null;
+  private pubSubClient: PubSubClient;
   private isConnected: boolean = false;
-  
-  private constructor() {}
-  
+
+  private constructor() {
+    this.pubSubClient = new PubSubClient();
+  }
+
   static getInstance(): PriceCacheService {
     if (!PriceCacheService.instance) {
       PriceCacheService.instance = new PriceCacheService();
     }
     return PriceCacheService.instance;
   }
-  
+
   async connect() {
-    if (this.isConnected) return;
-    
+    if (this.isConnected) {
+      logger.info(`📡 Price cache already connected`);
+      return;
+    }
+
     try {
-      this.subscriber = new zmq.Subscriber();
-      this.subscriber.connect(`tcp://127.0.0.1:${ZMQ_PRICE_FEED_PORT}`);
-      
+      logger.info(`📡 Price cache connecting to pub/sub...`);
+      await this.pubSubClient.connect();
+
       // Subscribe to all price updates
-      this.subscriber.subscribe("prices.");
-      
-      logger.info(`📡 Price cache connected to ZeroMQ feed at tcp://127.0.0.1:${ZMQ_PRICE_FEED_PORT}`);
+      logger.info(`📡 Price cache subscribing to all price updates (prices.*)`);
+      this.pubSubClient.subscribeToAllPrices(
+        (symbol: Symbol, priceData: any) => {
+          this.handlePriceUpdate(symbol, priceData);
+        },
+      );
+
+      logger.info(`✅ Price cache connected to pub/sub feed`);
       this.isConnected = true;
-      
-      // Process messages
-      this.processMessages();
+
+      // Log connection stats
+      const stats = this.pubSubClient.getStats();
+      logger.info(`📊 PubSub Client Stats: ${JSON.stringify(stats)}`);
     } catch (error) {
-      logger.error("Failed to connect price cache to ZeroMQ:", error);
+      logger.error("Failed to connect price cache to pub/sub:", error);
       throw error;
     }
   }
-  
+
   async disconnect() {
-    if (this.subscriber) {
-      this.subscriber.close();
-      this.subscriber = null;
+    if (this.pubSubClient) {
+      this.pubSubClient.disconnect();
       this.isConnected = false;
     }
   }
-  
-  private async processMessages() {
-    if (!this.subscriber) return;
-    
+
+  private handlePriceUpdate(symbol: Symbol, priceData: any) {
     try {
-      for await (const [topic, message] of this.subscriber) {
-        this.handleMessage(topic.toString(), message.toString());
-      }
-    } catch (error) {
-      logger.error("Error processing price cache messages:", error);
-      this.isConnected = false;
-    }
-  }
-  
-  private handleMessage(topic: string, messageStr: string) {
-    try {
-      const message = JSON.parse(messageStr);
-      const symbol = message.symbol;
-      
-      // Update cache
-      this.priceCache.set(symbol, {
-        ...message.data,
+      // Get existing data to preserve history
+      const existingData = this.priceCache.get(symbol);
+
+      // Update cache - preserve history if it exists
+      const cacheData = {
+        ...priceData,
         symbol,
-        lastUpdate: Date.now()
-      });
-      
-      logger.debug(`💰 Price cache updated: ${symbol} - ${message.data.mid}`);
+        lastUpdate: Date.now(),
+        // Preserve existing history if not provided in update
+        history: priceData.history ||
+          existingData?.history || {
+            ts: [],
+            o: [],
+            h: [],
+            l: [],
+            c: [],
+            v: [],
+          },
+      };
+
+      this.priceCache.set(symbol, cacheData);
+
+      // Price cache updated silently
     } catch (error) {
-      logger.error("Error handling price cache message:", error);
+      logger.error("Error handling price cache update:", error);
     }
   }
-  
+
   /**
    * Get current price data for a symbol
    */
   getPrice(symbol: Symbol): any {
     return this.priceCache.get(symbol);
   }
-  
+
   /**
    * Get all active prices
    */
@@ -99,7 +107,7 @@ class PriceCacheService {
     }
     return prices;
   }
-  
+
   /**
    * Get list of available symbols
    */

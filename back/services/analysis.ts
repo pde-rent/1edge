@@ -7,7 +7,7 @@ import * as ti from "technicalindicators";
  */
 export function analyse(ohlcv: TickerOHLCV): TickerAnalysis {
   const { ts, h, l, c, v } = ohlcv;
-  
+
   if (c.length === 0) {
     return { ts: [] };
   }
@@ -42,14 +42,14 @@ export function analyse(ohlcv: TickerOHLCV): TickerAnalysis {
     c,
     INDICATOR_DEFAULTS.MACD.fastPeriod,
     INDICATOR_DEFAULTS.MACD.slowPeriod,
-    INDICATOR_DEFAULTS.MACD.signalPeriod
+    INDICATOR_DEFAULTS.MACD.signalPeriod,
   );
 
   // Calculate Bollinger Bands
   analysis.bb = calculateBollingerBands(
     c,
     INDICATOR_DEFAULTS.BB.period,
-    INDICATOR_DEFAULTS.BB.stdDev
+    INDICATOR_DEFAULTS.BB.stdDev,
   );
 
   // Calculate SMA
@@ -66,12 +66,12 @@ export function analyse(ohlcv: TickerOHLCV): TickerAnalysis {
  */
 function calculatePercentChange(prices: number[]): number[] {
   const result: number[] = [0]; // First value has no change
-  
+
   for (let i = 1; i < prices.length; i++) {
     const change = ((prices[i] - prices[i - 1]) / prices[i - 1]) * 100;
     result.push(isNaN(change) ? 0 : change);
   }
-  
+
   return result;
 }
 
@@ -83,7 +83,7 @@ function calculateROC(prices: number[], period: number): number[] {
     values: prices,
     period: period,
   });
-  
+
   // Pad with NaN for missing values
   const padding = new Array(period).fill(NaN);
   return [...padding, ...roc];
@@ -95,32 +95,38 @@ function calculateROC(prices: number[], period: number): number[] {
 function calculateVolatility(prices: number[], period: number): number[] {
   const returns = calculatePercentChange(prices);
   const volatility: number[] = [];
-  
+
   for (let i = 0; i < returns.length; i++) {
     if (i < period - 1) {
       volatility.push(NaN);
     } else {
       const slice = returns.slice(i - period + 1, i + 1);
       const mean = slice.reduce((a, b) => a + b, 0) / slice.length;
-      const variance = slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / slice.length;
+      const variance =
+        slice.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / slice.length;
       volatility.push(Math.sqrt(variance));
     }
   }
-  
+
   return volatility;
 }
 
 /**
  * Calculate Average True Range
  */
-function calculateATR(high: number[], low: number[], close: number[], period: number): number[] {
+function calculateATR(
+  high: number[],
+  low: number[],
+  close: number[],
+  period: number,
+): number[] {
   const atr = ti.ATR.calculate({
     high: high,
     low: low,
     close: close,
     period: period,
   });
-  
+
   // Pad with NaN for missing values
   const padding = new Array(period).fill(NaN);
   return [...padding, ...atr];
@@ -134,7 +140,7 @@ function calculateEMA(prices: number[], period: number): number[] {
     values: prices,
     period: period,
   });
-  
+
   // Pad with NaN for missing values
   const padding = new Array(period - 1).fill(NaN);
   return [...padding, ...ema];
@@ -148,7 +154,7 @@ function calculateSMA(prices: number[], period: number): number[] {
     values: prices,
     period: period,
   });
-  
+
   // Pad with NaN for missing values
   const padding = new Array(period - 1).fill(NaN);
   return [...padding, ...sma];
@@ -162,7 +168,7 @@ function calculateRSI(prices: number[], period: number): number[] {
     values: prices,
     period: period,
   });
-  
+
   // Pad with NaN for missing values
   const padding = new Array(period).fill(NaN);
   return [...padding, ...rsi];
@@ -173,7 +179,7 @@ function calculateRSI(prices: number[], period: number): number[] {
  */
 function calculateMomentum(prices: number[], period: number): number[] {
   const momentum: number[] = [];
-  
+
   for (let i = 0; i < prices.length; i++) {
     if (i < period) {
       momentum.push(NaN);
@@ -181,7 +187,7 @@ function calculateMomentum(prices: number[], period: number): number[] {
       momentum.push(prices[i] - prices[i - period]);
     }
   }
-  
+
   return momentum;
 }
 
@@ -192,7 +198,7 @@ function calculateMACD(
   prices: number[],
   fastPeriod: number,
   slowPeriod: number,
-  signalPeriod: number
+  signalPeriod: number,
 ): { macd: number[]; signal: number[]; histogram: number[] } {
   const macdResult = ti.MACD.calculate({
     values: prices,
@@ -207,7 +213,10 @@ function calculateMACD(
   const padding = new Array(slowPeriod - 1).fill(NaN);
   const macd = [...padding, ...macdResult.map((r: any) => r.MACD || NaN)];
   const signal = [...padding, ...macdResult.map((r: any) => r.signal || NaN)];
-  const histogram = [...padding, ...macdResult.map((r: any) => r.histogram || NaN)];
+  const histogram = [
+    ...padding,
+    ...macdResult.map((r: any) => r.histogram || NaN),
+  ];
 
   return { macd, signal, histogram };
 }
@@ -218,7 +227,7 @@ function calculateMACD(
 function calculateBollingerBands(
   prices: number[],
   period: number,
-  stdDev: number
+  stdDev: number,
 ): { upper: number[]; middle: number[]; lower: number[] } {
   const bb = ti.BollingerBands.calculate({
     period: period,
@@ -240,12 +249,12 @@ function calculateBollingerBands(
  */
 export function checkBullishDivergence(
   prices: number[],
-  indicator: number[]
+  indicator: number[],
 ): boolean {
   if (prices.length < 4 || indicator.length < 4) return false;
 
   const len = prices.length;
-  
+
   // Look for lower lows in price but higher lows in indicator
   const priceLow1 = Math.min(...prices.slice(len - 4, len - 2));
   const priceLow2 = Math.min(...prices.slice(len - 2));
@@ -260,12 +269,12 @@ export function checkBullishDivergence(
  */
 export function checkBearishDivergence(
   prices: number[],
-  indicator: number[]
+  indicator: number[],
 ): boolean {
   if (prices.length < 4 || indicator.length < 4) return false;
 
   const len = prices.length;
-  
+
   // Look for higher highs in price but lower highs in indicator
   const priceHigh1 = Math.max(...prices.slice(len - 4, len - 2));
   const priceHigh2 = Math.max(...prices.slice(len - 2));

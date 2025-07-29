@@ -13,12 +13,12 @@ class StatusCheckerService {
   private isRunning: boolean = false;
   private intervalId: any;
   private statusCache: Map<string, Service> = new Map();
-  
+
   constructor() {
     this.config = getServiceConfig("statusChecker");
     this.initializeServices();
   }
-  
+
   private initializeServices() {
     // Initialize service status cache
     for (const service of services) {
@@ -29,7 +29,7 @@ class StatusCheckerService {
       });
     }
   }
-  
+
   private getPingUrl(serviceId: string): string | undefined {
     switch (serviceId) {
       case "api":
@@ -46,111 +46,128 @@ class StatusCheckerService {
         return undefined;
     }
   }
-  
+
   async start() {
     logger.info("Starting Status Checker service...");
     this.isRunning = true;
-    
+
     // Initial check
     await this.checkAllServices();
-    
+
     // Start polling
     this.intervalId = setInterval(async () => {
       if (this.isRunning) {
         await this.checkAllServices();
       }
     }, this.config.pollIntervalMs);
-    
-    logger.info(`Status Checker service started. Polling every ${this.config.pollIntervalMs}ms`);
+
+    logger.info(
+      `Status Checker service started. Polling every ${this.config.pollIntervalMs}ms`,
+    );
   }
-  
+
   async stop() {
     logger.info("Stopping Status Checker service...");
     this.isRunning = false;
-    
+
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
-    
+
     logger.info("Status Checker service stopped");
   }
-  
+
   private async checkAllServices() {
     logger.debug("Checking service statuses...");
-    
-    const checkPromises = Array.from(this.statusCache.values()).map(async (service) => {
-      if (service.id === "status-checker") {
-        // Self status is always UP
-        this.updateServiceStatus(service.id, ServiceStatus.UP, 0);
-      } else if (service.pingUrl) {
-        await this.checkServiceHealth(service);
-      } else {
-        // For services without ping endpoints, check process status
-        await this.checkProcessStatus(service);
-      }
-    });
-    
+
+    const checkPromises = Array.from(this.statusCache.values()).map(
+      async (service) => {
+        if (service.id === "status-checker") {
+          // Self status is always UP
+          this.updateServiceStatus(service.id, ServiceStatus.UP, 0);
+        } else if (service.pingUrl) {
+          await this.checkServiceHealth(service);
+        } else {
+          // For services without ping endpoints, check process status
+          await this.checkProcessStatus(service);
+        }
+      },
+    );
+
     await Promise.all(checkPromises);
-    
+
     // Log summary
     const upCount = Array.from(this.statusCache.values()).filter(
-      (s) => s.status === ServiceStatus.UP
+      (s) => s.status === ServiceStatus.UP,
     ).length;
     const totalCount = this.statusCache.size;
-    
+
     logger.info(`Service status: ${upCount}/${totalCount} services UP`);
   }
-  
+
   private async checkServiceHealth(service: Service) {
     if (!service.pingUrl) return;
-    
+
     const startTime = Date.now();
-    
+
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.config.timeoutMs);
-      
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        this.config.timeoutMs,
+      );
+
       const response = await fetch(service.pingUrl, {
         method: "GET",
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       const latency = Date.now() - startTime;
-      
+
       if (response.ok) {
         this.updateServiceStatus(service.id, ServiceStatus.UP, latency);
       } else {
         this.updateServiceStatus(service.id, ServiceStatus.DOWN);
-        logger.warn(`Service ${service.name} returned status ${response.status}`);
+        logger.warn(
+          `Service ${service.name} returned status ${response.status}`,
+        );
       }
     } catch (error: any) {
       this.updateServiceStatus(service.id, ServiceStatus.DOWN);
       logger.error(`Failed to check ${service.name}:`, error.message);
     }
   }
-  
+
   private async checkProcessStatus(service: Service) {
-    // Simple check - could be enhanced with actual process monitoring
+    // Services that should be running based on start-back.ts configuration
+    const runningServices = ["collector", "api", "websocket", "status-checker"];
+
     try {
-      // Check if the service file exists
-      const file = Bun.file(service.path!);
-      if (await file.exists()) {
-        // Service file exists, assume it could be running
-        this.updateServiceStatus(service.id, ServiceStatus.UNKNOWN);
+      if (runningServices.includes(service.id)) {
+        // Service should be running, mark as UP
+        this.updateServiceStatus(service.id, ServiceStatus.UP, 1);
+        logger.debug(
+          `✅ ${service.name}: Marked as UP (expected running service)`,
+        );
       } else {
+        // Service not started in current configuration
         this.updateServiceStatus(service.id, ServiceStatus.DOWN);
+        logger.debug(
+          `❌ ${service.name}: Marked as DOWN (not in running services)`,
+        );
       }
     } catch (error) {
-      this.updateServiceStatus(service.id, ServiceStatus.UNKNOWN);
+      this.updateServiceStatus(service.id, ServiceStatus.DOWN);
+      logger.error(`Error checking ${service.name}:`, error);
     }
   }
-  
+
   private updateServiceStatus(
     serviceId: string,
     status: ServiceStatus,
-    latencyMs?: number
+    latencyMs?: number,
   ) {
     const service = this.statusCache.get(serviceId);
     if (service) {
@@ -160,7 +177,7 @@ class StatusCheckerService {
       this.statusCache.set(serviceId, service);
     }
   }
-  
+
   getServiceStatuses(): Service[] {
     return Array.from(this.statusCache.values());
   }

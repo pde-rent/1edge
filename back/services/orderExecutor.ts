@@ -4,7 +4,12 @@
 // import { Sdk, LimitOrder, Api, AxiosProviderConnector } from "@1inch/limit-order-sdk";
 import { ethers } from "ethers";
 import { getServiceConfig } from "./config";
-import { initStorage, saveOrder, saveOrderEvent, getActiveStrategies } from "./storage";
+import {
+  initStorage,
+  saveOrder,
+  saveOrderEvent,
+  getActiveStrategies,
+} from "./storage";
 import { getTicker } from "./marketData";
 import { getCurrentIndicators } from "./analysis";
 import { logger } from "@back/utils/logger";
@@ -15,11 +20,7 @@ import type {
   TriggerCondition,
   NetworkConfig,
 } from "@common/types";
-import {
-  OrderStatus,
-  OrderEventType,
-  OrderType,
-} from "@common/types";
+import { OrderStatus, OrderEventType, OrderType } from "@common/types";
 import { NETWORKS, ONEINCH_API, ERROR_CODES } from "@common/constants";
 import { generateId, sleep } from "@common/utils";
 
@@ -175,7 +176,7 @@ class OrderExecutorService {
 
   private async evaluateTrigger(
     trigger: TriggerCondition,
-    strategy: Strategy
+    strategy: Strategy,
   ): Promise<boolean> {
     switch (trigger.type) {
       case "PRICE":
@@ -191,7 +192,7 @@ class OrderExecutorService {
 
   private async evaluatePriceTrigger(
     trigger: TriggerCondition,
-    strategy: Strategy
+    strategy: Strategy,
   ): Promise<boolean> {
     if (strategy.symbols.length === 0) return false;
 
@@ -199,34 +200,51 @@ class OrderExecutorService {
     if (!ticker || !ticker.last) return false;
 
     const price = ticker.last.mid;
-    const targetValue = typeof trigger.value === "number" ? trigger.value : parseFloat(trigger.value);
+    const targetValue =
+      typeof trigger.value === "number"
+        ? trigger.value
+        : parseFloat(trigger.value);
 
     switch (trigger.operator) {
-      case "GT": return price > targetValue;
-      case "LT": return price < targetValue;
-      case "GTE": return price >= targetValue;
-      case "LTE": return price <= targetValue;
-      case "EQ": return Math.abs(price - targetValue) < 0.0001;
-      default: return false;
+      case "GT":
+        return price > targetValue;
+      case "LT":
+        return price < targetValue;
+      case "GTE":
+        return price >= targetValue;
+      case "LTE":
+        return price <= targetValue;
+      case "EQ":
+        return Math.abs(price - targetValue) < 0.0001;
+      default:
+        return false;
     }
   }
 
   private evaluateTimeTrigger(trigger: TriggerCondition): boolean {
     const now = Date.now();
-    const targetTime = typeof trigger.value === "number" ? trigger.value : parseInt(trigger.value);
+    const targetTime =
+      typeof trigger.value === "number"
+        ? trigger.value
+        : parseInt(trigger.value);
 
     switch (trigger.operator) {
-      case "GT": return now > targetTime;
-      case "LT": return now < targetTime;
-      case "GTE": return now >= targetTime;
-      case "LTE": return now <= targetTime;
-      default: return false;
+      case "GT":
+        return now > targetTime;
+      case "LT":
+        return now < targetTime;
+      case "GTE":
+        return now >= targetTime;
+      case "LTE":
+        return now <= targetTime;
+      default:
+        return false;
     }
   }
 
   private async evaluateIndicatorTrigger(
     trigger: TriggerCondition,
-    strategy: Strategy
+    strategy: Strategy,
   ): Promise<boolean> {
     if (!trigger.indicator || strategy.symbols.length === 0) return false;
 
@@ -234,7 +252,10 @@ class OrderExecutorService {
     if (!ticker || !("analysis" in ticker) || !ticker.analysis) return false;
 
     const indicators = getCurrentIndicators(ticker.analysis);
-    const targetValue = typeof trigger.value === "number" ? trigger.value : parseFloat(trigger.value);
+    const targetValue =
+      typeof trigger.value === "number"
+        ? trigger.value
+        : parseFloat(trigger.value);
 
     let indicatorValue: number | undefined;
 
@@ -255,11 +276,16 @@ class OrderExecutorService {
     if (indicatorValue === undefined) return false;
 
     switch (trigger.operator) {
-      case "GT": return indicatorValue > targetValue;
-      case "LT": return indicatorValue < targetValue;
-      case "GTE": return indicatorValue >= targetValue;
-      case "LTE": return indicatorValue <= targetValue;
-      default: return false;
+      case "GT":
+        return indicatorValue > targetValue;
+      case "LT":
+        return indicatorValue < targetValue;
+      case "GTE":
+        return indicatorValue >= targetValue;
+      case "LTE":
+        return indicatorValue <= targetValue;
+      default:
+        return false;
     }
   }
 
@@ -305,7 +331,8 @@ class OrderExecutorService {
       return;
     }
 
-    const { priceRange, gridLevels, amountPerLevel, side } = strategy.rangeConfig;
+    const { priceRange, gridLevels, amountPerLevel, side } =
+      strategy.rangeConfig;
     const [minPrice, maxPrice] = priceRange;
     const priceStep = (maxPrice - minPrice) / (gridLevels - 1);
 
@@ -330,8 +357,12 @@ class OrderExecutorService {
         strategyId: strategy.id,
         type: OrderType.RANGE,
         status: OrderStatus.PENDING,
-        makerAsset: isBuy ? strategy.rangeConfig.quoteAsset : strategy.rangeConfig.baseAsset,
-        takerAsset: isBuy ? strategy.rangeConfig.baseAsset : strategy.rangeConfig.quoteAsset,
+        makerAsset: isBuy
+          ? strategy.rangeConfig.quoteAsset
+          : strategy.rangeConfig.baseAsset,
+        takerAsset: isBuy
+          ? strategy.rangeConfig.baseAsset
+          : strategy.rangeConfig.quoteAsset,
         makingAmount: amountPerLevel,
         takingAmount: (parseFloat(amountPerLevel) * targetPrice).toString(),
         maker: this.wallets.get(strategy.network)?.address || "",

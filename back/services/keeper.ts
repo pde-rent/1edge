@@ -7,18 +7,11 @@ import {
   getActiveOrders,
   saveOrderEvent,
   saveOrder,
-  getOrderEvents
+  getOrderEvents,
 } from "./storage";
 import { logger } from "@back/utils/logger";
-import type {
-  KeeperConfig,
-  Order,
-  NetworkConfig,
-} from "@common/types";
-import {
-  OrderStatus,
-  OrderEventType,
-} from "@common/types";
+import type { KeeperConfig, Order, NetworkConfig } from "@common/types";
+import { OrderStatus, OrderEventType } from "@common/types";
 import { NETWORKS } from "@common/constants";
 import { sleep } from "@common/utils";
 
@@ -41,8 +34,10 @@ class KeeperService {
 
     // DISABLED: Blockchain monitoring not needed right now
     // We'll focus on price tracking and periodic 1inch API checks instead
-    logger.info("⚠️  Blockchain monitoring disabled - focusing on price tracking only");
-    
+    logger.info(
+      "⚠️  Blockchain monitoring disabled - focusing on price tracking only",
+    );
+
     // TODO: Implement periodic 1inch API order status checks when needed
     // await this.initializeNetworks();
     // this.monitorOrders();
@@ -86,7 +81,7 @@ class KeeperService {
         const contract = new ethers.Contract(
           network.limitOrderContract,
           limitOrderAbi,
-          wallet
+          wallet,
         );
         this.contracts.set(id, contract);
 
@@ -102,10 +97,19 @@ class KeeperService {
 
   private setupEventListeners(chainId: number, contract: ethers.Contract) {
     // Listen for OrderFilled events
-    contract.on("OrderFilled", async (orderHash, makingAmount, takingAmount, event) => {
-      logger.info(`Order filled: ${orderHash}`);
-      await this.handleOrderFilled(chainId, orderHash, makingAmount, takingAmount, event);
-    });
+    contract.on(
+      "OrderFilled",
+      async (orderHash, makingAmount, takingAmount, event) => {
+        logger.info(`Order filled: ${orderHash}`);
+        await this.handleOrderFilled(
+          chainId,
+          orderHash,
+          makingAmount,
+          takingAmount,
+          event,
+        );
+      },
+    );
 
     // Listen for OrderCancelled events
     contract.on("OrderCancelled", async (orderHash, event) => {
@@ -119,7 +123,7 @@ class KeeperService {
     orderHash: string,
     makingAmount: bigint,
     takingAmount: bigint,
-    event: any
+    event: any,
   ) {
     try {
       // Find order by hash
@@ -133,7 +137,9 @@ class KeeperService {
 
       // Update order status
       const remainingAmount = BigInt(order.makingAmount) - makingAmount;
-      order.filledAmount = (BigInt(order.filledAmount || "0") + makingAmount).toString();
+      order.filledAmount = (
+        BigInt(order.filledAmount || "0") + makingAmount
+      ).toString();
       order.remainingAmount = remainingAmount.toString();
 
       if (remainingAmount === 0n) {
@@ -150,7 +156,10 @@ class KeeperService {
       await saveOrderEvent({
         orderId: order.id,
         orderHash: order.orderHash,
-        type: remainingAmount === 0n ? OrderEventType.FILLED : OrderEventType.PARTIALLY_FILLED,
+        type:
+          remainingAmount === 0n
+            ? OrderEventType.FILLED
+            : OrderEventType.PARTIALLY_FILLED,
         timestamp: Date.now(),
         txHash: event.transactionHash,
         filledAmount: makingAmount.toString(),
@@ -158,7 +167,9 @@ class KeeperService {
         gasUsed: event.gasUsed?.toString(),
       });
 
-      logger.info(`Order ${order.id} filled: ${makingAmount.toString()} / ${order.makingAmount}`);
+      logger.info(
+        `Order ${order.id} filled: ${makingAmount.toString()} / ${order.makingAmount}`,
+      );
     } catch (error) {
       logger.error(`Error handling order filled event:`, error);
     }
@@ -167,7 +178,7 @@ class KeeperService {
   private async handleOrderCancelled(
     chainId: number,
     orderHash: string,
-    event: any
+    event: any,
   ) {
     try {
       // Find order by hash
@@ -285,10 +296,15 @@ class KeeperService {
 
     if (!gasPrice) return true; // Proceed if we can't get gas price
 
-    const maxGasPrice = ethers.parseUnits(this.config.maxGasPrice || "100", "gwei");
+    const maxGasPrice = ethers.parseUnits(
+      this.config.maxGasPrice || "100",
+      "gwei",
+    );
 
     if (gasPrice > maxGasPrice) {
-      logger.warn(`Gas price too high on chain ${chainId}: ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
+      logger.warn(
+        `Gas price too high on chain ${chainId}: ${ethers.formatUnits(gasPrice, "gwei")} gwei`,
+      );
       return false;
     }
 
