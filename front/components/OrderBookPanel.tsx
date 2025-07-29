@@ -43,12 +43,12 @@ const TOKEN_ADDRESSES = {
 // Parse feed symbol to extract token pair
 const parseFeedSymbol = (feedSymbol: string | null): { base: string; quote: string } | null => {
   if (!feedSymbol) return null;
-  
+
   const parts = feedSymbol.split(':');
   let pairSymbol = parts[parts.length - 1];
-  
+
   const quoteAssets = ['USDT', 'USDC', 'USD', 'WETH', 'ETH', 'WBTC', 'BTC'];
-  
+
   for (const quote of quoteAssets) {
     if (pairSymbol.endsWith(quote)) {
       const base = pairSymbol.slice(0, -quote.length);
@@ -57,7 +57,7 @@ const parseFeedSymbol = (feedSymbol: string | null): { base: string; quote: stri
       }
     }
   }
-  
+
   return null;
 };
 
@@ -65,22 +65,22 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const [selectedChain, setSelectedChain] = useState(1);
   const [stepSize, setStepSize] = useState(0.5);
   const [realtimeSpotPrice, setRealtimeSpotPrice] = useState<number | null>(null);
-  
+
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
-  
+
   const parsedFeed = parseFeedSymbol(selectedFeed);
   const defaultPair = {
     maker: TOKEN_ADDRESSES['WETH'],
     taker: TOKEN_ADDRESSES['USDT']
   };
-  
+
   const [selectedPair, setSelectedPair] = useState<{ maker: string; taker: string }>(defaultPair);
-  
+
   useEffect(() => {
     if (parsedFeed && parsedFeed.base && parsedFeed.quote) {
       const baseAddress = TOKEN_ADDRESSES[parsedFeed.base];
       const quoteAddress = TOKEN_ADDRESSES[parsedFeed.quote];
-      
+
       if (baseAddress && quoteAddress) {
         setSelectedPair({
           maker: baseAddress,
@@ -89,7 +89,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       }
     }
   }, [selectedFeed]);
-  
+
   useEffect(() => {
     if (selectedFeed && isConnected) {
       const handleMessage = (message) => {
@@ -100,14 +100,14 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           }
         }
       };
-      
+
       subscribe([selectedFeed], handleMessage);
       return () => {
         unsubscribe([selectedFeed], handleMessage);
       };
     }
   }, [selectedFeed, isConnected, subscribe, unsubscribe]);
-  
+
   const getApiEndpoint = () => {
     if (selectedPair) {
       return `/orderbook/${selectedChain}/${selectedPair.maker}/${selectedPair.taker}?limit=100`;
@@ -118,7 +118,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const { data: orderbookResponse, error, isValidating, mutate } = useSWR(
     getApiEndpoint(),
     fetcher,
-    { 
+    {
       refreshInterval: 60000,
       revalidateOnFocus: false,
       revalidateOnReconnect: true
@@ -150,59 +150,66 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     }
   };
 
-  const renderLevel = (level: AggregatedLevel, isBid: boolean) => (
-    <div 
-      key={level.price}
-      className={cn(
-        "grid grid-cols-4 gap-2 py-1.5 px-3 hover:bg-gray-800/40 transition-colors duration-150 border-l-2 relative group",
-        isBid 
-          ? "border-l-green-500/60 hover:border-l-green-400" 
-          : "border-l-red-500/60 hover:border-l-red-400"
-      )}
-    >
-      {/* Price background fill */}
-      <div 
-        className={cn(
-          "absolute inset-y-0 right-0 opacity-10 transition-opacity group-hover:opacity-20",
-          isBid ? "bg-green-500" : "bg-red-500"
-        )}
-        style={{ width: `${Math.min(level.total / Math.max(...(isBid ? [level.total] : [level.total])) * 100, 100)}%` }}
-      />
-      
-      <div className="flex items-center gap-1.5 relative z-10">
-        {isBid ? (
-          <TrendingUp className="w-3 h-3 text-green-400 flex-shrink-0" />
-        ) : (
-          <TrendingDown className="w-3 h-3 text-red-400 flex-shrink-0" />
-        )}
-        <span className={cn(
-          "font-mono text-sm font-medium tabular-nums",
-          isBid ? "text-green-300" : "text-red-300"
-        )}>
-          {level.isRemainder ? `${formatPrice(level.price.toString())}+` : formatPrice(level.price.toString())}
-        </span>
-      </div>
-      
-      <span className="font-mono text-sm text-gray-300 tabular-nums relative z-10">
-        {formatAmount(level.amount.toString())}
-      </span>
-      
-      <span className="font-mono text-sm text-gray-400 tabular-nums relative z-10">
-        {formatAmount(level.total.toString())}
-      </span>
-      
-      <div className="flex justify-end relative z-10">
-        <span className={cn(
-          "text-xs px-1.5 py-0.5 rounded font-mono tabular-nums min-w-[28px] text-center",
-          "bg-gray-700/60 text-gray-300 border border-gray-600/50"
-        )}>
-          {level.count}
-        </span>
-      </div>
-    </div>
-  );
+  const renderLevel = (level: AggregatedLevel, isBid: boolean, maxTotal: number) => {
+    const depthPercentage = (level.total / maxTotal) * 100;
+    const opacity = 0.08 + (depthPercentage / 100) * 0.12; // 8% to 20% opacity based on depth
 
-  // Loading state
+    return (
+      <div
+        key={level.price}
+        className={cn(
+          "grid grid-cols-4 gap-2 py-2 px-3 hover:bg-gray-800/30 transition-all duration-200 border-l-2 relative group cursor-pointer",
+          isBid
+            ? "border-l-green-500/80 hover:border-l-green-400"
+            : "border-l-red-500/80 hover:border-l-red-400"
+        )}
+        style={{
+          backgroundColor: isBid
+            ? `rgba(16, 185, 129, ${opacity})`
+            : `rgba(239, 68, 68, ${opacity})`
+        }}
+      >
+        {/* Price column with enhanced styling */}
+        <div className="flex items-center gap-2 relative z-10">
+          {isBid ? (
+            <TrendingUp className="w-3 h-3 text-green-400 flex-shrink-0" />
+          ) : (
+            <TrendingDown className="w-3 h-3 text-red-400 flex-shrink-0" />
+          )}
+          <span className={cn(
+            "font-mono text-sm font-semibold tabular-nums",
+            isBid ? "text-green-200" : "text-red-200"
+          )}>
+            {level.isRemainder ? `${formatPrice(level.price.toString())}+` : formatPrice(level.price.toString())}
+          </span>
+        </div>
+
+        {/* Amount column */}
+        <span className="font-mono text-sm text-gray-200 tabular-nums relative z-10 font-medium">
+          {formatAmount(level.amount.toString())}
+        </span>
+
+        {/* Total column with enhanced styling */}
+        <div className="flex items-center relative z-10">
+          <span className="font-mono text-sm text-gray-300 tabular-nums font-medium">
+            {formatAmount(level.total.toString())}
+          </span>
+        </div>
+
+        {/* Orders count with enhanced styling */}
+        <div className="flex justify-end relative z-10">
+          <span className={cn(
+            "text-xs px-2 py-1 rounded-md font-mono tabular-nums min-w-[32px] text-center font-medium",
+            isBid
+              ? "bg-green-900/50 text-green-200 border border-green-700/40"
+              : "bg-red-900/50 text-red-200 border border-red-700/40"
+          )}>
+            {level.count}
+          </span>
+        </div>
+      </div>
+    );
+  };  // Loading state
   if (!orderbookResponse && !error) {
     return (
       <Card className="h-full bg-gray-950 border-gray-800">
@@ -259,11 +266,11 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const orderbook: ReconstructedOrderbook = orderbookResponse.data;
   const lastUpdated = new Date(orderbook.timestamp).toLocaleTimeString();
   const spotPrice = realtimeSpotPrice || orderbook.summary.spotPrice || null;
-  
+
   // Filter invalid orders and aggregate functions (keeping original logic)
   const filterInvalidOrders = (levels: OrderbookLevel[], isBid: boolean, spotPrice: number | null) => {
     if (!spotPrice) return levels;
-    
+
     return levels.filter(level => {
       const price = parseFloat(level.price);
       if (isBid) {
@@ -273,19 +280,19 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       }
     });
   };
-  
+
   const aggregateOrders = (levels: OrderbookLevel[], isBid: boolean, stepPercent: number, referencePrice: number | null = null): AggregatedLevel[] => {
     if (!levels.length) return [];
-    
+
     if (!referencePrice) {
       const aggregated = new Map<string, AggregatedLevel>();
-      
+
       levels.forEach(level => {
         const priceKey = level.price;
         const price = parseFloat(level.price);
         const amount = parseFloat(level.amount);
         const count = parseInt(level.count.toString());
-        
+
         if (!aggregated.has(priceKey)) {
           aggregated.set(priceKey, {
             price,
@@ -294,26 +301,26 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             count: 0
           });
         }
-        
+
         const bucket = aggregated.get(priceKey)!;
         bucket.amount += amount;
         bucket.count += count;
       });
-      
-      const sortedLevels = Array.from(aggregated.values()).sort((a, b) => 
+
+      const sortedLevels = Array.from(aggregated.values()).sort((a, b) =>
         isBid ? b.price - a.price : a.price - b.price
       );
-      
+
       let runningTotal = 0;
       sortedLevels.forEach(level => {
         runningTotal += level.amount;
         level.total = runningTotal;
       });
-      
+
       if (sortedLevels.length > 14) {
         const topFourteen = sortedLevels.slice(0, 14);
         const remainder = sortedLevels.slice(14);
-        
+
         if (remainder.length > 0) {
           const remainderLevel: AggregatedLevel = {
             price: remainder[0].price,
@@ -322,25 +329,25 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             count: remainder.reduce((sum, level) => sum + level.count, 0),
             isRemainder: true
           };
-          
+
           return [...topFourteen, remainderLevel];
         }
-        
+
         return topFourteen;
       }
-      
+
       return sortedLevels;
     }
-    
+
     // Percentage-based bucketing logic (keeping original implementation)
     const stepDecimal = stepPercent / 100;
     const aggregated = new Map<number, AggregatedLevel>();
-    
+
     levels.forEach(level => {
       const price = parseFloat(level.price);
       const amount = parseFloat(level.amount);
       const count = parseInt(level.count.toString());
-      
+
       let bucketPrice: number;
       if (isBid) {
         const stepsDown = Math.floor((referencePrice - price) / (referencePrice * stepDecimal));
@@ -349,7 +356,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         const stepsUp = Math.ceil((price - referencePrice) / (referencePrice * stepDecimal));
         bucketPrice = referencePrice + (stepsUp * referencePrice * stepDecimal);
       }
-      
+
       if (!aggregated.has(bucketPrice)) {
         aggregated.set(bucketPrice, {
           price: bucketPrice,
@@ -358,26 +365,26 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           count: 0
         });
       }
-      
+
       const bucket = aggregated.get(bucketPrice)!;
       bucket.amount += amount;
       bucket.count += count;
     });
-    
-    const sortedLevels = Array.from(aggregated.values()).sort((a, b) => 
+
+    const sortedLevels = Array.from(aggregated.values()).sort((a, b) =>
       isBid ? b.price - a.price : a.price - b.price
     );
-    
+
     let runningTotal = 0;
     sortedLevels.forEach(level => {
       runningTotal += level.amount;
       level.total = runningTotal;
     });
-    
+
     if (sortedLevels.length > 14) {
       const topFourteen = sortedLevels.slice(0, 14);
       const remainder = sortedLevels.slice(14);
-      
+
       if (remainder.length > 0) {
         const remainderLevel: AggregatedLevel = {
           price: remainder[0].price,
@@ -386,20 +393,25 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           count: remainder.reduce((sum, level) => sum + level.count, 0),
           isRemainder: true
         };
-        
+
         return [...topFourteen, remainderLevel];
       }
-      
+
       return topFourteen;
     }
-    
+
     return sortedLevels;
   };
-  
+
   const validBids = filterInvalidOrders(orderbook.bids, true, spotPrice);
   const validAsks = filterInvalidOrders(orderbook.asks, false, spotPrice);
   const aggregatedBids = aggregateOrders(validBids, true, stepSize, spotPrice);
   const aggregatedAsks = aggregateOrders(validAsks, false, stepSize, spotPrice);
+
+  // Calculate max totals for depth visualization
+  const maxBidTotal = Math.max(...aggregatedBids.map(b => b.total), 0);
+  const maxAskTotal = Math.max(...aggregatedAsks.map(a => a.total), 0);
+  const maxTotal = Math.max(maxBidTotal, maxAskTotal);
 
   return (
     <Card className="h-full bg-gray-950 border-gray-800 overflow-hidden flex flex-col p-0 gap-0">
@@ -415,8 +427,8 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                 size="sm"
                 className={cn(
                   "text-xs px-2 py-1 h-6 rounded font-medium transition-colors",
-                  stepSize === option.value 
-                    ? "bg-green-600 hover:bg-green-500 text-white" 
+                  stepSize === option.value
+                    ? "bg-green-600 hover:bg-green-500 text-white"
                     : "text-gray-300 hover:text-gray-100 hover:bg-gray-700"
                 )}
                 onClick={() => setStepSize(option.value)}
@@ -427,7 +439,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           </div>
         </div>
       </CardHeader>
-      
+
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
         {/* Summary Header - Compact */}
         <div className="px-3 py-2 border-b border-gray-800 bg-gray-900/30 flex-shrink-0">
@@ -435,19 +447,23 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             <span className="font-mono">Chain {orderbook.chain} • {lastUpdated}</span>
             {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-green-400" />}
           </div>
-          
+
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-2">
               <span className="text-gray-500">Bids:</span>
               <Badge className="bg-green-500/20 text-green-300 border-green-400/30 text-xs px-1.5 py-0 h-5">
                 {orderbook.summary.totalBidOrders}
               </Badge>
+              <span className="text-gray-500 ml-2">Max Depth:</span>
+              <span className="font-mono text-green-300 text-xs">{formatAmount(maxBidTotal.toString())}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-gray-500">Asks:</span>
               <Badge className="bg-red-500/20 text-red-300 border-red-400/30 text-xs px-1.5 py-0 h-5">
                 {orderbook.summary.totalAskOrders}
               </Badge>
+              <span className="text-gray-500 ml-2">Max Depth:</span>
+              <span className="font-mono text-red-300 text-xs">{formatAmount(maxAskTotal.toString())}</span>
             </div>
             {orderbook.summary.spread && (
               <div className="flex items-center gap-2">
@@ -462,7 +478,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
 
         {/* Table Header - Compact */}
         <div className="grid grid-cols-4 gap-2 px-3 py-2 border-b border-gray-800 bg-gray-900/40 flex-shrink-0">
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Price</div>
+          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Price • Depth</div>
           <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Amount</div>
           <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Total</div>
           <div className="text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Orders</div>
@@ -472,18 +488,18 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         <div className="flex-1 overflow-y-auto bg-gray-950">
           {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="text-gray-400 font-medium mb-2">No active orders found</div>
-              <div className="text-sm text-gray-500">
-                Try a different chain or check if there are active orders on 1inch
-              </div>
+              <p className="text-gray-500 mb-2">No orders available</p>
+              <p className="text-xs text-gray-600">
+                {selectedFeed ? `No data for ${selectedFeed}` : 'Select a feed to view orderbook'}
+              </p>
             </div>
           ) : (
             <div>
               {/* Asks (sells) in reverse order */}
               <div className="border-b border-gray-800/50">
-                {aggregatedAsks.slice().reverse().map(level => renderLevel(level, false))}
+                {aggregatedAsks.slice().reverse().map(level => renderLevel(level, false, maxTotal))}
               </div>
-              
+
               {/* Spot price and spread indicator - Compact */}
               {spotPrice && (
                 <div className="px-3 py-2 bg-gray-900/60 border-b border-gray-800/50 flex-shrink-0">
@@ -505,10 +521,10 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                   </div>
                 </div>
               )}
-              
+
               {/* Bids (buys) */}
               <div>
-                {aggregatedBids.map(level => renderLevel(level, true))}
+                {aggregatedBids.map(level => renderLevel(level, true, maxTotal))}
               </div>
             </div>
           )}
@@ -517,7 +533,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         {/* Footer - Compact */}
         <div className="px-3 py-2 border-t border-gray-800 bg-gray-900/40 flex-shrink-0">
           <div className="flex items-center justify-between text-xs text-gray-500">
-            <span className="font-mono">Top 15 levels per side</span>
+            <span className="font-mono">Top 15 levels per side • Depth visualization</span>
             <span className="font-mono">
               60s refresh • RT filter: {realtimeSpotPrice ? 'ON' : 'OFF'}
             </span>

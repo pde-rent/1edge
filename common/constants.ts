@@ -184,40 +184,29 @@ export const GRID_CONFIG = {
     xs: 80,
     xxs: 100
   },
- initialLayouts: {
+  initialLayouts: {
     lg: [
-      // Top row - App info and main chart area
-      { i: "appInfo", x: 0, y: 0, w: 3, h: 3, static: false, minW: 3, minH: 3 },
-      { i: "activeFeed", x: 3, y: 0, w: 6, h: 20, minW: 5, minH: 12 },
-      { i: "config", x: 9, y: 0, w: 3, h: 20, minW: 3, minH: 12 },
-      
-      // Left sidebar - Feeds and services stacked
-      { i: "feeds", x: 0, y: 3, w: 3, h: 11, minW: 3, minH: 8 },
-      { i: "services", x: 0, y: 14, w: 3, h: 18, minW: 3, minH: 12 },
-      
-      // Bottom - Positions panel matching chart width
-      { i: "positions", x: 3, y: 20, w: 6, h: 12, minW: 5, minH: 8 },
-    ],
-    
-    md: [
+      // Left side: Price chart on top, positions below
+      { i: "activeFeed", x: 0, y: 0, w: 6, h: 20, static: true, minW: 6, minH: 12 },
+      { i: "positions", x: 0, y: 20, w: 6, h: 12, static: true, minW: 6, minH: 8 },
+
+      // Right side: Order book and create order spanning full height (switched positions)
+      { i: "services", x: 6, y: 0, w: 3, h: 32, static: true, minW: 3, minH: 20 },
+      { i: "config", x: 9, y: 0, w: 3, h: 32, static: true, minW: 3, minH: 20 },
+    ], md: [
       // Responsive medium layout
-      { i: "appInfo", x: 0, y: 0, w: 3, h: 3, static: false, minW: 3, minH: 3 },
-      { i: "feeds", x: 0, y: 3, w: 3, h: 10, minW: 3, minH: 6 },
-      { i: "services", x: 0, y: 13, w: 3, h: 15, minW: 3, minH: 10 },
-      
-      { i: "activeFeed", x: 3, y: 0, w: 7, h: 16, minW: 5, minH: 10 },
-      { i: "config", x: 3, y: 16, w: 7, h: 12, minW: 5, minH: 8 },
-      { i: "positions", x: 0, y: 28, w: 10, h: 10, minW: 6, minH: 6 },
+      { i: "activeFeed", x: 0, y: 0, w: 5, h: 16, static: true, minW: 5, minH: 10 },
+      { i: "positions", x: 0, y: 16, w: 5, h: 12, static: true, minW: 5, minH: 8 },
+      { i: "services", x: 5, y: 0, w: 2.5, h: 28, static: true, minW: 2, minH: 20 },
+      { i: "config", x: 7.5, y: 0, w: 2.5, h: 28, static: true, minW: 2, minH: 20 },
     ],
-    
+
     sm: [
       // Mobile/small screen - vertical stack
-      { i: "appInfo", x: 0, y: 0, w: 6, h: 3, static: false, minW: 6, minH: 3 },
-      { i: "feeds", x: 0, y: 3, w: 6, h: 10, minW: 6, minH: 8 },
-      { i: "activeFeed", x: 0, y: 13, w: 6, h: 16, minW: 6, minH: 12 },
-      { i: "config", x: 0, y: 29, w: 6, h: 14, minW: 6, minH: 10 },
-      { i: "services", x: 0, y: 43, w: 6, h: 16, minW: 6, minH: 12 },
-      { i: "positions", x: 0, y: 59, w: 6, h: 12, minW: 6, minH: 8 },
+      { i: "activeFeed", x: 0, y: 0, w: 6, h: 16, static: true, minW: 6, minH: 12 },
+      { i: "positions", x: 0, y: 16, w: 6, h: 12, static: true, minW: 6, minH: 8 },
+      { i: "services", x: 0, y: 28, w: 6, h: 16, static: true, minW: 6, minH: 12 },
+      { i: "config", x: 0, y: 44, w: 6, h: 16, static: true, minW: 6, minH: 12 },
     ],
   } as Record<string, any[]>,
 };

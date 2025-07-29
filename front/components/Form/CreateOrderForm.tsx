@@ -2,13 +2,13 @@
 'use client'
 import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { 
-  ChevronDown, 
-  TrendingUp, 
-  BarChart3, 
-  Grid3X3, 
-  Clock, 
-  Info, 
+import {
+  ChevronDown,
+  TrendingUp,
+  BarChart3,
+  Grid3X3,
+  Clock,
+  Info,
   Repeat,
   Activity,
   Target,
@@ -16,6 +16,7 @@ import {
   DollarSign,
   Settings
 } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import TWAPForm from './components/TWAPForm';
 import RangeForm from './components/RangeForm';
 import IcebergForm from './components/IcebergForm';
@@ -24,9 +25,6 @@ import GridMarketMakingForm from './components/GridMarketMakingForm';
 import MomentumReversalForm from './components/MomentumReversalForm';
 import RangeBreakoutForm from './components/RangeBreakoutForm';
 import TrendFollowingForm from './components/TrendFollowingStrategyForm';
-import TokenSelector from './components/TokenSelector';
-import CoinPairSelector from './components/CoinsPairSelector';
-import GlassButton from './components/GlassButton';
 
 export interface FormData {
   twapDuration: string;
@@ -67,11 +65,7 @@ export interface Coin {
 const CreateOrderForm = () => {
   const [orderCategory, setOrderCategory] = useState<'Order' | 'Strategy'>('Order');
   const [orderType, setOrderType] = useState<string>('TWAP');
-  const [selectedToken, setSelectedToken] = useState<string>('');
-  const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
-  const [fromCoin, setFromCoin] = useState<string>('ETH');
-  const [toCoin, setToCoin] = useState<string>('USDC');
-  
+
   const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormData>({
     defaultValues: {
       twapDuration: '60',
@@ -91,16 +85,12 @@ const CreateOrderForm = () => {
       breakoutThreshold: '25',
       fastEMA: '12',
       slowEMA: '26',
+      budgetAmount: '',
       fromCoin: 'ETH',
       toCoin: 'USDC'
     }
   });
 
-  React.useEffect(() => {
-    setValue('fromCoin', fromCoin);
-    setValue('toCoin', toCoin);
-  }, [fromCoin, toCoin, setValue]);
-    
   const orderTypes: Record<'Order' | 'Strategy', OrderType[]> = {
     Order: [
       { id: 'TWAP', name: 'TWAP', icon: Clock, description: 'Time-weighted average price' },
@@ -114,14 +104,6 @@ const CreateOrderForm = () => {
       { id: 'RangeBreakout', name: 'Breakout', icon: Zap, description: 'Range breakouts' },
       { id: 'TrendFollowing', name: 'Trend', icon: TrendingUp, description: 'EMA strategy' }
     ]
-  };
-    
-  const handleFromCoinChange = (coin: string) => {
-    setFromCoin(coin);
-  };
-
-  const handleToCoinChange = (coin: string) => {
-    setToCoin(coin);
   };
 
   const renderForm = () => {
@@ -147,188 +129,166 @@ const CreateOrderForm = () => {
     }
   };
 
-  const onSubmit = (data: FormData) => {
-    console.log('Form submitted:', { 
-      orderCategory, 
-      orderType, 
-      selectedToken,
-      ...data 
-    });
+  const onSubmit = async (data: FormData) => {
+    const strategy = {
+      id: new Date().toISOString(),
+      name: orderType,
+      type: orderType,
+      status: 'Running',
+      network: 1,
+      enabled: true,
+      config: JSON.stringify(data),
+    };
+
+    try {
+      const response = await fetch('/api/strategies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(strategy),
+      });
+
+      if (response.ok) {
+        console.log('Strategy saved successfully');
+      } else {
+        console.error('Failed to save strategy');
+      }
+    } catch (error) {
+      console.error('An error occurred while saving the strategy:', error);
+    }
   };
 
   return (
-    <div className="max-w-3l mx-auto relative z-10">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        
-        {/* 2x2 Grid Layout for Main Sections */}
-        <div className="grid grid-cols-2 gap-3">
-          
-          {/* Top Left: Coin Pair Selector */}
-          <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-lg p-3 border border-emerald-500/20 shadow-lg">
-            <h4 className="text-xs font-medium text-emerald-50 mb-2 flex items-center">
-              <span className="w-2 h-2 bg-emerald-400 rounded-full mr-2"></span>
-              Trading Pair
-            </h4>
-            <div className="relative z-50">
-              <CoinPairSelector
-                fromCoin={fromCoin}
-                toCoin={toCoin}
-                onFromCoinChange={(coin: any) => handleFromCoinChange(coin)}
-                onToCoinChange={(coin: any) => handleToCoinChange(coin)}
-              />
-            </div>
-          </div>
+    <Card className="h-full bg-gray-950 border-gray-800 overflow-hidden flex flex-col p-0 gap-0">
+      {/* Header */}
+      <CardHeader className="border-b border-gray-800 bg-gray-900/50 flex-shrink-0 pb-3">
+        <h2 className="text-lg font-semibold text-gray-100">Create Order</h2>
+      </CardHeader>
 
-          {/* Top Right: Category & Type Selection */}
-          <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-lg p-3 border border-emerald-500/20 shadow-lg">
-            <h4 className="text-xs font-medium text-emerald-50 mb-2 flex items-center">
-              <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-              Type & Category
-            </h4>
-            
-            {/* Category Toggle */}
-            <div className="flex rounded-md bg-emerald-900/30 p-0.5 mb-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setOrderCategory('Order');
-                  setOrderType('TWAP');
-                }}
-                className={`flex-1 py-1 px-2 rounded text-xs font-medium transition-all ${
-                  orderCategory === 'Order'
-                    ? 'bg-emerald-500/30 text-emerald-50'
-                    : 'text-emerald-300 hover:text-emerald-200'
-                }`}
-              >
-                <DollarSign className="w-3 h-3 inline mr-1" />
-                Orders
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setOrderCategory('Strategy');
-                  setOrderType('DCA');
-                }}
-                className={`flex-1 py-1 px-2 rounded text-xs font-medium transition-all ${
-                  orderCategory === 'Strategy'
-                    ? 'bg-emerald-500/30 text-emerald-50'
-                    : 'text-emerald-300 hover:text-emerald-200'
-                }`}
-              >
-                <TrendingUp className="w-3 h-3 inline mr-1" />
-                Strategies
-              </button>
-            </div>
+      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+        <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
 
-            {/* Type Selection Dropdown */}
-            <div className="relative">
-              <select
-                value={orderType}
-                onChange={(e) => setOrderType(e.target.value)}
-                className="w-full px-2 py-1.5 bg-emerald-800/30 border border-emerald-700/40 rounded text-emerald-50 text-xs focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 appearance-none cursor-pointer"
-              >
-                {orderTypes[orderCategory].map((type) => (
-                  <option key={type.id} value={type.id} className="bg-emerald-900">
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-emerald-300 pointer-events-none" />
-            </div>
-          </div>
+          {/* Order Configuration - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-          {/* Bottom Left: Configuration */}
-          <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-lg p-3 border border-emerald-500/20 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-emerald-50 flex items-center">
-                <span className="w-2 h-2 bg-purple-400 rounded-full mr-2"></span>
-                Config
-              </h4>
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(!showAdvanced)}
-                className="text-emerald-300 hover:text-emerald-200 transition-colors"
-              >
-                <Settings className="w-3 h-3" />
-              </button>
-            </div>
-            <div className={showAdvanced ? 'block' : 'max-h-20 overflow-hidden'}>
-              <div className="text-xs">
-                {renderForm()}
+            {/* Order Type & Category Selection */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-medium text-gray-300">Type & Parameters</span>
+              </div>
+
+              {/* Category Toggle */}
+              <div className="flex rounded-md bg-gray-800/60 p-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrderCategory('Order');
+                    setOrderType('TWAP');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all ${orderCategory === 'Order'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
+                    }`}
+                >
+                  <DollarSign className="w-4 h-4 inline mr-2" />
+                  Orders
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOrderCategory('Strategy');
+                    setOrderType('DCA');
+                  }}
+                  className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all ${orderCategory === 'Strategy'
+                      ? 'bg-green-600 text-white'
+                      : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
+                    }`}
+                >
+                  <TrendingUp className="w-4 h-4 inline mr-2" />
+                  Strategies
+                </button>
+              </div>
+
+              {/* Type Selection Dropdown */}
+              <div className="relative">
+                <select
+                  value={orderType}
+                  onChange={(e) => setOrderType(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded text-gray-100 text-sm focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50 appearance-none cursor-pointer"
+                >
+                  {orderTypes[orderCategory].map((type) => (
+                    <option key={type.id} value={type.id} className="bg-gray-900">
+                      {type.name} - {type.description}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
             </div>
-            {!showAdvanced && (
-              <button
-                type="button"
-                onClick={() => setShowAdvanced(true)}
-                className="text-xs text-emerald-400 hover:text-emerald-300 mt-1"
-              >
-                Show options...
-              </button>
-            )}
-          </div>
 
-          {/* Bottom Right: Budget */}
-          <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-lg p-3 border border-emerald-500/20 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-xs font-medium text-emerald-50 flex items-center">
-                <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></span>
-                Budget
-              </h4>
-              <Info className="w-3 h-3 text-emerald-300" />
-            </div>
-            
+            {/* Size in USD */}
             <div className="space-y-2">
-              <div className="text-xs">
-                <TokenSelector
-                  selectedToken={selectedToken}
-                  onTokenSelect={setSelectedToken}
-                  tokens={['ETH', 'USDC']}
-                />
-              </div>
-              
-              {selectedToken && (
-                <Controller
-                  name="budgetAmount"
-                  control={control}
-                  rules={{ required: 'Budget amount is required' }}
-                  render={({ field }) => (
-                    <input
-                      {...field}
-                      type="number"
-                      step="0.01"
-                      className="w-full px-2 py-1.5 bg-emerald-800/30 border border-emerald-700/40 rounded text-emerald-50 placeholder-emerald-300 text-xs focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50"
-                      placeholder={`Amount (${selectedToken})`}
-                    />
-                  )}
-                />
+              <label className="text-sm font-medium text-gray-300">Size (USD)</label>
+              <Controller
+                name="budgetAmount"
+                control={control}
+                rules={{ required: 'Size is required' }}
+                render={({ field }) => (
+                  <input
+                    {...field}
+                    type="number"
+                    step="0.01"
+                    className="w-full px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded text-gray-100 placeholder-gray-400 text-sm focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50"
+                    placeholder="Enter amount in USD"
+                  />
+                )}
+              />
+              {errors.budgetAmount && (
+                <span className="text-xs text-red-400">{errors.budgetAmount.message}</span>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Submit Button - Full Width Below Grid */}
-        <button
-          type="submit"
-          className="w-full py-3 bg-gradient-to-r from-emerald-700 to-emerald-900 hover:from-emerald-600 hover:to-emerald-700 text-white font-medium text-sm rounded-lg transition-all transform hover:scale-[1.01] shadow-lg"
-        >
-          Create {orderTypes[orderCategory].find(t => t.id === orderType)?.name} {orderCategory}
-        </button>
-        
-        {/* Compact Info Footer */}
-        <div className="bg-emerald-500/10 rounded-lg p-2 border border-emerald-400/20">
-          <div className="flex items-center gap-2">
-            <Info className="w-3 h-3 text-emerald-300 flex-shrink-0" />
-            <div className="text-xs text-emerald-200">
-              {orderCategory === 'Order' 
-                ? 'Executed based on market conditions and parameters'
-                : 'Runs continuously with automated strategy execution'
-              }
+            {/* Dynamic Form Fields Based on Order Type */}
+            <div className="space-y-3">
+              <div className="border-t border-gray-800 pt-3">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-gray-300">
+                    {orderTypes[orderCategory].find(t => t.id === orderType)?.name} Parameters
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  {renderForm()}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </form>
-    </div>
+
+          {/* Footer with Submit Button */}
+          <div className="border-t border-gray-800 bg-gray-900/40 p-4 flex-shrink-0">
+            <button
+              type="submit"
+              className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-medium text-sm rounded-lg transition-all transform hover:scale-[1.01] shadow-lg"
+            >
+              Create {orderTypes[orderCategory].find(t => t.id === orderType)?.name} {orderCategory}
+            </button>
+
+            {/* Info Footer */}
+            <div className="mt-3 p-2 rounded bg-gray-800/30 border border-gray-700/30">
+              <div className="flex items-center gap-2">
+                <Info className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                <div className="text-xs text-gray-400">
+                  {orderCategory === 'Order'
+                    ? 'Executed based on market conditions and parameters'
+                    : 'Runs continuously with automated strategy execution'
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

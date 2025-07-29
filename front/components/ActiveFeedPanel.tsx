@@ -10,10 +10,11 @@ import type { TickerFeed, ApiResponse } from '@common/types';
 import { roundSig } from '@common/utils';
 import { Badge } from '@/components/ui/badge';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { TrendingUp, BarChart3, Activity } from 'lucide-react';
+import { TrendingUp, BarChart3, Activity, ChevronDown, Wifi } from 'lucide-react';
 
 interface ActiveFeedPanelProps {
   feedId: string | null;
+  onFeedSelect: (feedId: string) => void;
 }
 
 /**
@@ -32,7 +33,7 @@ function parseFeedSymbol(symbol: string) {
     // e.g., binance:BTCUSDT -> main: BTCUSDT, tags: [binance]
     return { main: parts[1], tags: [parts[0]] };
   }
-  if (parts.length === 1 && parts[0].includes('-')){
+  if (parts.length === 1 && parts[0].includes('-')) {
     // e.g. BTC-USD -> main: BTC-USD, tags: [] (could be from coinbase, treat as main)
     return { main: parts[0], tags: [] };
   }
@@ -46,8 +47,8 @@ function parseFeedSymbol(symbol: string) {
  */
 function FeedTag({ children }: { children: React.ReactNode }) {
   return (
-    <Badge 
-      variant="outline" 
+    <Badge
+      variant="outline"
       className="ml-2 text-xs font-medium uppercase h-5 px-2 bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20"
     >
       {children}
@@ -59,7 +60,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
  * ActiveFeedPanel displays a chart and info for a selected feed.
  * @param feedId - The feed symbol to display.
  */
-export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
+export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPanelProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
@@ -73,13 +74,36 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
     fetcher,
     { refreshInterval: 5000 }
   );
-  
+
   const { data: historyResponse } = useSWR<ApiResponse<TickerFeed>>(
     feedId ? `/api/feeds/history/${feedId}` : null,
     fetcher
   );
 
+  // Fetch all feeds for the dropdown
+  const { data: feedsResponse } = useSWR<ApiResponse<any[]>>('/api/feeds', fetcher);
+
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
+
+  // Set default feed if none selected
+  useEffect(() => {
+    if (feedsResponse?.success && feedsResponse.data && feedsResponse.data.length > 0 && !feedId) {
+      // Look for BTCUSDC first
+      const btcFeed = feedsResponse.data.find(feed =>
+        feed.symbol && feed.symbol.includes('BTCUSDC')
+      );
+
+      if (btcFeed && btcFeed.symbol) {
+        onFeedSelect(btcFeed.symbol);
+      } else {
+        // Fallback to first feed if BTCUSDC not found
+        const firstFeed = feedsResponse.data[0];
+        if (firstFeed && firstFeed.symbol) {
+          onFeedSelect(firstFeed.symbol);
+        }
+      }
+    }
+  }, [feedsResponse, feedId, onFeedSelect]);
 
   // WebSocket for real-time updates
   useEffect(() => {
@@ -88,12 +112,12 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
         if (message.type === 'price_update' && message.symbol === feedId) {
           const priceData = message.data;
           setRealtimePrice(priceData);
-          
+
           if (priceData.mid && seriesRef.current) {
             const currentTime = Math.floor(Date.now() / 1000);
             const timeframeSeconds = parseInt(timeframe);
             const candleTime = Math.floor(currentTime / timeframeSeconds) * timeframeSeconds;
-            
+
             if (!tickBufferRef.current[candleTime]) {
               const lastCandle = tickBufferRef.current[Object.keys(tickBufferRef.current).pop()];
               tickBufferRef.current[candleTime] = {
@@ -104,12 +128,12 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
                 time: candleTime,
               };
             }
-            
+
             const candle = tickBufferRef.current[candleTime];
             candle.high = Math.max(candle.high, priceData.mid);
             candle.low = Math.min(candle.low, priceData.mid);
             candle.close = priceData.mid;
-            
+
             if (chartType === 'line') {
               seriesRef.current.update({
                 time: currentTime,
@@ -127,7 +151,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
           }
         }
       };
-      
+
       subscribe([feedId], handleMessage);
       return () => {
         unsubscribe([feedId], handleMessage);
@@ -139,50 +163,50 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
   // Chart creation
   useEffect(() => {
     if (!chartContainerRef.current || chartRef.current) return;
-    
+
     const container = chartContainerRef.current;
     const chart = createChart(container, {
-        width: container.clientWidth,
-        height: container.clientHeight,
-        layout: {
-          background: { type: ColorType.Solid, color: 'transparent' },
-          textColor: '#e5e7eb', // gray-200
-          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-          fontSize: 12,
-          attributionLogo: false,
+      width: container.clientWidth,
+      height: container.clientHeight,
+      layout: {
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#e5e7eb', // gray-200
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+        fontSize: 12,
+        attributionLogo: false,
+      },
+      grid: {
+        vertLines: { color: '#374151' }, // gray-700
+        horzLines: { color: '#374151' } // gray-700
+      },
+      timeScale: {
+        borderColor: '#6b7280', // gray-500
+        timeVisible: true,
+        secondsVisible: true,
+        rightOffset: 5
+      },
+      autoSize: true,
+      localization: {
+        priceFormatter: price => roundSig(price, 6).toLocaleString(undefined),
+      },
+      crosshair: {
+        vertLine: {
+          labelBackgroundColor: '#1f2937', // gray-800
         },
-        grid: { 
-          vertLines: { color: '#374151' }, // gray-700
-          horzLines: { color: '#374151' } // gray-700
+        horzLine: {
+          labelBackgroundColor: '#1f2937', // gray-800
         },
-        timeScale: { 
-          borderColor: '#6b7280', // gray-500
-          timeVisible: true, 
-          secondsVisible: true, 
-          rightOffset: 5 
-        },
-        autoSize: true,
-        localization: {
-          priceFormatter: price => roundSig(price, 6).toLocaleString(undefined),
-        },
-        crosshair: {
-          vertLine: {
-            labelBackgroundColor: '#1f2937', // gray-800
-          },
-          horzLine: {
-            labelBackgroundColor: '#1f2937', // gray-800
-          },
-        },
-        watermark: {
-          visible: true,
-          color: 'rgba(55, 65, 81, 0.3)', // gray-700 with opacity
-          text: '1edge',
-          fontSize: 18,
-          horzAlign: 'right',
-          vertAlign: 'bottom',
-        },
-      });
-      chartRef.current = chart;
+      },
+      watermark: {
+        visible: true,
+        color: 'rgba(55, 65, 81, 0.3)', // gray-700 with opacity
+        text: '1edge',
+        fontSize: 18,
+        horzAlign: 'right',
+        vertAlign: 'bottom',
+      },
+    });
+    chartRef.current = chart;
 
     return () => {
       if (chartRef.current) {
@@ -238,7 +262,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
         let time = timestamp;
         if (typeof time === 'string') time = parseInt(time, 10);
         if (time > 1000000000000) time = Math.floor(time / 1000);
-        
+
         const now = Math.floor(Date.now() / 1000);
         if (time > now || time < 1262304000) {
           time = now - ((rawData.ts.length - index) * 60);
@@ -295,12 +319,12 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
 
   // Parse feed symbol for display
   const parsedSymbol = feedId ? parseFeedSymbol(feedId) : { main: '', tags: [] };
-  const latestPrice = realtimePrice?.mid 
+  const latestPrice = realtimePrice?.mid
     ? roundSig(realtimePrice.mid, 6).toLocaleString()
     : (apiResponse?.success && apiResponse.data?.last?.mid
       ? roundSig(apiResponse.data.last.mid, 6).toLocaleString()
       : '-');
-  
+
   // Display enhanced index data if available
   const indexMetrics = realtimePrice ? {
     velocity: realtimePrice.velocity ? roundSig(realtimePrice.velocity, 2).toLocaleString() : '0',
@@ -311,21 +335,46 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
 
   return (
     <div className="h-full w-full flex flex-col rounded-xl bg-gray-900 border-5 border-gray-800 shadow-lg shadow-black/20 overflow-hidden">
-      {feedId && (
-        <div className="px-4 py-3 flex-shrink-0 flex justify-between items-center border-b border-gray-800 bg-gray-900/50">
-          <div className="flex items-center flex-wrap gap-2">
-            <h2 className="font-semibold text-lg text-white font-mono">
-              {parsedSymbol.main}
-            </h2>
-            {parsedSymbol.tags.map(tag => (
-              <FeedTag key={tag}>{tag}</FeedTag>
-            ))}
-            <span className="ml-4 font-mono text-lg font-semibold text-white">
-              {latestPrice}
-            </span>
+      {/* Enhanced Header with Logo and Feed Selector */}
+      <div className="px-4 py-3 flex-shrink-0 border-b border-gray-800 bg-gray-900/50">
+        <div className="flex items-center justify-between mb-3">
+          {/* Left: Logo and Feed Selector */}
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo.svg"
+              alt="1edge"
+              className="h-[32px] w-[80px] object-contain brightness-110 contrast-125"
+            />
+
+            {/* Feed Selector Dropdown */}
+            <div className="relative">
+              <select
+                value={feedId || ''}
+                onChange={(e) => onFeedSelect(e.target.value)}
+                className="px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded text-gray-100 text-sm focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50 appearance-none cursor-pointer pr-10 min-w-[180px]"
+              >
+                <option value="" disabled>Select a feed</option>
+                {feedsResponse?.success && feedsResponse.data?.map((feed: any) => (
+                  <option key={feed.symbol} value={feed.symbol} className="bg-gray-900">
+                    {parseFeedSymbol(feed.symbol).main}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
           </div>
 
-          <div className="flex gap-3">
+          {/* Right: Connection Status and Controls */}
+          <div className="flex items-center gap-3">
+            {/* Connection indicator */}
+            <div className="flex items-center gap-2">
+              <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-gray-500'}`} />
+              <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-gray-500'}`}>
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+
+            {/* Chart Type Selector */}
             <ToggleGroup
               type="single"
               value={chartType}
@@ -334,29 +383,30 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
               }}
               className="bg-gray-900 border border-gray-800 rounded-md p-1"
             >
-              <ToggleGroupItem 
-                value="candles" 
+              <ToggleGroupItem
+                value="candles"
                 aria-label="candlestick chart"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
               >
                 <Activity className="h-4 w-4" />
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="bars" 
+              <ToggleGroupItem
+                value="bars"
                 aria-label="bar chart"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
               >
                 <BarChart3 className="h-4 w-4" />
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="line" 
+              <ToggleGroupItem
+                value="line"
                 aria-label="line chart"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
               >
                 <TrendingUp className="h-4 w-4" />
               </ToggleGroupItem>
             </ToggleGroup>
-            
+
+            {/* Timeframe Selector */}
             <ToggleGroup
               type="single"
               value={timeframe}
@@ -368,32 +418,32 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
               }}
               className="bg-gray-900 border border-gray-800 rounded-md p-1"
             >
-              <ToggleGroupItem 
-                value="5" 
+              <ToggleGroupItem
+                value="5"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
               >
                 5s
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="20" 
+              <ToggleGroupItem
+                value="20"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
               >
                 20s
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="60" 
+              <ToggleGroupItem
+                value="60"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
               >
                 1m
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="300" 
-                className="data-[state=on]:bg-green-500/20 data-[state=green-400]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
+              <ToggleGroupItem
+                value="300"
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
               >
                 5m
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="1800" 
+              <ToggleGroupItem
+                value="1800"
                 className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
               >
                 30m
@@ -401,7 +451,42 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
             </ToggleGroup>
           </div>
         </div>
-      )}
+
+        {/* Feed Info Bar */}
+        {feedId && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center flex-wrap gap-3">
+              <h2 className="font-semibold text-lg text-white font-mono">
+                {parsedSymbol.main}
+              </h2>
+              {parsedSymbol.tags.map(tag => (
+                <FeedTag key={tag}>{tag}</FeedTag>
+              ))}
+              <span className="ml-2 font-mono text-lg font-semibold text-white">
+                {latestPrice}
+              </span>
+            </div>
+
+            {/* Feed Metrics */}
+            {indexMetrics && (
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-400">Velocity:</span>
+                  <span className="text-green-400 font-semibold">{indexMetrics.velocity}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-400">Spread:</span>
+                  <span className="text-orange-400 font-semibold">{indexMetrics.dispersion}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-400">Vol:</span>
+                  <span className="text-green-400 font-semibold">{indexMetrics.vbid}/{indexMetrics.vask}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className={`flex-grow w-full relative ${feedId ? 'h-[calc(100%-64px)]' : 'h-full'} min-h-[150px]`}>
         <div
@@ -414,28 +499,6 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
             </p>
           )}
         </div>
-        
-        {/* Floating metrics overlay */}
-        {feedId && indexMetrics && (
-          <div className="absolute top-3 left-3 bg-black/90 backdrop-blur-sm text-white p-3 rounded-lg text-xs font-mono leading-relaxed z-50 border border-gray-800/60 min-w-[140px]">
-            <div className="flex justify-between mb-1">
-              <span className="text-gray-400">Vol Bid:</span>
-              <span className="text-green-400 font-semibold">{indexMetrics.vbid}</span>
-            </div>
-            <div className="flex justify-between mb-1">
-              <span className="text-gray-400">Vol Ask:</span>
-              <span className="text-green-400 font-semibold">{indexMetrics.vask}</span>
-            </div>
-            <div className="flex justify-between mb-1">
-              <span className="text-gray-400">Velocity:</span>
-              <span className="text-green-400 font-semibold">{indexMetrics.velocity}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Dispersion:</span>
-              <span className="text-orange-400 font-semibold">{indexMetrics.dispersion}</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
