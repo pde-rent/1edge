@@ -178,27 +178,27 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         backgroundColor: level.isRemainder ? THEME.background.overlay05 : 'transparent'
       }}
     >
-      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs }}>
+      <TableCell sx={{ py: 0.1, px: 1, fontSize: THEME.font.size.xs }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          {isBid ? <TrendingUpIcon sx={{ fontSize: 12, color: THEME.primary }} /> : <TrendingDownIcon sx={{ fontSize: 12, color: THEME.secondary }} />}
+          {isBid ? <TrendingUpIcon sx={{ fontSize: 10, color: THEME.primary }} /> : <TrendingDownIcon sx={{ fontSize: 10, color: THEME.secondary }} />}
           <Typography variant="caption" sx={{ color: isBid ? THEME.primary : THEME.secondary, fontFamily: THEME.font.mono }}> {/* Use theme colors and font */}
             {level.isRemainder ? `${formatPrice(level.price.toString())}+` : formatPrice(level.price.toString())}
           </Typography>
         </Box>
       </TableCell>
-      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
+      <TableCell sx={{ py: 0.1, px: 1, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
         {formatAmount(level.amount.toString())}
       </TableCell>
-      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
+      <TableCell sx={{ py: 0.1, px: 1, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
         {formatAmount(level.total.toString())}
       </TableCell>
-      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs }}>
+      <TableCell sx={{ py: 0.1, px: 1, fontSize: THEME.font.size.xs }}>
         <Chip 
           label={level.count} 
           size="small" 
           sx={{ 
-            fontSize: '0.6rem', 
-            height: 14, 
+            fontSize: '0.55rem', 
+            height: 12, 
             backgroundColor: level.isRemainder ? THEME.primary + '20' : THEME.background.overlay10,
             color: level.isRemainder ? THEME.primary : THEME.text.secondary
           }} 
@@ -280,9 +280,69 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const validAsks = filterInvalidOrders(orderbook.asks, false, spotPrice);
   
   // Aggregate orders into percentage-based price levels
-  const aggregateOrders = (levels: OrderbookLevel[], isBid: boolean, stepPercent: number, referencePrice: number): AggregatedLevel[] => {
-    if (!levels.length || !referencePrice) return [];
+  const aggregateOrders = (levels: OrderbookLevel[], isBid: boolean, stepPercent: number, referencePrice: number | null = null): AggregatedLevel[] => {
+    if (!levels.length) return [];
     
+    // If no reference price, use simple grouping by exact price
+    if (!referencePrice) {
+      const aggregated = new Map<string, AggregatedLevel>();
+      
+      levels.forEach(level => {
+        const priceKey = level.price;
+        const price = parseFloat(level.price);
+        const amount = parseFloat(level.amount);
+        const count = parseInt(level.count.toString());
+        
+        if (!aggregated.has(priceKey)) {
+          aggregated.set(priceKey, {
+            price,
+            amount: 0,
+            total: 0,
+            count: 0
+          });
+        }
+        
+        const bucket = aggregated.get(priceKey)!;
+        bucket.amount += amount;
+        bucket.count += count;
+      });
+      
+      // Convert to array and sort
+      const sortedLevels = Array.from(aggregated.values()).sort((a, b) => 
+        isBid ? b.price - a.price : a.price - b.price
+      );
+      
+      // Calculate running totals
+      let runningTotal = 0;
+      sortedLevels.forEach(level => {
+        runningTotal += level.amount;
+        level.total = runningTotal;
+      });
+      
+      // Keep top 14 levels, aggregate the rest into 15th level
+      if (sortedLevels.length > 14) {
+        const topFourteen = sortedLevels.slice(0, 14);
+        const remainder = sortedLevels.slice(14);
+        
+        if (remainder.length > 0) {
+          const remainderLevel: AggregatedLevel = {
+            price: remainder[0].price,
+            amount: remainder.reduce((sum, level) => sum + level.amount, 0),
+            total: topFourteen[topFourteen.length - 1].total + remainder.reduce((sum, level) => sum + level.amount, 0),
+            count: remainder.reduce((sum, level) => sum + level.count, 0),
+            isRemainder: true
+          };
+          
+          return [...topFourteen, remainderLevel];
+        }
+        
+        return topFourteen;
+      }
+      
+      return sortedLevels;
+    }
+    
+    // With reference price, use percentage-based bucketing
     const stepDecimal = stepPercent / 100;
     const aggregated = new Map<number, AggregatedLevel>();
     
@@ -354,8 +414,8 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     return sortedLevels;
   };
   
-  const aggregatedBids = aggregateOrders(validBids, true, stepSize, spotPrice || 0);
-  const aggregatedAsks = aggregateOrders(validAsks, false, stepSize, spotPrice || 0);
+  const aggregatedBids = aggregateOrders(validBids, true, stepSize, spotPrice);
+  const aggregatedAsks = aggregateOrders(validAsks, false, stepSize, spotPrice);
 
   return (
     <Paper elevation={1} sx={{ height: '100%', width: '100%', p: 0, display: 'flex', flexDirection: 'column' }}>
@@ -460,7 +520,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             <TableHead>
               <TableRow>
                 <TableCell sx={{ 
-                  py: 1, px: 1.5, 
+                  py: 0.5, px: 1, 
                   fontWeight: THEME.font.weight.medium,
                   fontSize: THEME.font.size.xs,
                   textTransform: 'uppercase',
@@ -468,7 +528,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                   letterSpacing: '0.5px'
                 }}>Price</TableCell>
                 <TableCell sx={{ 
-                  py: 1, px: 1.5,
+                  py: 0.5, px: 1,
                   fontWeight: THEME.font.weight.medium,
                   fontSize: THEME.font.size.xs,
                   textTransform: 'uppercase', 
@@ -476,7 +536,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                   letterSpacing: '0.5px'
                 }}>Amount</TableCell>
                 <TableCell sx={{ 
-                  py: 1, px: 1.5,
+                  py: 0.5, px: 1,
                   fontWeight: THEME.font.weight.medium,
                   fontSize: THEME.font.size.xs,
                   textTransform: 'uppercase',
@@ -484,7 +544,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                   letterSpacing: '0.5px'
                 }}>Total</TableCell>
                 <TableCell sx={{ 
-                  py: 1, px: 1.5,
+                  py: 0.5, px: 1,
                   fontWeight: THEME.font.weight.medium,
                   fontSize: THEME.font.size.xs,
                   textTransform: 'uppercase',
@@ -499,7 +559,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
               
               {/* Spot price and spread indicator */}
               <TableRow>
-                <TableCell colSpan={4} sx={{ py: 1, textAlign: 'center', backgroundColor: THEME.background.overlay10, borderTop: `1px solid ${THEME.border}`, borderBottom: `1px solid ${THEME.border}` }}>
+                <TableCell colSpan={4} sx={{ py: 0.5, textAlign: 'center', backgroundColor: THEME.background.overlay10, borderTop: `1px solid ${THEME.border}`, borderBottom: `1px solid ${THEME.border}` }}>
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
                     {spotPrice && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
