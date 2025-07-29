@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, BarSeries, LineSeries } from 'lightweight-charts';
 import { fetcher } from '../utils/fetcher';
-import { useWebSocket } from '../utils/useWebSocket';
+import { useWebSocketContext } from '../contexts/WebSocketContext';
 // Use path aliases
 import { API_URL, THEME } from '@common/constants';
 import type { TickerFeed, ApiResponse } from '@common/types';
@@ -11,6 +11,7 @@ import { Typography, Box, Chip, TableCell, ToggleButtonGroup, ToggleButton } fro
 import PanelHeader from './common/PanelHeader';
 import { useTheme } from '@mui/material/styles';
 import { roundSig } from '@common/utils';
+// import { formatPrice } from '../lib/utils';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
@@ -74,118 +75,104 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
   const theme = useTheme();
   const [chartType, setChartType] = useState<'candles' | 'bars' | 'line'>('candles');
-  const [chartData, setChartData] = useState(null);
   const [realtimePrice, setRealtimePrice] = useState(null);
+  const [timeframe, setTimeframe] = useState(20); // Default 20 seconds
+  const tickBufferRef = useRef({}); // Store ticks per candle period
 
   const { data: apiResponse, error } = useSWR<ApiResponse<TickerFeed>>(
     feedId ? `/api/feeds/${feedId}` : null,
     fetcher,
-    { refreshInterval: 5000 } // Reduced frequency since we use WebSocket for real-time
+    { refreshInterval: 5000 }
+  );
+  
+  const { data: historyResponse } = useSWR<ApiResponse<TickerFeed>>(
+    feedId ? `/api/feeds/history/${feedId}` : null,
+    fetcher
   );
 
-  // WebSocket connection for real-time price updates
-  const { subscribe, unsubscribe, isConnected } = useWebSocket('ws://localhost:40007/ws', {
-    onMessage: (message) => {
-      if (message.type === 'price_update' && message.symbol === feedId) {
-        setRealtimePrice(message.data);
-      }
-    },
-    onConnect: () => {
-      console.log('Connected to 1edge WebSocket');
-    },
-    onError: (error) => {
-      console.error('WebSocket error:', error);
-    }
-  });
+  const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
 
-  // Subscribe to price updates when feedId changes
+  // WebSocket for real-time updates
   useEffect(() => {
-    if (feedId && isConnected) {
-      subscribe([feedId]);
+    if (feedId && isConnected && seriesRef.current) {
+      const handleMessage = (message) => {
+        if (message.type === 'price_update' && message.symbol === feedId) {
+          const priceData = message.data;
+          setRealtimePrice(priceData);
+          
+          if (priceData.mid && seriesRef.current) {
+            const currentTime = Math.floor(Date.now() / 1000);
+            const candleTime = Math.floor(currentTime / timeframe) * timeframe;
+            
+            if (!tickBufferRef.current[candleTime]) {
+              const lastCandle = tickBufferRef.current[Object.keys(tickBufferRef.current).pop()];
+              tickBufferRef.current[candleTime] = {
+                open: lastCandle ? lastCandle.close : priceData.mid,
+                high: priceData.mid,
+                low: priceData.mid,
+                close: priceData.mid,
+                time: candleTime,
+              };
+            }
+            
+            const candle = tickBufferRef.current[candleTime];
+            candle.high = Math.max(candle.high, priceData.mid);
+            candle.low = Math.min(candle.low, priceData.mid);
+            candle.close = priceData.mid;
+            
+            if (chartType === 'line') {
+              seriesRef.current.update({
+                time: currentTime,
+                value: priceData.mid
+              });
+            } else {
+              seriesRef.current.update({
+                time: candleTime,
+                open: candle.open,
+                high: candle.high,
+                low: candle.low,
+                close: candle.close
+              });
+            }
+          }
+        }
+      };
+      
+      subscribe([feedId], handleMessage);
       return () => {
-        unsubscribe([feedId]);
+        unsubscribe([feedId], handleMessage);
+        tickBufferRef.current = {};
       };
     }
-  }, [feedId, isConnected, subscribe, unsubscribe]);
+  }, [feedId, isConnected, subscribe, unsubscribe, chartType, timeframe]);
 
-  // Parse and format API data
+  // Chart creation
   useEffect(() => {
-    if (apiResponse?.success && apiResponse.data && apiResponse.data.history && apiResponse.data.history.ts) {
-      const rawData = apiResponse.data.history;
-
-      const formattedData = rawData.ts.map((timestamp, index) => {
-        // Improved timestamp handling
-        let time = timestamp;
-
-        // Convert to number if it's a string
-        if (typeof time === 'string') {
-          time = parseInt(time, 10);
-        }
-
-        // If timestamp is in milliseconds (13 digits), convert to seconds (10 digits)
-        if (time > 1000000000000) {
-          time = Math.floor(time / 1000);
-        }
-
-        // Get current time in seconds
-        const now = Math.floor(Date.now() / 1000);
-
-        // If timestamp is in the future or unreasonably old (before 2010), adjust it
-        if (time > now || time < 1262304000) { // 1262304000 = Jan 1, 2010
-          // Use current time minus offset based on index
-          time = now - (index * 60); // 60-second intervals
-        }
-
-        return {
-          time,
-          open: rawData.o[index],
-          high: rawData.h[index],
-          low: rawData.l[index],
-          close: rawData.c[index],
-          value: rawData.c[index], // Used for line chart
-        };
-      });
-
-      // Sort by time to ensure proper ordering
-      formattedData.sort((a, b) => (a.time as number) - (b.time as number));
-
-      setChartData(formattedData);
-    }
-  }, [apiResponse]);
-
-  // Create chart when container is ready
-  useEffect(() => {
-    if (feedId && chartContainerRef.current && !chartRef.current) {
-      const container = chartContainerRef.current;
-      const width = container.clientWidth;
-      const height = container.clientHeight || 300;
-
-      const chart = createChart(container, {
-        width,
-        height,
+    if (!chartContainerRef.current || chartRef.current) return;
+    
+    const container = chartContainerRef.current;
+    const chart = createChart(container, {
+        width: container.clientWidth,
+        height: container.clientHeight,
         layout: {
           background: { type: ColorType.Solid, color: 'transparent' },
           textColor: THEME.text.primary,
           fontFamily: 'inherit',
           fontSize: 16,
-          attributionLogo: false, // Remove TradingView watermark
+          attributionLogo: false,
         },
         grid: { vertLines: { color: THEME.grey[600] }, horzLines: { color: THEME.grey[600] } },
-        timeScale: { borderColor: THEME.grey[500], timeVisible: true, secondsVisible: true, rightOffset: 0, fixRightEdge: true },
-        autoSize: true, // Enable auto-sizing
+        timeScale: { borderColor: THEME.grey[500], timeVisible: true, secondsVisible: true, rightOffset: 5 },
+        autoSize: true,
         localization: {
           priceFormatter: price => roundSig(price, 6).toLocaleString(undefined),
         },
         crosshair: {
           vertLine: {
             labelBackgroundColor: theme.palette.background.paper,
-            labelBorderColor: theme.palette.background.paper,
-            labelTextColor: theme.palette.text.primary,
           },
           horzLine: {
             labelBackgroundColor: theme.palette.background.paper,
-            labelBorderColor: theme.palette.background.paper,
-            labelTextColor: theme.palette.text.primary,
           },
         },
         watermark: {
@@ -197,110 +184,104 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
           vertAlign: 'bottom',
         },
       });
-
       chartRef.current = chart;
-    }
 
     return () => {
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
-        seriesRef.current = null;
       }
     };
-  }, [feedId, theme.palette.background.paper]);
+  }, []);
 
-  // Update chart series when chart type changes
+  // Series creation and historical data loading
   useEffect(() => {
     const chart = chartRef.current;
-    if (chart && chartType) {
-      // Remove existing series if any
-      if (seriesRef.current) {
-        chart.removeSeries(seriesRef.current);
-        seriesRef.current = null;
-      }
+    if (!chart || !feedId) return;
 
-      // Add appropriate series based on chart type
-      if (chartType === 'candles') {
-        seriesRef.current = chart.addSeries(CandlestickSeries, {
-          upColor: THEME.primary,
-          downColor: THEME.secondary,
-          borderDownColor: THEME.secondary,
-          borderUpColor: THEME.primary,
-          wickDownColor: THEME.secondary,
-          wickUpColor: THEME.primary,
-        });
-      } else if (chartType === 'bars') {
-        seriesRef.current = chart.addSeries(BarSeries, {
-          upColor: THEME.primary,
-          downColor: THEME.secondary,
-          thinBars: false,
-        });
-      } else if (chartType === 'line') {
-        seriesRef.current = chart.addSeries(LineSeries, {
-          color: THEME.primary,
-          lineWidth: 2,
-          crosshairMarkerVisible: true,
-          crosshairMarkerRadius: 4,
-          lastValueVisible: true,
-        });
-      }
+    // Remove old series
+    if (seriesRef.current && chart) {
+      chart.removeSeries(seriesRef.current);
+      seriesRef.current = null;
+    }
 
-      // Add data to the new series if available
-      if (chartData && seriesRef.current) {
-        if (chartType === 'line') {
-          // For line chart, we need to transform the data to include just time and value
-          const lineData = chartData.map(item => ({
-            time: item.time,
-            value: item.close
-          }));
-          seriesRef.current.setData(lineData);
-        } else {
-          // For candles and bars, we use the full OHLC data
-          seriesRef.current.setData(chartData);
+    // Create new series
+    let newSeries;
+    if (chartType === 'candles') {
+      newSeries = chart.addSeries(CandlestickSeries, {
+        upColor: THEME.primary,
+        downColor: THEME.secondary,
+        borderDownColor: THEME.secondary,
+        borderUpColor: THEME.primary,
+        wickDownColor: THEME.secondary,
+        wickUpColor: THEME.primary,
+      });
+    } else if (chartType === 'bars') {
+      newSeries = chart.addSeries(BarSeries, {
+        upColor: THEME.primary,
+        downColor: THEME.secondary,
+        thinBars: false,
+      });
+    } else {
+      newSeries = chart.addSeries(LineSeries, {
+        color: THEME.primary,
+        lineWidth: 2,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 4,
+        lastValueVisible: true,
+      });
+    }
+    seriesRef.current = newSeries;
+
+    // Load historical data
+    if (historyResponse?.success && historyResponse.data?.history?.ts) {
+      const rawData = historyResponse.data.history;
+      const formattedData = rawData.ts.map((timestamp, index) => {
+        let time = timestamp;
+        if (typeof time === 'string') time = parseInt(time, 10);
+        if (time > 1000000000000) time = Math.floor(time / 1000);
+        
+        const now = Math.floor(Date.now() / 1000);
+        if (time > now || time < 1262304000) {
+          time = now - ((rawData.ts.length - index) * 60);
         }
 
-        // Fit content after series change
-        chart.timeScale().fitContent();
-      }
-    }
-  }, [chartType, chartData]);
+        return {
+          time,
+          open: rawData.o[index],
+          high: rawData.h[index],
+          low: rawData.l[index],
+          close: rawData.c[index],
+          value: rawData.c[index],
+        };
+      }).sort((a, b) => a.time - b.time);
 
-  // Resize the chart when the container size changes
+      if (chartType === 'line') {
+        const lineData = formattedData.map(item => ({ time: item.time, value: item.close }));
+        newSeries.setData(lineData);
+      } else {
+        newSeries.setData(formattedData);
+      }
+      chart.timeScale().fitContent();
+    }
+  }, [feedId, chartType, historyResponse, timeframe]);
+
+  // Resize handler
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!chartContainerRef.current || !chartRef.current) return;
 
     const resizeChart = () => {
       const chart = chartRef.current;
       if (!chart || !chartContainerRef.current) return;
-
       const container = chartContainerRef.current;
-      const width = container.clientWidth;
-      const height = container.clientHeight;
-
-      if (width > 0 && height > 0) {
-        // reapply desired font size on resize since labels are drawn on canvas
-        chart.applyOptions({ layout: { fontSize: 16 } });
-        chart.resize(width, height);
-        chart.timeScale().fitContent();
-      }
+      chart.resize(container.clientWidth, container.clientHeight);
     };
 
-    // Initial sizing
-    resizeChart();
+    const resizeObserver = new ResizeObserver(resizeChart);
+    resizeObserver.observe(chartContainerRef.current);
 
-    const resizeObserver = new ResizeObserver(() => {
-      resizeChart();
-    });
-
-    if (chartContainerRef.current) {
-      resizeObserver.observe(chartContainerRef.current);
-    }
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [feedId]); // Re-run when feedId changes
+    return () => resizeObserver.disconnect();
+  }, []);
 
   if (!feedId && !chartRef.current) {
     return (
@@ -334,10 +315,18 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
   // Parse feed symbol for display
   const parsedSymbol = feedId ? parseFeedSymbol(feedId) : { main: '', tags: [] };
   const latestPrice = realtimePrice?.mid 
-    ? realtimePrice.mid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    ? roundSig(realtimePrice.mid, 6).toLocaleString()
     : (apiResponse?.success && apiResponse.data?.last?.mid
-      ? apiResponse.data.last.mid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      ? roundSig(apiResponse.data.last.mid, 6).toLocaleString()
       : '-');
+  
+  // Display enhanced index data if available
+  const indexMetrics = realtimePrice ? {
+    velocity: realtimePrice.velocity ? roundSig(realtimePrice.velocity, 2).toLocaleString() : '0',
+    dispersion: realtimePrice.dispersion ? `${roundSig(realtimePrice.dispersion, 2).toLocaleString()}%` : '0%',
+    vbid: realtimePrice.vbid ? roundSig(realtimePrice.vbid, 2).toLocaleString() : '0',
+    vask: realtimePrice.vask ? roundSig(realtimePrice.vask, 2).toLocaleString() : '0'
+  } : null;
 
   return (
     <Box sx={{
@@ -357,7 +346,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
           borderBottom: `1px solid ${THEME.background.overlay10}`,
           backgroundColor: THEME.background.paper
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
             <Typography
               variant="h6"
               sx={{
@@ -375,60 +364,145 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
               sx={{
                 ml: 2,
                 fontFamily: 'monospace',
-                fontSize: '1.1rem'
+                fontSize: '1.1rem',
+                fontWeight: 600
               }}
             >
               {latestPrice}
             </Typography>
           </Box>
 
-          <ToggleButtonGroup
-            value={chartType}
-            variant="outlined"
-            exclusive
-            onChange={handleChartTypeChange}
-            aria-label="chart type"
-            size="small"
-            sx={{
-              border: `1px solid ${THEME.background.overlay10}`,
-              borderRadius: '4px',
-              overflow: 'hidden',
-              '& .MuiToggleButtonGroup-grouped': {
-                border: 'none',
-                px: 1,
-                '&.Mui-selected': {
-                  color: theme.palette.secondary.main,
-                  backgroundColor: THEME.background.overlay05,
-                },
-              }
-            }}
-          >
-            <ToggleButton value="candles" aria-label="candlestick chart">
-              <CandlestickChartIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="bars" aria-label="bar chart">
-              <BarChartIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="line" aria-label="line chart">
-              <ShowChartIcon fontSize="small" />
-            </ToggleButton>
-          </ToggleButtonGroup>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <ToggleButtonGroup
+              value={chartType}
+              variant="outlined"
+              exclusive
+              onChange={handleChartTypeChange}
+              aria-label="chart type"
+              size="small"
+              sx={{
+                border: `1px solid ${THEME.background.overlay10}`,
+                borderRadius: '4px',
+                overflow: 'hidden',
+                '& .MuiToggleButtonGroup-grouped': {
+                  border: 'none',
+                  px: 1,
+                  '&.Mui-selected': {
+                    color: theme.palette.secondary.main,
+                    backgroundColor: THEME.background.overlay05,
+                  },
+                }
+              }}
+            >
+              <ToggleButton value="candles" aria-label="candlestick chart">
+                <CandlestickChartIcon fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="bars" aria-label="bar chart">
+                <BarChartIcon fontSize="small" />
+              </ToggleButton>
+              <ToggleButton value="line" aria-label="line chart">
+                <ShowChartIcon fontSize="small" />
+              </ToggleButton>
+            </ToggleButtonGroup>
+            
+            <ToggleButtonGroup
+              value={timeframe}
+              variant="outlined"
+              exclusive
+              onChange={(event, newTimeframe) => {
+                if (newTimeframe !== null) {
+                  setTimeframe(newTimeframe);
+                  tickBufferRef.current = {}; // Clear buffer on timeframe change
+                }
+              }}
+              aria-label="timeframe"
+              size="small"
+              sx={{
+                border: `1px solid ${THEME.background.overlay10}`,
+                borderRadius: '4px',
+                overflow: 'hidden',
+                '& .MuiToggleButtonGroup-grouped': {
+                  border: 'none',
+                  px: 1,
+                  fontSize: '0.75rem',
+                  '&.Mui-selected': {
+                    color: theme.palette.secondary.main,
+                    backgroundColor: THEME.background.overlay05,
+                  },
+                }
+              }}
+            >
+              <ToggleButton value={5} aria-label="5 seconds">5s</ToggleButton>
+              <ToggleButton value={20} aria-label="20 seconds">20s</ToggleButton>
+              <ToggleButton value={60} aria-label="1 minute">1m</ToggleButton>
+              <ToggleButton value={300} aria-label="5 minutes">5m</ToggleButton>
+              <ToggleButton value={1800} aria-label="30 minutes">30m</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
         </Box>
       )}
 
       <Box
-        ref={chartContainerRef}
         sx={{
           flexGrow: 1,
           width: '100%',
+          position: 'relative',
           height: feedId ? 'calc(100% - 40px)' : '100%', // Adjust height to account for header only
           minHeight: '150px',
         }}
       >
-        {feedId && error && (
-          <Typography color="error" sx={{ px: 2 }}>
-            Error loading chart: {error.message}
-          </Typography>
+        <Box
+          ref={chartContainerRef}
+          sx={{
+            width: '100%',
+            minHeight: '400px',
+            height: '100%',
+          }}
+        >
+          {feedId && error && (
+            <Typography color="error" sx={{ px: 2 }}>
+              Error loading chart: {error.message}
+            </Typography>
+          )}
+        </Box>
+        
+        {/* Floating metrics overlay */}
+        {feedId && indexMetrics && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 10,
+              left: 10,
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              fontFamily: 'monospace',
+              lineHeight: 1.4,
+              zIndex: 1000,
+              backdropFilter: 'blur(4px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              minWidth: '120px'
+            }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <span style={{ color: '#888' }}>Vol Bid:</span>
+              <span>{indexMetrics.vbid}</span>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <span style={{ color: '#888' }}>Vol Ask:</span>
+              <span>{indexMetrics.vask}</span>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+              <span style={{ color: '#888' }}>Velocity:</span>
+              <span style={{ color: '#4CAF50' }}>{indexMetrics.velocity}</span>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: '#888' }}>Dispersion:</span>
+              <span style={{ color: '#FF9800' }}>{indexMetrics.dispersion}</span>
+            </Box>
+          </Box>
         )}
       </Box>
     </Box>
