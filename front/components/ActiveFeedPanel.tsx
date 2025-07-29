@@ -7,14 +7,10 @@ import { useWebSocketContext } from '../contexts/WebSocketContext';
 // Use path aliases
 import { API_URL, THEME } from '@common/constants';
 import type { TickerFeed, ApiResponse } from '@common/types';
-import { Typography, Box, Chip, TableCell, ToggleButtonGroup, ToggleButton } from '@mui/material';
-import PanelHeader from './common/PanelHeader';
-import { useTheme } from '@mui/material/styles';
 import { roundSig } from '@common/utils';
-// import { formatPrice } from '../lib/utils';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
+import { Badge } from '@/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { TrendingUp, BarChart3, Activity } from 'lucide-react';
 
 interface ActiveFeedPanelProps {
   feedId: string | null;
@@ -45,23 +41,17 @@ function parseFeedSymbol(symbol: string) {
 }
 
 /**
- * Renders a tag chip for a feed symbol.
+ * Renders a tag badge for a feed symbol.
  * @param children - The tag content.
  */
 function FeedTag({ children }: { children: React.ReactNode }) {
   return (
-    <Chip
-      label={children}
-      size="small"
-      variant="outlined"
-      sx={{
-        ml: 0.5,
-        textTransform: 'uppercase',
-        fontWeight: 500,
-        fontSize: '0.8rem',
-        height: '20px'
-      }}
-    />
+    <Badge 
+      variant="outline" 
+      className="ml-2 text-xs font-medium uppercase h-5 px-2 bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20"
+    >
+      {children}
+    </Badge>
   );
 }
 
@@ -73,10 +63,9 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
-  const theme = useTheme();
   const [chartType, setChartType] = useState<'candles' | 'bars' | 'line'>('candles');
   const [realtimePrice, setRealtimePrice] = useState(null);
-  const [timeframe, setTimeframe] = useState(20); // Default 20 seconds
+  const [timeframe, setTimeframe] = useState('20'); // Default 20 seconds as string for ToggleGroup
   const tickBufferRef = useRef({}); // Store ticks per candle period
 
   const { data: apiResponse, error } = useSWR<ApiResponse<TickerFeed>>(
@@ -102,7 +91,8 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
           
           if (priceData.mid && seriesRef.current) {
             const currentTime = Math.floor(Date.now() / 1000);
-            const candleTime = Math.floor(currentTime / timeframe) * timeframe;
+            const timeframeSeconds = parseInt(timeframe);
+            const candleTime = Math.floor(currentTime / timeframeSeconds) * timeframeSeconds;
             
             if (!tickBufferRef.current[candleTime]) {
               const lastCandle = tickBufferRef.current[Object.keys(tickBufferRef.current).pop()];
@@ -156,28 +146,36 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
         height: container.clientHeight,
         layout: {
           background: { type: ColorType.Solid, color: 'transparent' },
-          textColor: THEME.text.primary,
-          fontFamily: 'inherit',
-          fontSize: 16,
+          textColor: '#e5e7eb', // gray-200
+          fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+          fontSize: 12,
           attributionLogo: false,
         },
-        grid: { vertLines: { color: THEME.grey[600] }, horzLines: { color: THEME.grey[600] } },
-        timeScale: { borderColor: THEME.grey[500], timeVisible: true, secondsVisible: true, rightOffset: 5 },
+        grid: { 
+          vertLines: { color: '#374151' }, // gray-700
+          horzLines: { color: '#374151' } // gray-700
+        },
+        timeScale: { 
+          borderColor: '#6b7280', // gray-500
+          timeVisible: true, 
+          secondsVisible: true, 
+          rightOffset: 5 
+        },
         autoSize: true,
         localization: {
           priceFormatter: price => roundSig(price, 6).toLocaleString(undefined),
         },
         crosshair: {
           vertLine: {
-            labelBackgroundColor: theme.palette.background.paper,
+            labelBackgroundColor: '#1f2937', // gray-800
           },
           horzLine: {
-            labelBackgroundColor: theme.palette.background.paper,
+            labelBackgroundColor: '#1f2937', // gray-800
           },
         },
         watermark: {
           visible: true,
-          color: THEME.background.overlay30,
+          color: 'rgba(55, 65, 81, 0.3)', // gray-700 with opacity
           text: '1edge',
           fontSize: 18,
           horzAlign: 'right',
@@ -205,26 +203,26 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
       seriesRef.current = null;
     }
 
-    // Create new series
+    // Create new series with proper colors
     let newSeries;
     if (chartType === 'candles') {
       newSeries = chart.addSeries(CandlestickSeries, {
-        upColor: THEME.primary,
-        downColor: THEME.secondary,
-        borderDownColor: THEME.secondary,
-        borderUpColor: THEME.primary,
-        wickDownColor: THEME.secondary,
-        wickUpColor: THEME.primary,
+        upColor: '#22c55e', // green-500
+        downColor: '#ef4444', // red-500
+        borderDownColor: '#ef4444',
+        borderUpColor: '#22c55e',
+        wickDownColor: '#ef4444',
+        wickUpColor: '#22c55e',
       });
     } else if (chartType === 'bars') {
       newSeries = chart.addSeries(BarSeries, {
-        upColor: THEME.primary,
-        downColor: THEME.secondary,
+        upColor: '#22c55e',
+        downColor: '#ef4444',
         thinBars: false,
       });
     } else {
       newSeries = chart.addSeries(LineSeries, {
-        color: THEME.primary,
+        color: '#3b82f6', // blue-500
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 4,
@@ -285,32 +283,15 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
 
   if (!feedId && !chartRef.current) {
     return (
-      <Box sx={{
-        height: '100%',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <Box sx={{
-          flex: 1,
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center'
-        }}>
-          <Typography color="text.secondary">
+      <div className="h-full w-full flex flex-col bg-gray-950">
+        <div className="flex-1 flex justify-center items-center">
+          <p className="text-gray-400 text-sm">
             Select a feed to view chart.
-          </Typography>
-        </Box>
-      </Box>
+          </p>
+        </div>
+      </div>
     );
   }
-
-  // Handle chart type change
-  const handleChartTypeChange = (event: React.MouseEvent<HTMLElement>, newChartType: 'candles' | 'bars' | 'line') => {
-    if (newChartType !== null) {
-      setChartType(newChartType);
-    }
-  };
 
   // Parse feed symbol for display
   const parsedSymbol = feedId ? parseFeedSymbol(feedId) : { main: '', tags: [] };
@@ -329,182 +310,133 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
   } : null;
 
   return (
-    <Box sx={{
-      height: '100%',
-      width: '100%',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div className="h-full w-full flex flex-col rounded-xl bg-gray-900 border-5 border-gray-800 shadow-lg shadow-black/20 overflow-hidden">
       {feedId && (
-        <Box sx={{
-          px: 2,
-          py: 1,
-          flexShrink: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `1px solid ${THEME.background.overlay10}`,
-          backgroundColor: THEME.background.paper
-        }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 500,
-                fontSize: '1.1rem'
-              }}
-            >
+        <div className="px-4 py-3 flex-shrink-0 flex justify-between items-center border-b border-gray-800 bg-gray-900/50">
+          <div className="flex items-center flex-wrap gap-2">
+            <h2 className="font-semibold text-lg text-white font-mono">
               {parsedSymbol.main}
-            </Typography>
+            </h2>
             {parsedSymbol.tags.map(tag => (
               <FeedTag key={tag}>{tag}</FeedTag>
             ))}
-            <Typography
-              variant="body1"
-              sx={{
-                ml: 2,
-                fontFamily: 'monospace',
-                fontSize: '1.1rem',
-                fontWeight: 600
-              }}
-            >
+            <span className="ml-4 font-mono text-lg font-semibold text-white">
               {latestPrice}
-            </Typography>
-          </Box>
+            </span>
+          </div>
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <ToggleButtonGroup
+          <div className="flex gap-3">
+            <ToggleGroup
+              type="single"
               value={chartType}
-              variant="outlined"
-              exclusive
-              onChange={handleChartTypeChange}
-              aria-label="chart type"
-              size="small"
-              sx={{
-                border: `1px solid ${THEME.background.overlay10}`,
-                borderRadius: '4px',
-                overflow: 'hidden',
-                '& .MuiToggleButtonGroup-grouped': {
-                  border: 'none',
-                  px: 1,
-                  '&.Mui-selected': {
-                    color: theme.palette.secondary.main,
-                    backgroundColor: THEME.background.overlay05,
-                  },
-                }
+              onValueChange={(value) => {
+                if (value) setChartType(value as 'candles' | 'bars' | 'line');
               }}
+              className="bg-gray-900 border border-gray-800 rounded-md p-1"
             >
-              <ToggleButton value="candles" aria-label="candlestick chart">
-                <CandlestickChartIcon fontSize="small" />
-              </ToggleButton>
-              <ToggleButton value="bars" aria-label="bar chart">
-                <BarChartIcon fontSize="small" />
-              </ToggleButton>
-              <ToggleButton value="line" aria-label="line chart">
-                <ShowChartIcon fontSize="small" />
-              </ToggleButton>
-            </ToggleButtonGroup>
+              <ToggleGroupItem 
+                value="candles" 
+                aria-label="candlestick chart"
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
+              >
+                <Activity className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="bars" 
+                aria-label="bar chart"
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
+              >
+                <BarChart3 className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="line" 
+                aria-label="line chart"
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
+              >
+                <TrendingUp className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
             
-            <ToggleButtonGroup
+            <ToggleGroup
+              type="single"
               value={timeframe}
-              variant="outlined"
-              exclusive
-              onChange={(event, newTimeframe) => {
-                if (newTimeframe !== null) {
-                  setTimeframe(newTimeframe);
+              onValueChange={(value) => {
+                if (value) {
+                  setTimeframe(value);
                   tickBufferRef.current = {}; // Clear buffer on timeframe change
                 }
               }}
-              aria-label="timeframe"
-              size="small"
-              sx={{
-                border: `1px solid ${THEME.background.overlay10}`,
-                borderRadius: '4px',
-                overflow: 'hidden',
-                '& .MuiToggleButtonGroup-grouped': {
-                  border: 'none',
-                  px: 1,
-                  fontSize: '0.75rem',
-                  '&.Mui-selected': {
-                    color: theme.palette.secondary.main,
-                    backgroundColor: THEME.background.overlay05,
-                  },
-                }
-              }}
+              className="bg-gray-900 border border-gray-800 rounded-md p-1"
             >
-              <ToggleButton value={5} aria-label="5 seconds">5s</ToggleButton>
-              <ToggleButton value={20} aria-label="20 seconds">20s</ToggleButton>
-              <ToggleButton value={60} aria-label="1 minute">1m</ToggleButton>
-              <ToggleButton value={300} aria-label="5 minutes">5m</ToggleButton>
-              <ToggleButton value={1800} aria-label="30 minutes">30m</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
-        </Box>
+              <ToggleGroupItem 
+                value="5" 
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
+              >
+                5s
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="20" 
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
+              >
+                20s
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="60" 
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
+              >
+                1m
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="300" 
+                className="data-[state=on]:bg-green-500/20 data-[state=green-400]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
+              >
+                5m
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="1800" 
+                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
+              >
+                30m
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+        </div>
       )}
 
-      <Box
-        sx={{
-          flexGrow: 1,
-          width: '100%',
-          position: 'relative',
-          height: feedId ? 'calc(100% - 40px)' : '100%', // Adjust height to account for header only
-          minHeight: '150px',
-        }}
-      >
-        <Box
+      <div className={`flex-grow w-full relative ${feedId ? 'h-[calc(100%-64px)]' : 'h-full'} min-h-[150px]`}>
+        <div
           ref={chartContainerRef}
-          sx={{
-            width: '100%',
-            minHeight: '400px',
-            height: '100%',
-          }}
+          className="w-full min-h-[400px] h-full bg-gray-950"
         >
           {feedId && error && (
-            <Typography color="error" sx={{ px: 2 }}>
+            <p className="text-red-400 px-4 py-2 text-sm">
               Error loading chart: {error.message}
-            </Typography>
+            </p>
           )}
-        </Box>
+        </div>
         
         {/* Floating metrics overlay */}
         {feedId && indexMetrics && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 10,
-              left: 10,
-              backgroundColor: 'rgba(0, 0, 0, 0.7)',
-              color: 'white',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '0.75rem',
-              fontFamily: 'monospace',
-              lineHeight: 1.4,
-              zIndex: 1000,
-              backdropFilter: 'blur(4px)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              minWidth: '120px'
-            }}
-          >
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <span style={{ color: '#888' }}>Vol Bid:</span>
-              <span>{indexMetrics.vbid}</span>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <span style={{ color: '#888' }}>Vol Ask:</span>
-              <span>{indexMetrics.vask}</span>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-              <span style={{ color: '#888' }}>Velocity:</span>
-              <span style={{ color: '#4CAF50' }}>{indexMetrics.velocity}</span>
-            </Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: '#888' }}>Dispersion:</span>
-              <span style={{ color: '#FF9800' }}>{indexMetrics.dispersion}</span>
-            </Box>
-          </Box>
+          <div className="absolute top-3 left-3 bg-black/90 backdrop-blur-sm text-white p-3 rounded-lg text-xs font-mono leading-relaxed z-50 border border-gray-800/60 min-w-[140px]">
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-400">Vol Bid:</span>
+              <span className="text-green-400 font-semibold">{indexMetrics.vbid}</span>
+            </div>
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-400">Vol Ask:</span>
+              <span className="text-green-400 font-semibold">{indexMetrics.vask}</span>
+            </div>
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-400">Velocity:</span>
+              <span className="text-green-400 font-semibold">{indexMetrics.velocity}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-400">Dispersion:</span>
+              <span className="text-orange-400 font-semibold">{indexMetrics.dispersion}</span>
+            </div>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

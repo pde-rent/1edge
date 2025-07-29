@@ -2,53 +2,25 @@
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
-// import styled from 'styled-components'; // No longer needed for PanelContainer and Title
 import { useState, useEffect } from 'react';
-import { BaseSection } from './common/LayoutPrimitives';
-import { Table, TableBody, TableCell, TableHead, TableRow, TableContainer, Paper, Chip, Typography, Box } from '@mui/material';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import LayersIcon from '@mui/icons-material/Layers';
-import PanelHeader from './common/PanelHeader';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import { roundSig, formatPrice } from '../lib/utils';
-import InfoTooltip from './common/InfoTooltip';
-import { useTheme } from '@mui/material/styles';
-
-// const PanelContainer = styled.section` // Removed
-// width: 100%;
-// height: 100%;
-// overflow: auto;
-// display: flex;
-// flex-direction: column;
-// `;
-
-// const Title = styled.h2` // Removed
-// margin: 0 0 10px 0;
-// font-size: 1.2rem;
-// padding-bottom: 5px;
-// border-bottom: 1px solid #444;
-// `;
-
-// Keep StyledTable, ErrorMessage, LoadingMessage as they are specific to FeedsList or general utility styled components
-// import styled from 'styled-components'; // Keep for other styled components if any, or remove if not used elsewhere in this file
+import { Layers, TrendingUp, Loader2, Wifi } from 'lucide-react';
 
 /**
- * Renders a tag chip for a feed symbol.
+ * Renders a tag badge for a feed symbol with dark theme and green accents.
  * @param children - The tag content.
  */
 function FeedTag({ children }: { children: React.ReactNode }) {
   return (
-    <Chip
-      label={children}
-      size="small"
-      variant="outlined"
-      sx={{
-        ml: 0.5,
-        textTransform: 'uppercase',
-        fontWeight: 500,
-        fontSize: '0.7rem',
-        height: '16px'
-      }}
-    />
+    <Badge
+      variant="outline"
+      className="ml-1 text-xs px-1.5 py-0 h-4 font-semibold uppercase bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20"
+    >
+      {children}
+    </Badge>
   );
 }
 
@@ -98,7 +70,6 @@ function formatMidValue(value: number | undefined): string {
  */
 export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (feedId: string) => void, selectedFeedId: string | null }) {
   const { data: apiResponse, error, isValidating } = useSWR('/api/feeds', fetcher, { refreshInterval: 10000 });
-  const theme = useTheme();
   const [feedsToDisplay, setFeedsToDisplay] = useState([]);
   const [realtimePrices, setRealtimePrices] = useState(new Map());
 
@@ -137,170 +108,184 @@ export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (fe
 
   if (error && feedsToDisplay.length === 0)
     return (
-      <BaseSection>
-        <Typography color="error">Error loading feeds: {error.message}</Typography>
-      </BaseSection>
+      <Card className="h-full bg-gray-950 border-gray-800">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-red-400 font-medium">
+            Error loading feeds: {error.message}
+          </div>
+        </CardContent>
+      </Card>
     );
 
   if (feedsToDisplay.length === 0 && isValidating)
     return (
-      <BaseSection>
-        <Typography color="text.secondary">Loading feeds...</Typography>
-      </BaseSection>
+      <Card className="h-full bg-gray-950 border-gray-800">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="flex items-center gap-3 text-gray-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Loading feeds...</span>
+          </div>
+        </CardContent>
+      </Card>
     );
 
   if (feedsToDisplay.length === 0 && !isValidating && !error)
     return (
-      <BaseSection>
-        <Typography color="text.secondary">No feeds available.</Typography>
-      </BaseSection>
+      <Card className="h-full bg-gray-950 border-gray-800 ">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-gray-500 font-medium">
+            No feeds available.
+          </div>
+        </CardContent>
+      </Card>
     );
 
   if (apiResponse && !apiResponse.success && feedsToDisplay.length === 0) {
     return (
-      <BaseSection>
-        <Typography color="error">Error: {apiResponse.error || 'Failed to fetch feeds'}</Typography>
-      </BaseSection>
+      <Card className="h-full bg-gray-950 border-gray-800">
+        <CardContent className="flex items-center justify-center py-8">
+          <div className="text-red-400 font-medium">
+            Error: {apiResponse.error || 'Failed to fetch feeds'}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <BaseSection sx={{ p: 0 }}>
-      {isValidating && feedsToDisplay.length > 0 && (
-        <Typography variant="caption" color="text.secondary" sx={{ position: 'absolute', top: 5, right: 8 }}>
-          Updating...
-        </Typography>
-      )}
+    <Card className="h-full bg-gray-950 border-gray-800 overflow-hidden flex flex-col p-0 gap-0">
+      {/* Header */}
+      <CardHeader className="pb-3 border-b border-gray-800 bg-gray-900/50 flex-shrink-0">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Layers className="w-4 h-4 text-green-400" />
+            <h2 className="text-lg font-semibold text-gray-100">Feeds</h2>
+          </div>
+          
+          {/* Live indicator */}
+          {isValidating && feedsToDisplay.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <span className="text-xs font-semibold text-green-400 uppercase tracking-wide">
+                Live
+              </span>
+            </div>
+          )}
+          
+          {/* Connection status */}
+          {!isValidating && (
+            <div className="flex items-center gap-1.5">
+              <Wifi className={cn(
+                "w-3 h-3",
+                isConnected ? "text-green-400" : "text-gray-500"
+              )} />
+              <span className={cn(
+                "text-xs font-medium uppercase tracking-wide",
+                isConnected ? "text-green-400" : "text-gray-500"
+              )}>
+                {isConnected ? 'Connected' : 'Offline'}
+              </span>
+            </div>
+          )}
+        </div>
+      </CardHeader>
 
-      <TableContainer elevation={0} sx={{ maxHeight: '100%', width: '100%' }}>
-        <Table
-          size="small"
-          stickyHeader
-          className="table"
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell
-                align="left"
-                sx={{
-                  py: 1,
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted-foreground)',
-                  letterSpacing: '0.5px',
-                  width: '50%',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  Feed
-                  <InfoTooltip title="Collected feeds, raw or aggregated, used by strategies" placement="right" />
-                </Box>
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{
-                  py: 1,
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted-foreground)',
-                  letterSpacing: '0.5px',
-                  width: '25%',
-                }}
-              >
-                Spread
-              </TableCell>
-              <TableCell
-                align="right"
-                sx={{
-                  py: 1,
-                  fontWeight: 500,
-                  fontSize: '0.75rem',
-                  textTransform: 'uppercase',
-                  color: 'var(--muted-foreground)',
-                  letterSpacing: '0.5px',
-                  width: '25%',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
-                  Mid
-                  <ArrowUpwardIcon fontSize="inherit" />
-                </Box>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {feedsToDisplay.map((feed: any) => {
-              const parsed = parseFeedSymbol(feed.symbol);
-              const isSelected = feed.symbol === selectedFeedId;
+      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+        {/* Table Header */}
+        <div className="grid grid-cols-12 gap-2 px-3 py-2 border-b border-gray-800 bg-gray-900/40 flex-shrink-0">
+          <div className="col-span-6 text-xs font-medium text-gray-400 uppercase tracking-wide flex items-center gap-1">
+            <Layers className="w-3 h-3" />
+            Feed
+          </div>
+          <div className="col-span-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-right">
+            Spread
+          </div>
+          <div className="col-span-3 text-xs font-medium text-gray-400 uppercase tracking-wide text-right flex items-center justify-end gap-1">
+            Mid
+            <TrendingUp className="w-3 h-3 text-green-400" />
+          </div>
+        </div>
 
-              // Use real-time data if available, fallback to API data
-              const realtimeData = realtimePrices.get(feed.symbol);
-              const midPrice = realtimeData?.mid || feed.last?.mid;
-              const askPrice = realtimeData?.ask || feed.last?.ask;
-              const bidPrice = realtimeData?.bid || feed.last?.bid;
+        {/* Feeds List - Scrollable */}
+        <div className="flex-1 overflow-y-auto bg-gray-950">
+          {feedsToDisplay.map((feed: any) => {
+            const parsed = parseFeedSymbol(feed.symbol);
+            const isSelected = feed.symbol === selectedFeedId;
 
-              // Compute absolute and relative spread, clamp negative to zero
-              let spreadVal = 0;
-              let absSpread: string = '0';
-              let relativeSpread: string = '0%';
-              if (typeof askPrice === 'number' && typeof bidPrice === 'number') {
-                spreadVal = Math.max(0, askPrice - bidPrice);
-                absSpread = formatPrice(spreadVal);
-                if (typeof midPrice === 'number' && midPrice > 0) {
-                  const relativeSpreadValue = (spreadVal / midPrice) * 100;
-                  relativeSpread = roundSig(relativeSpreadValue, 3) + '%';
-                }
+            // Use real-time data if available, fallback to API data
+            const realtimeData = realtimePrices.get(feed.symbol);
+            const midPrice = realtimeData?.mid || feed.last?.mid;
+            const askPrice = realtimeData?.ask || feed.last?.ask;
+            const bidPrice = realtimeData?.bid || feed.last?.bid;
+
+            // Compute absolute and relative spread, clamp negative to zero
+            let spreadVal = 0;
+            let absSpread: string = '0';
+            let relativeSpread: string = '0%';
+            if (typeof askPrice === 'number' && typeof bidPrice === 'number') {
+              spreadVal = Math.max(0, askPrice - bidPrice);
+              absSpread = formatPrice(spreadVal);
+              if (typeof midPrice === 'number' && midPrice > 0) {
+                const relativeSpreadValue = (spreadVal / midPrice) * 100;
+                relativeSpread = roundSig(relativeSpreadValue, 3) + '%';
               }
+            }
 
-              return (
-                <TableRow
-                  key={feed.symbol}
-                  onClick={() => onSelect(feed.symbol)}
-                  title={`Select ${feed.symbol}`}
-                  hover
-                  selected={isSelected}
-                  sx={{
-                    cursor: 'pointer',
-                    backgroundColor: isSelected 
-                      ? 'rgba(255, 140, 0, 0.15)' // Dark orange shade with transparency
-                      : 'transparent',
-                    borderLeft: isSelected ? '3px solid #ff8c00' : '3px solid transparent',
-                    '&:hover': {
-                      backgroundColor: isSelected 
-                        ? 'rgba(255, 140, 0, 0.25)' 
-                        : theme.palette.action.hover,
-                    },
-                  }}
-                >
-                  <TableCell align="left" sx={{ whiteSpace: 'nowrap', py: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Typography component="span" variant="body2">{parsed.main}</Typography>
-                      {parsed.tags.map(tag => <FeedTag key={tag}>{tag}</FeedTag>)}
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right" sx={{ py: 0.5 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, justifyContent: 'flex-end' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        {relativeSpread}
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                        {absSpread}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell align="right" sx={{ py: 0.5, textAlign: 'right' }}>
-                    <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
-                      {formatMidValue(midPrice)}
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </BaseSection>
+            return (
+              <div
+                key={feed.symbol}
+                onClick={() => onSelect(feed.symbol)}
+                title={`Select ${feed.symbol}`}
+                className={cn(
+                  "grid grid-cols-12 gap-2 px-3 py-2 cursor-pointer transition-all duration-200 border-l-2 hover:bg-gray-800/40",
+                  isSelected 
+                    ? "bg-green-500/10 border-l-green-500 hover:bg-green-500/15" 
+                    : "border-l-transparent hover:border-l-gray-600"
+                )}
+              >
+                <div className="col-span-6 flex items-center min-w-0">
+                  <span className={cn(
+                    "font-semibold text-sm truncate",
+                    isSelected ? "text-green-300" : "text-gray-200"
+                  )}>
+                    {parsed.main}
+                  </span>
+                  <div className="flex items-center gap-1 ml-1 flex-shrink-0">
+                    {parsed.tags.map(tag => <FeedTag key={tag}>{tag}</FeedTag>)}
+                  </div>
+                </div>
+                
+                <div className="col-span-3 flex flex-col items-end justify-center">
+                  <span className="text-xs text-gray-400 font-medium">
+                    {relativeSpread}
+                  </span>
+                  <span className="font-mono text-xs text-gray-300 font-semibold">
+                    {absSpread}
+                  </span>
+                </div>
+                
+                <div className="col-span-3 flex items-center justify-end">
+                  <span className="font-mono text-sm text-green-400 font-bold tabular-nums">
+                    {formatMidValue(midPrice)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="px-3 py-2 border-t border-gray-800 bg-gray-900/40 flex-shrink-0">
+          <div className="flex items-center justify-between text-xs text-gray-500">
+            <span className="font-mono">
+              {feedsToDisplay.length} feed{feedsToDisplay.length !== 1 ? 's' : ''} available
+            </span>
+            <span className="font-mono">
+              10s refresh • Real-time: {isConnected ? 'ON' : 'OFF'}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
