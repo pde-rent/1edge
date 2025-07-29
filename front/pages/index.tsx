@@ -1,30 +1,24 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-// import styled, { createGlobalStyle } from 'styled-components'; // REMOVED
 import AppInfoPanel from '../components/AppInfoPanel';
 import FeedsPanel from '../components/FeedsPanel';
 import ActiveFeedPanel from '../components/ActiveFeedPanel';
-// import ConfigPanel from '../components/ConfigPanel'; // Hidden from dashboard
 import OrderBookPanel from '../components/OrderBookPanel';
 import StatusPanel from '../components/StatusPanel';
 import PositionsPanel from '../components/PositionsPanel';
-import useSWR from 'swr'; // Added for fetching feeds
-import { fetcher } from '../utils/fetcher'; // Added for fetching feeds
-import type { ApiResponse } from '@common/types'; // Use path alias
-import { Paper } from '@mui/material';
+import useSWR from 'swr';
+import { fetcher } from '../utils/fetcher';
+import type { ApiResponse } from '@common/types';
 
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { GRID_CONFIG } from '@common/constants';
 
-// Add custom styles to override RGL defaults
 import Head from 'next/head';
+import CreateOrderForm from '@/components/Form/CreateOrderForm';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
-
-// REMOVED GlobalStyle
-// REMOVED GridItemContainer styled.div
 
 /**
  * Home page for the trading bot dashboard.
@@ -33,7 +27,8 @@ const ResponsiveGridLayout = WidthProvider(Responsive);
 export default function Home() {
   const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
   const [isLayoutLocked, setIsLayoutLocked] = useState(true);
-  const [mounted, setMounted] = useState(false); // For preventing SSR layout issues with RGL
+  const [mounted, setMounted] = useState(false);
+  
   // Dynamic grid sizing based on viewport height and current breakpoint
   const [windowHeight, setWindowHeight] = useState(0);
   useEffect(() => {
@@ -44,6 +39,7 @@ export default function Home() {
       return () => window.removeEventListener('resize', handleResize);
     }
   }, []);
+  
   const [breakpoint, setBreakpoint] = useState<'lg'|'md'|'sm'|'xs'|'xxs'>('lg');
   const handleBreakpoint = (newBreakpoint: string) => setBreakpoint(newBreakpoint as any);
   const totalRows = GRID_CONFIG.totalRowsMap[breakpoint] || GRID_CONFIG.totalRowsMap.lg;
@@ -54,8 +50,26 @@ export default function Home() {
   // Fetch feeds data
   const { data: feedsResponse } = useSWR<ApiResponse<any[]>>('/api/feeds', fetcher);
 
-  // Use imported grid initial layouts
-  const [currentLayouts, setCurrentLayouts] = useState(GRID_CONFIG.initialLayouts);
+  // Modified grid layouts to make positions panel same width as active feed panel
+  const getModifiedLayouts = () => {
+    const layouts = { ...GRID_CONFIG.initialLayouts };
+    
+    // For each breakpoint, ensure positions panel has same width as activeFeed panel
+    Object.keys(layouts).forEach(bp => {
+      const layout = layouts[bp];
+      const activeFeedItem = layout.find(item => item.i === 'activeFeed');
+      const positionsItem = layout.find(item => item.i === 'positions');
+      
+      if (activeFeedItem && positionsItem) {
+        // Set positions panel width to match active feed panel
+        positionsItem.w = activeFeedItem.w;
+      }
+    });
+    
+    return layouts;
+  };
+
+  const [currentLayouts, setCurrentLayouts] = useState(getModifiedLayouts());
 
   // Load custom layout from localStorage if exists
   useEffect(() => {
@@ -92,12 +106,11 @@ export default function Home() {
   };
 
   useEffect(() => {
-    setMounted(true); // Ensure RGL calculates layout client-side
+    setMounted(true);
   }, []);
 
   useEffect(() => {
     // Set BTCUSDC as default selected feed, fallback to first feed
-    // Only run when feedsResponse changes, not when selectedFeed changes
     if (feedsResponse?.success && feedsResponse.data && feedsResponse.data.length > 0 && selectedFeed === null) {
       // Look for BTCUSDC first
       const btcFeed = feedsResponse.data.find(feed => 
@@ -129,23 +142,12 @@ export default function Home() {
     }
   };
 
-  const handleResetLayout = () => setCurrentLayouts(GRID_CONFIG.initialLayouts);
+  const handleResetLayout = () => setCurrentLayouts(getModifiedLayouts());
 
   // Prevent RGL from rendering on server to avoid layout mismatch
   if (!mounted) {
     return null;
   }
-
-  // Style for the content containers
-  const paperStyle = {
-    height: '100%',
-    width: '100%',
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-  };
-  // Grid item container style
-  const gridItemStyle = { height: '100%', width: '100%', overflow: 'hidden' };
 
   return (
     <>
@@ -156,6 +158,7 @@ export default function Home() {
           .react-grid-layout {
             width: 100% !important;
             height: 100vh;
+            background-color: #0c0808;
           }
 
           /* Allow resizing from all corners */
@@ -251,14 +254,14 @@ export default function Home() {
         margin={GRID_CONFIG.margin}
         containerPadding={GRID_CONFIG.containerPadding}
         resizeHandles={GRID_CONFIG.resizeHandles}
-        rowHeight={rowHeight} // dynamic rowHeight based on viewport
-        autoSize={true} // Make sure it fills the available space
-        verticalCompact={true} // Ensure layout is compact
-        compactType="vertical" // Changed to vertical to make adjacent panels stack properly
+        rowHeight={rowHeight}
+        autoSize={true}
+        verticalCompact={true}
+        compactType="vertical"
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-        droppingItem={{ i: 'new-item', w: 2, h: 4 }} // This helps with dragactivity
+        droppingItem={{ i: 'new-item', w: 2, h: 4 }}
       >
-        <div key="appInfo" style={gridItemStyle}>
+        <div key="appInfo" className="h-full w-full overflow-hidden">
           <AppInfoPanel
             isLocked={isLayoutLocked}
             onToggleLock={() => setIsLayoutLocked(!isLayoutLocked)}
@@ -266,30 +269,25 @@ export default function Home() {
             onLoadLayout={handleLoadLayout}
           />
         </div>
-        <div key="feeds" style={gridItemStyle}>
-          <Paper sx={paperStyle} elevation={2}>
-            <FeedsPanel onSelect={setSelectedFeed} />
-          </Paper>
+        <div key="feeds" className="h-full w-full overflow-hidden">
+          <FeedsPanel onSelect={setSelectedFeed} />
         </div>
-        <div key="activeFeed" style={gridItemStyle}>
-          <Paper sx={paperStyle} elevation={2}>
+        <div key="activeFeed" className="h-full w-full overflow-hidden">
+          <div className="h-full w-full overflow-hidden flex flex-col rounderd-2xl">
             <ActiveFeedPanel feedId={selectedFeed} />
-          </Paper>
+          </div>
         </div>
-        <div key="config" style={gridItemStyle}>
-          <Paper sx={paperStyle} elevation={2}>
-            <OrderBookPanel selectedFeed={selectedFeed} />
-          </Paper>
+        <div key="config" className="h-full w-full overflow-hidden">
+          {/* Config panel content would go here */}
+          <CreateOrderForm/>
         </div>
-        <div key="services" style={gridItemStyle}>
-          <Paper sx={paperStyle} elevation={2}>
-            <StatusPanel />
-          </Paper>
+        <div key="services" className="h-full w-full overflow-hidden">
+          <OrderBookPanel selectedFeed={selectedFeed} />
         </div>
-        <div key="positions" style={gridItemStyle}>
-          <Paper sx={paperStyle} elevation={2}>
+        <div key="positions" className="h-full w-full overflow-hidden">
+          <div className="h-full w-full overflow-hidden flex flex-col">
             <PositionsPanel />
-          </Paper>
+          </div>
         </div>
       </ResponsiveGridLayout>
     </>
