@@ -11,16 +11,16 @@ export const API_HOST = process.env.API_HOST || "localhost";
 
 /** Service ports configuration */
 export const SERVICE_PORTS = {
-  API: 40005,
-  WEBSOCKET: 40007,
-  COLLECTOR: 40008,
-  ORDER_EXECUTOR: 40009,
-  KEEPER: 40010,
-  STATUS_CHECKER: 40011,
+  API: Number(process.env.API_PORT) || 40005,
+  WEBSOCKET: Number(process.env.WEBSOCKET_PORT) || 40007,
+  COLLECTOR: Number(process.env.COLLECTOR_PORT) || 40008,
+  ORDER_EXECUTOR: Number(process.env.ORDER_EXECUTOR_PORT) || 40009,
+  KEEPER: Number(process.env.KEEPER_PORT) || 40010,
+  STATUS_CHECKER: Number(process.env.STATUS_CHECKER_PORT) || 40011,
 } as const;
 
-/** ZeroMQ internal messaging port */
-export const ZMQ_PRICE_FEED_PORT = 5555;
+/** Native pub/sub server port for internal messaging */
+export const INTRACO_PORT = Number(process.env.INTRACO_PORT) || 40042;
 
 /** Next.js server hostname */
 export const NEXT_HOST = process.env.NEXT_HOST || "localhost";
@@ -29,7 +29,8 @@ export const NEXT_HOST = process.env.NEXT_HOST || "localhost";
 export const API_URL = process.env.API_URL || `http://${API_HOST}:${API_PORT}`;
 
 /** Full Next.js server URL */
-export const NEXT_URL = process.env.NEXT_URL || `http://${NEXT_HOST}:${NEXT_PORT}`;
+export const NEXT_URL =
+  process.env.NEXT_URL || `http://${NEXT_HOST}:${NEXT_PORT}`;
 
 /** UI Theme configuration - single source of truth for application styling */
 export const THEME = {
@@ -258,7 +259,8 @@ export const NETWORKS: Record<number, NetworkConfig> = {
   43114: {
     chainId: 43114,
     name: "Avalanche",
-    rpcUrl: process.env.AVALANCHE_RPC_URL || "https://api.avax.network/ext/bc/C/rpc",
+    rpcUrl:
+      process.env.AVALANCHE_RPC_URL || "https://api.avax.network/ext/bc/C/rpc",
     limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
     settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
     nativeSymbol: "AVAX",
@@ -284,43 +286,6 @@ export const ONEINCH_API = {
   API_KEY: process.env.ONE_INCH_API_KEY || "",
 };
 
-/**
- * Default service ports
- */
-export const SERVICE_PORTS = {
-  API: parseInt(process.env.API_PORT || "40005"),
-  FRONTEND: parseInt(process.env.NEXT_PORT || "40006"),
-};
-
-/**
- * Common token addresses (Ethereum mainnet)
- */
-export const TOKENS = {
-  1: {
-    // Ethereum
-    WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-    USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    DAI: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-    WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-  },
-  137: {
-    // Polygon
-    WMATIC: "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270",
-    USDC: "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
-    USDT: "0xc2132D05D31c914a87C6611C10748AEb04B58e8F",
-    DAI: "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063",
-    WETH: "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
-  },
-  56: {
-    // BSC
-    WBNB: "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-    USDC: "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
-    USDT: "0x55d398326f99059fF775485246999027B3197955",
-    BUSD: "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",
-    WETH: "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
-  },
-};
 
 /**
  * Time constants
