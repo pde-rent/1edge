@@ -94,7 +94,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
 
   // WebSocket for real-time updates
   useEffect(() => {
-    if (feedId && isConnected && seriesRef.current) {
+    if (feedId && isConnected) {
       const handleMessage = (message) => {
         if (message.type === 'price_update' && message.symbol === feedId) {
           const priceData = message.data;
@@ -200,7 +200,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
     if (!chart || !feedId) return;
 
     // Remove old series
-    if (seriesRef.current && chart) {
+    if (seriesRef.current) {
       chart.removeSeries(seriesRef.current);
       seriesRef.current = null;
     }
@@ -264,7 +264,7 @@ export default function ActiveFeedPanel({ feedId }: ActiveFeedPanelProps) {
       }
       chart.timeScale().fitContent();
     }
-  }, [feedId, chartType, historyResponse, timeframe]);
+  }, [feedId, chartType, historyResponse]);
 
   // Resize handler
   useEffect(() => {
