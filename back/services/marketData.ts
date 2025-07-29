@@ -24,8 +24,10 @@ const activeExchanges: Record<string, any> = {};
  * Parses a Symbol string into its components.
  */
 function parseSymbol(
-  symbolInput: Symbol
-): { exchangeId: string; marketType?: string; tickerSymbol: string } | undefined {
+  symbolInput: Symbol,
+):
+  | { exchangeId: string; marketType?: string; tickerSymbol: string }
+  | undefined {
   const parts = String(symbolInput).split(":");
   if (parts.length === 3) {
     return {
@@ -43,7 +45,9 @@ function parseSymbol(
 /**
  * Fetch ticker data on an exchange REST API.
  */
-export async function getCexTicker(symbolInput: Symbol): Promise<CcxtTicker | undefined> {
+export async function getCexTicker(
+  symbolInput: Symbol,
+): Promise<CcxtTicker | undefined> {
   const parsed = parseSymbol(symbolInput);
   if (!parsed) return undefined;
   const { exchangeId, tickerSymbol } = parsed;
@@ -54,16 +58,15 @@ export async function getCexTicker(symbolInput: Symbol): Promise<CcxtTicker | un
       logger.error(`[REST] ${exchangeId} cannot fetchTicker.`);
       return undefined;
     }
-    logger.debug(`[REST] ${exchangeId} fetchTicker ${tickerSymbol}`);
     const ticker = await ex.fetchTicker(tickerSymbol);
     if (ticker?.last === undefined) {
-      logger.warn(`[REST] No last price for ${exchangeId}:${tickerSymbol}`);
       return undefined;
     }
-    logger.info(`[REST] ${exchangeId}:${tickerSymbol} last=${ticker.last}`);
     return ticker;
   } catch (err: any) {
-    logger.error(`[REST] Error ${exchangeId}:${tickerSymbol} - ${err.message || err}`);
+    logger.error(
+      `[REST] Error ${exchangeId}:${tickerSymbol} - ${err.message || err}`,
+    );
     return undefined;
   }
 }
@@ -73,13 +76,66 @@ export async function getCexTicker(symbolInput: Symbol): Promise<CcxtTicker | un
  */
 export async function getExchange(exchangeId: string): Promise<any> {
   if (activeExchanges[exchangeId]) return activeExchanges[exchangeId];
-  logger.info(`Init ccxt websocket connection for ${exchangeId}`);
+
   const ctor = (ccxt as any).pro[exchangeId] || (ccxt as any)[exchangeId];
   if (!ctor) throw new Error(`ccxt exchange ${exchangeId} not found.`);
-  const ex = new ctor({ enableRateLimit: true });
-  await ex.loadMarkets();
-  activeExchanges[exchangeId] = ex;
-  return ex;
+
+  // Exchange-specific configuration for rate limiting
+  const exchangeConfig: any = {
+    enableRateLimit: true,
+    rateLimit: exchangeId === "bitget" ? 1200 : 1000, // Slower rate for Bitget
+  };
+
+  // Add exchange-specific options
+  if (exchangeId === "bitget") {
+    exchangeConfig.options = {
+      defaultType: "spot", // Use spot trading by default
+      recvWindow: 10000, // Larger receive window
+    };
+  }
+
+  const ex = new ctor(exchangeConfig);
+
+  // Retry market loading with exponential backoff
+  let retryCount = 0;
+  const maxRetries = 3;
+
+  while (retryCount <= maxRetries) {
+    try {
+      await ex.loadMarkets();
+      activeExchanges[exchangeId] = ex;
+      return ex;
+    } catch (error: any) {
+      retryCount++;
+
+      if (
+        error.message?.includes("429") ||
+        error.message?.includes("Too Many Requests")
+      ) {
+        const backoffMs = Math.min(1000 * Math.pow(2, retryCount), 10000); // Max 10s
+        logger.warn(
+          `[${exchangeId}] Rate limited, retrying in ${backoffMs}ms (attempt ${retryCount}/${maxRetries})`,
+        );
+        await sleep(backoffMs);
+      } else if (retryCount > maxRetries) {
+        logger.error(
+          `[${exchangeId}] Failed to connect after ${maxRetries} attempts:`,
+          error.message,
+        );
+        throw error;
+      } else {
+        logger.warn(
+          `[${exchangeId}] Connection attempt ${retryCount} failed:`,
+          error.message,
+        );
+        await sleep(2000 * retryCount);
+      }
+    }
+  }
+
+  throw new Error(
+    `Failed to connect to ${exchangeId} after ${maxRetries} attempts`,
+  );
 }
 
 /**
@@ -118,7 +174,7 @@ function updateWeightedAvg(aggSymbol: Symbol): void {
 async function fetchOHLCV(
   symbol: Symbol,
   timeframe: TimeFrame,
-  limit: number = 100
+  limit: number = 100,
 ): Promise<TickerOHLCV | undefined> {
   const parsed = parseSymbol(symbol);
   if (!parsed) return undefined;
@@ -143,7 +199,7 @@ async function fetchOHLCV(
 
     const tf = tfMap[timeframe] || "1m";
     const ohlcv = await ex.fetchOHLCV(tickerSymbol, tf, undefined, limit);
-    
+
     if (!ohlcv || ohlcv.length === 0) {
       return undefined;
     }
@@ -169,7 +225,9 @@ async function fetchOHLCV(
 
     return result;
   } catch (err: any) {
-    logger.error(`[OHLCV] Error ${exchangeId}:${tickerSymbol} - ${err.message || err}`);
+    logger.error(
+      `[OHLCV] Error ${exchangeId}:${tickerSymbol} - ${err.message || err}`,
+    );
     return undefined;
   }
 }
@@ -179,7 +237,7 @@ async function fetchOHLCV(
  */
 async function initializeTickerFeed(
   symbol: Symbol,
-  config: TickerConfig | AggregatedTickerConfig
+  config: TickerConfig | AggregatedTickerConfig,
 ): Promise<TickerFeed> {
   const ticker = await getCexTicker(symbol);
   const ohlcv = await fetchOHLCV(symbol, config.tf);
@@ -215,7 +273,7 @@ async function initializeTickerFeed(
  */
 async function updateSourceTicker(
   symbol: Symbol,
-  config: TickerConfig
+  config: TickerConfig,
 ): Promise<TickerFeed | undefined> {
   try {
     // Check cache first
@@ -226,10 +284,10 @@ async function updateSourceTicker(
 
     // Fetch fresh data
     const feed = await initializeTickerFeed(symbol, config);
-    
+
     // Cache the result
     await cacheTicker(symbol, feed, config.ttl);
-    
+
     return feed;
   } catch (err: any) {
     logger.error(`[UpdateSource] Error updating ${symbol}: ${err.message}`);
@@ -242,7 +300,7 @@ async function updateSourceTicker(
  */
 export async function updateAggregatedTicker(
   aggSymbol: Symbol,
-  config: AggregatedTickerConfig
+  config: AggregatedTickerConfig,
 ): Promise<AggregatedTicker> {
   // Initialize if not exists
   if (!aggregatedDataStore[aggSymbol]) {
@@ -261,21 +319,26 @@ export async function updateAggregatedTicker(
   const aggTicker = aggregatedDataStore[aggSymbol];
 
   // Update all sources
-  const updatePromises = Object.entries(config.sources).map(async ([srcSymbol, srcConfig]) => {
-    const feed = await updateSourceTicker(srcSymbol as Symbol, {
-      id: srcSymbol as Symbol,
-      name: srcSymbol,
-      exchange: parseSymbol(srcSymbol as Symbol)?.exchangeId || "unknown",
-      tf: config.tf,
-      lookback: config.lookback,
-      ttl: 60, // 1 minute cache for sources
-      weight: srcConfig.weight,
-    } as TickerConfig);
+  const updatePromises = Object.entries(config.sources).map(
+    async ([srcSymbol, srcConfig]) => {
+      const feed = await updateSourceTicker(
+        srcSymbol as Symbol,
+        {
+          id: srcSymbol as Symbol,
+          name: srcSymbol,
+          exchange: parseSymbol(srcSymbol as Symbol)?.exchangeId || "unknown",
+          tf: config.tf,
+          lookback: config.lookback,
+          ttl: 60, // 1 minute cache for sources
+          weight: srcConfig.weight,
+        } as TickerConfig,
+      );
 
-    if (feed) {
-      aggTicker.sources[srcSymbol as Symbol] = feed;
-    }
-  });
+      if (feed) {
+        aggTicker.sources[srcSymbol as Symbol] = feed;
+      }
+    },
+  );
 
   await Promise.all(updatePromises);
 
@@ -284,10 +347,11 @@ export async function updateAggregatedTicker(
 
   // Update status
   const activeSourceCount = Object.values(aggTicker.sources).filter(
-    (src) => src.status === FeedStatus.ACTIVE
+    (src) => src.status === FeedStatus.ACTIVE,
   ).length;
-  
-  aggTicker.status = activeSourceCount > 0 ? FeedStatus.ACTIVE : FeedStatus.ERROR;
+
+  aggTicker.status =
+    activeSourceCount > 0 ? FeedStatus.ACTIVE : FeedStatus.ERROR;
 
   // Cache aggregated data
   await cacheTicker(aggSymbol, aggTicker, 300); // 5 minute cache
@@ -298,7 +362,9 @@ export async function updateAggregatedTicker(
 /**
  * Get current ticker data.
  */
-export async function getTicker(symbol: Symbol): Promise<TickerFeed | AggregatedTicker | null> {
+export async function getTicker(
+  symbol: Symbol,
+): Promise<TickerFeed | AggregatedTicker | null> {
   // Check if it's an aggregated ticker
   if (symbol.startsWith("agg:")) {
     return aggregatedDataStore[symbol] || null;
@@ -311,7 +377,10 @@ export async function getTicker(symbol: Symbol): Promise<TickerFeed | Aggregated
 /**
  * Initialize aggregated ticker in store if not exists.
  */
-function initAgg(aggSymbol: Symbol, aggCfg: AggregatedTickerConfig): AggregatedTicker {
+function initAgg(
+  aggSymbol: Symbol,
+  aggCfg: AggregatedTickerConfig,
+): AggregatedTicker {
   if (!aggregatedDataStore[aggSymbol]) {
     aggregatedDataStore[aggSymbol] = {
       id: aggSymbol,
@@ -330,7 +399,11 @@ function initAgg(aggSymbol: Symbol, aggCfg: AggregatedTickerConfig): AggregatedT
 /**
  * Initialize source ticker in aggregated ticker.
  */
-function initSrc(agg: AggregatedTicker, srcCfg: TickerConfig, timestamp: number): TickerFeed {
+function initSrc(
+  agg: AggregatedTicker,
+  srcCfg: TickerConfig,
+  timestamp: number,
+): TickerFeed {
   if (!agg.sources[srcCfg.id]) {
     const parsed = parseSymbol(srcCfg.id);
     agg.sources[srcCfg.id] = {
@@ -399,7 +472,7 @@ function recordCandle(
 function buildFullSrcCfg(
   srcSymbol: string,
   srcConfig: any,
-  aggCfg: AggregatedTickerConfig
+  aggCfg: AggregatedTickerConfig,
 ): TickerConfig {
   const parsed = parseSymbol(srcSymbol as Symbol);
   return {
@@ -432,163 +505,489 @@ function ensureAggStore(dest: Symbol, aggCfg: AggregatedTickerConfig): void {
   }
 }
 
+// Exchange connection tracking for batched subscriptions
+interface BatchedConnection {
+  exchange: any | null;
+  subscriptions: Map<
+    string,
+    {
+      aggSymbol: Symbol;
+      srcCfg: TickerConfig;
+      aggCfg: AggregatedTickerConfig;
+    }
+  >;
+  stopSignal: { stop: boolean };
+  isRunning: boolean;
+}
+
+const batchedConnections = new Map<string, BatchedConnection>();
+
 /**
- * Subscribe to a single source with WebSocket streaming and auto-reconnect.
+ * Get or create a batched connection for an exchange.
  */
-async function watchExchangeTicker(
+async function getBatchedConnection(
+  exchangeId: string,
+  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onError: (err: any) => void,
+  reconnectMs: number,
+): Promise<BatchedConnection> {
+  if (batchedConnections.has(exchangeId)) {
+    return batchedConnections.get(exchangeId)!;
+  }
+
+  const connection: BatchedConnection = {
+    exchange: null, // Will be set when ready
+    subscriptions: new Map(),
+    stopSignal: { stop: false },
+    isRunning: false,
+  };
+
+  batchedConnections.set(exchangeId, connection);
+
+  // Initialize exchange connection in background
+  getExchange(exchangeId)
+    .then((exchange) => {
+      connection.exchange = exchange;
+      // Start monitoring loop if we have subscriptions and aren't already running
+      if (connection.subscriptions.size > 0 && !connection.isRunning) {
+        void startBatchedTickerLoop(
+          exchangeId,
+          connection,
+          onUpdate,
+          onError,
+          reconnectMs,
+        );
+      }
+    })
+    .catch((error) => {
+      logger.error(`❌ Failed to initialize exchange ${exchangeId}:`, error);
+      onError(error);
+    });
+
+  return connection;
+}
+
+/**
+ * Start the batched ticker monitoring loop for an exchange.
+ */
+async function startBatchedTickerLoop(
+  exchangeId: string,
+  connection: BatchedConnection,
+  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onError: (err: any) => void,
+  reconnectMs: number,
+): Promise<void> {
+  if (connection.isRunning) return;
+  connection.isRunning = true;
+
+
+  while (!connection.stopSignal.stop) {
+    try {
+      if (!connection.exchange) {
+        await sleep(1000); // Wait for exchange to be ready
+        continue;
+      }
+      
+      if (connection.subscriptions.size === 0) {
+        await sleep(1000); // Wait for subscriptions to be added
+        continue;
+      }
+
+
+      // Get all symbols for this exchange
+      const symbols = Array.from(connection.subscriptions.keys());
+      
+      // Use batch ticker fetching to avoid rate limits
+      let tickerData: Record<string, any> = {};
+      const fetchStart = Date.now();
+
+      try {
+        // Try to use batch ticker fetching if available
+        if (connection.exchange.has["fetchTickers"]) {
+          const tickers = await connection.exchange.fetchTickers(symbols);
+          tickerData = tickers;
+        } else {
+          // Fallback: fetch tickers individually with delay
+          for (const symbol of symbols) {
+            try {
+              const ticker = await connection.exchange.fetchTicker(symbol);
+              tickerData[symbol] = ticker;
+              // Add small delay to avoid rate limiting
+              await sleep(100);
+            } catch (tickerError) {
+              logger.warn(
+                `[Batch:${exchangeId}] Failed to fetch ${symbol}: ${tickerError.message}`,
+              );
+            }
+          }
+        }
+        
+        const fetchTime = Date.now() - fetchStart;
+        const validTickers = Object.keys(tickerData).length;
+        
+        
+        // Log batch summary only if we have activity
+        if (validTickers > 0) {
+        }
+      } catch (batchError) {
+        logger.error(`[Batch:${exchangeId}] Batch fetch failed:`, batchError);
+        // If batch fails, try WebSocket for individual symbols
+        await handleWebSocketFallback(
+          exchangeId,
+          connection,
+          onUpdate,
+          onError,
+        );
+        continue;
+      }
+
+      // Process each ticker update
+      let processedCount = 0;
+      let updatedSymbols: string[] = [];
+      
+      
+      // Create mapping from exchange-specific symbols to CCXT standardized symbols
+      const symbolMap = new Map<string, string>();
+      for (const [tickerSymbol] of connection.subscriptions) {
+        // tickerSymbol is exchange-specific (e.g., "BTC-USDT" for OKX, "BTCUSDT" for Binance)
+        // We need to find the corresponding CCXT key (e.g., "BTC/USDT")
+        for (const ccxtKey of Object.keys(tickerData)) {
+          // Convert CCXT key to exchange format for comparison
+          const exchangeKey = ccxtKey.replace('/', exchangeId === 'okx' ? '-' : '');
+          if (exchangeKey === tickerSymbol) {
+            symbolMap.set(tickerSymbol, ccxtKey);
+            break;
+          }
+        }
+      }
+      
+      for (const [tickerSymbol, subscription] of connection.subscriptions) {
+        const ccxtKey = symbolMap.get(tickerSymbol);
+        const ticker = ccxtKey ? tickerData[ccxtKey] : undefined;
+        if (!ticker || !ticker.last) {
+          continue;
+        }
+
+        const { aggSymbol, srcCfg, aggCfg } = subscription;
+        processedCount++;
+        updatedSymbols.push(aggSymbol);
+
+        // Update data structures
+        const price = ticker.last;
+        const bid = ticker.bid || price;
+        const ask = ticker.ask || price;
+        const timestamp = ticker.timestamp || Date.now();
+        const baseVolume = ticker.baseVolume || 0;
+        const mid = (bid + ask) / 2;
+
+        const agg = initAgg(aggSymbol, aggCfg);
+        const src = initSrc(agg, srcCfg, timestamp);
+        src.last = {
+          bid,
+          ask,
+          mid,
+          last: price,
+          volume: baseVolume,
+          timestamp,
+        };
+        src.status = FeedStatus.ACTIVE;
+        src.updatedAt = timestamp;
+
+        // Update weighted average
+        updateWeightedAvg(aggSymbol);
+        agg.status = FeedStatus.ACTIVE;
+
+        // Record candle data
+        recordCandle(
+          agg.history,
+          agg.last.mid,
+          baseVolume,
+          agg.tf || 60,
+          agg.lookback || 86400,
+          agg,
+        );
+
+        // Trigger update callback
+        onUpdate(aggSymbol, agg);
+
+        // Cache the result
+        await cacheTicker(aggSymbol, agg, 300);
+      }
+      
+      // Log processing summary
+      if (processedCount > 0) {
+      }
+
+      // Wait before next batch update (adjust based on exchange rate limits)
+      const batchDelay = exchangeId === "bitget" ? 2000 : 1000; // 2s for Bitget, 1s for others
+      await sleep(batchDelay);
+    } catch (err) {
+      onError(err);
+      logger.error(`[Batch:${exchangeId}] error:`, err);
+      await sleep(reconnectMs);
+
+      // Recreate exchange connection
+      delete activeExchanges[exchangeId];
+      try {
+        connection.exchange = await getExchange(exchangeId);
+      } catch (reconnectError) {
+        logger.error(
+          `[Batch:${exchangeId}] Failed to reconnect:`,
+          reconnectError,
+        );
+      }
+    }
+  }
+
+  connection.isRunning = false;
+}
+
+/**
+ * Fallback to WebSocket for individual symbols when batch fails.
+ */
+async function handleWebSocketFallback(
+  exchangeId: string,
+  connection: BatchedConnection,
+  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onError: (err: any) => void,
+): Promise<void> {
+  try {
+    // Try WebSocket for the first few symbols only to avoid overwhelming
+    const symbolsToTry = Array.from(connection.subscriptions.keys()).slice(
+      0,
+      3,
+    );
+
+    for (const tickerSymbol of symbolsToTry) {
+      try {
+        const subscription = connection.subscriptions.get(tickerSymbol)!;
+        const { aggSymbol, srcCfg, aggCfg } = subscription;
+
+        const trades = await (connection.exchange as any).watchTrades(
+          tickerSymbol,
+          undefined,
+          1,
+        );
+        if (trades && trades[0]) {
+          const trade = trades[0];
+          const price = trade.price;
+          const timestamp = trade.timestamp;
+          const baseVolume = trade.amount;
+
+          // Get previous bid/ask or estimate from price
+          const prevFeed = aggregatedDataStore[aggSymbol]?.sources[srcCfg.id];
+          const bid =
+            trade.side === "sell" ? price : prevFeed?.last.bid || price;
+          const ask =
+            trade.side === "buy" ? price : prevFeed?.last.ask || price;
+          const mid = (bid + ask) / 2;
+
+          const agg = initAgg(aggSymbol, aggCfg);
+          const src = initSrc(agg, srcCfg, timestamp);
+          src.last = {
+            bid,
+            ask,
+            mid,
+            last: price,
+            volume: baseVolume,
+            timestamp,
+          };
+          src.status = FeedStatus.ACTIVE;
+          src.updatedAt = timestamp;
+
+          updateWeightedAvg(aggSymbol);
+          agg.status = FeedStatus.ACTIVE;
+
+          recordCandle(
+            agg.history,
+            agg.last.mid,
+            baseVolume,
+            agg.tf || 60,
+            agg.lookback || 86400,
+            agg,
+          );
+
+          onUpdate(aggSymbol, agg);
+          await cacheTicker(aggSymbol, agg, 300);
+        }
+      } catch (wsError) {
+        logger.warn(
+          `[WS:${exchangeId}] WebSocket fallback failed for ${tickerSymbol}:`,
+          wsError.message,
+        );
+      }
+    }
+  } catch (fallbackError) {
+    logger.error(`[WS:${exchangeId}] WebSocket fallback error:`, fallbackError);
+  }
+}
+
+/**
+ * Add a ticker subscription to the batched connection.
+ */
+async function addBatchedSubscription(
   srcCfg: TickerConfig,
   aggSymbol: Symbol,
   aggCfg: AggregatedTickerConfig,
   onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
   onError: (err: any) => void,
   reconnectMs: number,
-  stopSignal: { stop: boolean },
 ): Promise<void> {
   const parsed = parseSymbol(srcCfg.id);
-  if (!parsed) return onError(new Error(`Invalid symbol: ${srcCfg.id}`));
-  const { exchangeId, marketType, tickerSymbol } = parsed;
-  let ex = await getExchange(exchangeId);
-  
-  // Build exchange-specific parameters
-  const params: any = {};
-  if (marketType && marketType !== "undefined") {
-    params.type = marketType;
+  if (!parsed) {
+    onError(new Error(`Invalid symbol: ${srcCfg.id}`));
+    return;
   }
-  
-  // Add exchange-specific WebSocket parameters
-  if (exchangeId === 'binance') {
-    params.name = "aggTrade"; // Binance aggregate trades
+
+  const { exchangeId, tickerSymbol } = parsed;
+  const connection = await getBatchedConnection(
+    exchangeId,
+    onUpdate,
+    onError,
+    reconnectMs,
+  );
+
+  connection.subscriptions.set(tickerSymbol, {
+    aggSymbol,
+    srcCfg,
+    aggCfg,
+  });
+
+
+  // Start monitoring loop if exchange is ready and this is the first subscription
+  if (connection.exchange && !connection.isRunning) {
+    void startBatchedTickerLoop(
+      exchangeId,
+      connection,
+      onUpdate,
+      onError,
+      reconnectMs,
+    );
   }
-  // For other exchanges like Kraken, use default trade streams without special params
-
-  logger.info(`🚀 Starting WebSocket stream for ${srcCfg.id} -> ${aggSymbol}`);
-
-  while (!stopSignal.stop) {
-    try {
-      // Retrieve previous bid/ask from prior data
-      const prevFeed = aggregatedDataStore[aggSymbol]?.sources[srcCfg.id];
-      const prevBid = prevFeed?.last.bid ?? 0;
-      const prevAsk = prevFeed?.last.ask ?? 0;
-
-      // Use WebSocket to watch trades with exchange-specific params
-      let bid: number, ask: number, timestamp: number, baseVolume: number, price: number;
-      
-      // Try WebSocket first, fallback to REST if WebSocket fails
-      try {
-        const trades = await (ex as any).watchTrades(
-          tickerSymbol, 
-          undefined, 
-          1, 
-          Object.keys(params).length > 0 ? params : undefined
-        );
-        const trade = trades[0];
-        price = trade.price;
-        
-        // Reconstruct bid/ask from trade side
-        if (trade.side === "buy") {
-          ask = price;
-          bid = prevBid || price;
-        } else {
-          bid = price;
-          ask = prevAsk || price;
-        }
-        timestamp = trade.timestamp;
-        baseVolume = trade.amount;
-        
-      } catch (wsError) {
-        // WebSocket failed, fallback to REST API
-        logger.warn(`[WS:${exchangeId}] WebSocket failed, falling back to REST for ${tickerSymbol}`);
-        const ticker = await ex.fetchTicker(tickerSymbol);
-        if (!ticker || !ticker.last) {
-          throw new Error(`No ticker data available for ${tickerSymbol}`);
-        }
-        
-        price = ticker.last;
-        bid = ticker.bid || ticker.last;
-        ask = ticker.ask || ticker.last;
-        timestamp = ticker.timestamp || Date.now();
-        baseVolume = ticker.baseVolume || 0;
-      }
-      
-      if (!bid || !ask || !timestamp) continue;
-      const mid = (bid + ask) / 2;
-      
-      // Update data structures
-      const agg = initAgg(aggSymbol, aggCfg);
-      const src = initSrc(agg, srcCfg, timestamp);
-      src.last = { bid, ask, mid, last: price, volume: baseVolume, timestamp };
-      src.status = FeedStatus.ACTIVE;
-      src.updatedAt = timestamp;
-      
-      // Update weighted average
-      updateWeightedAvg(aggSymbol);
-      agg.status = FeedStatus.ACTIVE;
-      
-      // Record candle data
-      recordCandle(
-        agg.history,
-        agg.last.mid,
-        baseVolume,
-        agg.tf || 60,
-        agg.lookback || 86400,
-        agg,
-      );
-      
-      // Trigger update callback
-      onUpdate(aggSymbol, agg);
-      
-      // Cache the result
-      await cacheTicker(aggSymbol, agg, 300);
-      
-    } catch (err) {
-      onError(err);
-      logger.error(`[WS:${exchangeId}] error:`, err);
-      await sleep(reconnectMs);
-      delete activeExchanges[exchangeId];
-      ex = await getExchange(exchangeId);
-    }
-  }
-  logger.info(`⏹️ Stopped watching ${tickerSymbol} for ${aggSymbol}`);
 }
 
 /**
- * Subscribe to all ticker feeds with WebSocket streaming.
+ * Remove a ticker subscription from the batched connection.
+ */
+function removeBatchedSubscription(srcCfg: TickerConfig): void {
+  const parsed = parseSymbol(srcCfg.id);
+  if (!parsed) return;
+
+  const { exchangeId, tickerSymbol } = parsed;
+  const connection = batchedConnections.get(exchangeId);
+
+  if (connection) {
+    connection.subscriptions.delete(tickerSymbol);
+
+    // Clean up empty connections
+    if (connection.subscriptions.size === 0) {
+      connection.stopSignal.stop = true;
+      batchedConnections.delete(exchangeId);
+    }
+  }
+}
+
+/**
+ * Subscribe to all ticker feeds with batched WebSocket streaming.
  */
 export function subToTickerFeeds(
   config: Record<Symbol, AggregatedTickerConfig>,
   onUpdate: (destSymbol: Symbol, data: AggregatedTicker) => void,
-  onError: (err: any) => void = (err) => logger.error("General subscription error", err),
+  onError: (err: any) => void = (err) =>
+    logger.error("General subscription error", err),
   reconnectMs = 5000,
 ): { close: () => void; getAllActiveSignals: () => { stop: boolean }[] } {
-  logger.info("🚀 Subscribing to WebSocket ticker feeds...");
-  const stopSignals: Record<string, { stop: boolean }> = {};
-  
+  const subscriptionKeys: string[] = [];
+
+  // Group subscriptions by exchange to enable batching
+  const exchangeGroups = new Map<
+    string,
+    Array<{
+      dest: Symbol;
+      srcKey: string;
+      srcConfig: any;
+      aggCfg: AggregatedTickerConfig;
+    }>
+  >();
+
   for (const [destStr, aggCfg] of Object.entries(config)) {
     const dest = destStr as Symbol;
     if (!aggCfg.sources || !Object.keys(aggCfg.sources).length) {
       logger.warn(`No sources for ${dest}.`);
       continue;
     }
-    
+
     ensureAggStore(dest, aggCfg);
-    
+
     for (const [sk, sc] of Object.entries(aggCfg.sources)) {
       const fullCfg = buildFullSrcCfg(sk, sc, aggCfg);
-      const key = `${dest}:${sk}`;
-      const signal = { stop: false };
-      stopSignals[key] = signal;
-      
-      logger.info(`📡 Watching ${fullCfg.id} for ${dest}`);
-      void watchExchangeTicker(fullCfg, dest, aggCfg, onUpdate, onError, reconnectMs, signal);
+      const parsed = parseSymbol(fullCfg.id);
+      if (!parsed) continue;
+
+      const { exchangeId } = parsed;
+      if (!exchangeGroups.has(exchangeId)) {
+        exchangeGroups.set(exchangeId, []);
+      }
+
+      exchangeGroups.get(exchangeId)!.push({
+        dest,
+        srcKey: sk,
+        srcConfig: sc,
+        aggCfg,
+      });
+
+      subscriptionKeys.push(`${dest}:${sk}`);
     }
   }
-  
+
+  // Start batched subscriptions for each exchange in parallel
+
+  const subscriptionPromises: Promise<void>[] = [];
+
+  for (const [exchangeId, subscriptions] of exchangeGroups) {
+
+    // Start all subscriptions for this exchange in parallel
+    const exchangePromises = subscriptions.map(({ dest, srcKey, srcConfig, aggCfg }) => {
+      const fullCfg = buildFullSrcCfg(srcKey, srcConfig, aggCfg);
+      return addBatchedSubscription(
+        fullCfg,
+        dest,
+        aggCfg,
+        onUpdate,
+        onError,
+        reconnectMs,
+      );
+    });
+
+    subscriptionPromises.push(...exchangePromises);
+  }
+
+  // Don't wait for all subscriptions to complete - let them run in background
+  Promise.allSettled(subscriptionPromises).then((results) => {
+    const failed = results.filter(r => r.status === 'rejected').length;
+    const succeeded = results.length - failed;
+    if (failed > 0) {
+      logger.warn(`Subscription setup: ${succeeded} succeeded, ${failed} failed`);
+    }
+  });
+
   return {
     close: () => {
-      logger.info("🛑 Closing all WebSocket subscriptions...");
-      Object.values(stopSignals).forEach((s) => (s.stop = true));
+      // Stop all batched connections
+      for (const connection of batchedConnections.values()) {
+        connection.stopSignal.stop = true;
+      }
+
+      // Clear all connections
+      batchedConnections.clear();
+
     },
-    getAllActiveSignals: () => Object.values(stopSignals),
+    getAllActiveSignals: () => {
+      // Return all stop signals from batched connections
+      return Array.from(batchedConnections.values()).map(
+        (conn) => conn.stopSignal,
+      );
+    },
   };
 }
 
@@ -597,10 +996,9 @@ export function subToTickerFeeds(
  */
 export function subscribeTicker(
   symbol: Symbol,
-  callback: (ticker: TickerTick) => void
+  callback: (ticker: TickerTick) => void,
 ): () => void {
-  logger.info(`📡 Subscribing to ${symbol} WebSocket updates`);
-  
+
   // For now, return a placeholder unsubscribe function
   // Full implementation would use subToTickerFeeds internally
   return () => {
@@ -611,7 +1009,10 @@ export function subscribeTicker(
 /**
  * Get all active tickers.
  */
-export function getActiveTickers(): Record<Symbol, TickerFeed | AggregatedTicker> {
+export function getActiveTickers(): Record<
+  Symbol,
+  TickerFeed | AggregatedTicker
+> {
   return { ...aggregatedDataStore };
 }
 
@@ -619,13 +1020,19 @@ export function getActiveTickers(): Record<Symbol, TickerFeed | AggregatedTicker
  * Close all exchange connections.
  */
 export async function closeAllExchanges(): Promise<void> {
+  // Close batched connections first
+  for (const [exchangeId, connection] of batchedConnections) {
+    connection.stopSignal.stop = true;
+  }
+  batchedConnections.clear();
+
+  // Close individual exchange connections
   for (const [exchangeId, exchange] of Object.entries(activeExchanges)) {
     try {
       if (exchange.close) {
         await exchange.close();
       }
       delete activeExchanges[exchangeId];
-      logger.info(`Closed connection to ${exchangeId}`);
     } catch (err: any) {
       logger.error(`Error closing ${exchangeId}: ${err.message}`);
     }
