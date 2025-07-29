@@ -1,17 +1,21 @@
-import { ButtonHTMLAttributes } from "react";
+import { Button, ButtonProps } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-type ButtonVariant = 'default' | 'danger' | 'warning';
+type GlassVariant = 'default' | 'danger' | 'warning';
 
-// Define the props interface
-interface GlassButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+interface GlassButtonProps extends Omit<ButtonProps, 'variant'> {
   active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  variant?: ButtonVariant;
+  variant?: GlassVariant;
 }
 
-const GlassButton: React.FC<GlassButtonProps> = ({ active, onClick, children, variant = 'default', ...props }) => {
-  const variants: Record<ButtonVariant, string>  = {
+const GlassButton: React.FC<GlassButtonProps> = ({ 
+  active, 
+  children, 
+  variant = 'default', 
+  className,
+  ...props 
+}) => {
+  const variants: Record<GlassVariant, string> = {
     default: active 
       ? 'bg-gradient-to-br from-emerald-500/30 via-green-400/25 to-emerald-600/30 hover:from-emerald-500/40 hover:via-green-400/35 hover:to-emerald-600/40 text-emerald-50 border border-emerald-400/40 hover:border-emerald-300/60 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-400/30'
       : 'bg-gradient-to-br from-emerald-900/10 via-green-800/5 to-emerald-700/10 hover:from-emerald-800/20 hover:via-green-700/15 hover:to-emerald-600/20 text-emerald-200 border border-emerald-600/20 hover:border-emerald-500/30 shadow-lg shadow-emerald-900/20',
@@ -24,14 +28,17 @@ const GlassButton: React.FC<GlassButtonProps> = ({ active, onClick, children, va
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-4 py-3 rounded-xl backdrop-blur-xl transition-all transform hover:scale-[1.02] ${variants[variant]}`}
+    <Button
+      className={cn(
+        "rounded-xl backdrop-blur-xl transition-all transform hover:scale-[1.02]",
+        variants[variant],
+        className
+      )}
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 };
+
 export default GlassButton;

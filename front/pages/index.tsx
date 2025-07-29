@@ -11,7 +11,6 @@ import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import type { ApiResponse } from '@common/types';
 import { Paper } from '@mui/material';
-import DashboardGrid from "@/components/DashboardGrid";
 import { Loader } from "@/components/ui/luma-spin";
 import { usePrivy } from "@privy-io/react-auth";
 import { HeroSection } from "@/components/Hero-section";
