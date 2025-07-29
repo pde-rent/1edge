@@ -11,17 +11,21 @@
 </div>
 
 ## Disclaimer
+
 This repository is experimental
 
 ## Overview
+
 1edge makes use of 1inch's limit order protocol (LOP) to implement advanced orders and market making strategies catered to this order book.
 
 ## Advanced Orders List
+
 - Time-weighted average price (time triggered)
 - Range order (price-triggered, single sided grid)
 - Iceberg (self-triggered sequential orders)
 
 ## Market Making Strategies
+
 - Naive Reversal (two-sided grid)
 - Momentum Reversal
 - Volatility Breakout

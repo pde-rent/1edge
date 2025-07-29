@@ -3,34 +3,110 @@
     "defaultTtl": 300,
     "dbPath": "./data/1edge.db"
   },
+  "tokenMapping": {
+    "WBTC": {
+      "1": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "56": "0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c",
+      "8453": "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
+      "42161": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      "43114": "0x152b9d0FdC40C096757F570A51E494bd4b943E50"
+    },
+    "WETH": {
+      "1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "56": "0x2170Ed0880ac9A755fd29B2688956BD959F933F8",
+      "8453": "0x4200000000000000000000000000000000000006",
+      "42161": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "43114": "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"
+    },
+    "USDT": {
+      "1": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "56": "0x55d398326f99059fF775485246999027B3197955",
+      "42161": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "43114": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7"
+    },
+    "USDC": {
+      "1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "56": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
+      "8453": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "42161": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "43114": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
+    },
+    "1INCH": {
+      "1": "0x111111111117dC0aa78b770fA6A738034120C302",
+      "56": "0x111111111117dC0aa78b770fA6A738034120C302",
+      "8453": "0xc5fecC3a29Fb57B5024eEc8a2239d4621e111CBE",
+      "42161": "0x6314C31A7a1652cE482cffe247E9CB7c3f4BB9aF"
+    },
+    "AAVE": {
+      "1": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
+      "56": "0xfb6115445Bff7b52FeB98650C87f44907E58f802",
+      "8453": "0x63706e401c06ac8513145b7687A14804d17f814b",
+      "42161": "0xba5DdD1f9d7F570dc94a51479a000E3BCE967196",
+      "43114": "0x63a72806098Bd3D9520cC43356dD78afe5D386D9"
+    }
+  },
   "services": {
     "collector": {
       "pollIntervalMs": 1000,
       "tickers": {
-        "agg:spot:ETHUSDC": {
-          "id": "agg:spot:ETHUSDC",
-          "name": "ETH/USDC Aggregate",
+        "agg:spot:ETHUSDT": {
+          "id": "agg:spot:ETHUSDT",
+          "name": "ETH/USDT Aggregate",
           "tf": 60,
           "lookback": 86400,
           "sources": {
-            "binance:spot:ETHUSDC": { "weight": 0.35 },
-            "bybit:spot:ETHUSDC": { "weight": 0.20 },
-            "okx:spot:ETH-USDC": { "weight": 0.15 },
-            "bitget:spot:ETHUSDC": { "weight": 0.15 },
-            "coinbase:spot:ETH-USDC": { "weight": 0.15 }
+            "binance:spot:ETHUSDT": { "weight": 0.4 },
+            "bybit:spot:ETHUSDT": { "weight": 0.25 },
+            "okx:spot:ETH-USDT": { "weight": 0.2 },
+            "bitget:spot:ETHUSDT": { "weight": 0.15 }
           }
         },
-        "agg:spot:BTCUSDC": {
-          "id": "agg:spot:BTCUSDC",
-          "name": "BTC/USDC Aggregate",
+        "agg:spot:BTCUSDT": {
+          "id": "agg:spot:BTCUSDT",
+          "name": "BTC/USDT Aggregate",
           "tf": 60,
           "lookback": 86400,
           "sources": {
-            "binance:spot:BTCUSDC": { "weight": 0.35 },
-            "bybit:spot:BTCUSDC": { "weight": 0.20 },
-            "okx:spot:BTC-USDC": { "weight": 0.15 },
-            "bitget:spot:BTCUSDC": { "weight": 0.15 },
-            "coinbase:spot:BTC-USDC": { "weight": 0.15 }
+            "binance:spot:BTCUSDT": { "weight": 0.4 },
+            "bybit:spot:BTCUSDT": { "weight": 0.25 },
+            "okx:spot:BTC-USDT": { "weight": 0.2 },
+            "bitget:spot:BTCUSDT": { "weight": 0.15 }
+          }
+        },
+        "agg:spot:USDCUSDT": {
+          "id": "agg:spot:USDCUSDT",
+          "name": "USDC/USDT Aggregate",
+          "tf": 60,
+          "lookback": 86400,
+          "sources": {
+            "binance:spot:USDCUSDT": { "weight": 0.4 },
+            "bybit:spot:USDCUSDT": { "weight": 0.25 },
+            "okx:spot:USDC-USDT": { "weight": 0.2 },
+            "bitget:spot:USDCUSDT": { "weight": 0.15 }
+          }
+        },
+        "agg:spot:1INCHUSDT": {
+          "id": "agg:spot:1INCHUSDT",
+          "name": "1INCH/USDT Aggregate",
+          "tf": 60,
+          "lookback": 86400,
+          "sources": {
+            "binance:spot:1INCHUSDT": { "weight": 0.4 },
+            "bybit:spot:1INCHUSDT": { "weight": 0.25 },
+            "okx:spot:1INCH-USDT": { "weight": 0.2 },
+            "bitget:spot:1INCHUSDT": { "weight": 0.15 }
+          }
+        },
+        "agg:spot:AAVEUSDT": {
+          "id": "agg:spot:AAVEUSDT",
+          "name": "AAVE/USDT Aggregate",
+          "tf": 60,
+          "lookback": 86400,
+          "sources": {
+            "binance:spot:AAVEUSDT": { "weight": 0.4 },
+            "bybit:spot:AAVEUSDT": { "weight": 0.25 },
+            "okx:spot:AAVE-USDT": { "weight": 0.2 },
+            "bitget:spot:AAVEUSDT": { "weight": 0.15 }
           }
         }
       }

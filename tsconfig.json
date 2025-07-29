@@ -30,6 +30,11 @@
     "strict": true /* Enable all strict type-checking options. */,
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
   },
-  "include": ["common/**/*.ts", "back/**/*.ts", "front/**/*.ts", "package.json"],
+  "include": [
+    "common/**/*.ts",
+    "back/**/*.ts",
+    "front/**/*.ts",
+    "package.json"
+  ],
   "exclude": ["node_modules", "dist", "build", "contracts"]
-  }
+}

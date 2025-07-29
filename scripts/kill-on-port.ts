@@ -7,30 +7,46 @@ const execAsync = promisify(exec);
 
 async function killProcessOnPort(port: string) {
   try {
-    // Find process using the port
-    const { stdout } = await execAsync(`lsof -i :${port} -t`);
-    const pids = stdout.trim().split("\n").filter(Boolean);
-    
-    if (pids.length === 0) {
-      console.log(`No process found on port ${port}`);
+    const { stdout } = await execAsync(`lsof -i :${port} -P`);
+    const lines = stdout.trim().split("\n").slice(1); // Skip header
+
+    if (lines.length === 0) {
+      console.log(`No process on port ${port}`);
       return;
     }
-    
-    // Kill the processes
-    for (const pid of pids) {
-      console.log(`Killing process ${pid} on port ${port}`);
-      await execAsync(`kill -9 ${pid}`);
+
+    const serverPids = lines
+      .map((line) => {
+        const [command, pid, , , type] = line.split(/\s+/);
+        const isBrowser = /chrome|firefox|safari|edge/i.test(command);
+        const isServer = type === "LISTEN" || /node|bun|next/.test(command);
+        return isServer && !isBrowser ? pid : null;
+      })
+      .filter(Boolean);
+
+    if (serverPids.length === 0) {
+      console.log(`No server processes on port ${port}`);
+      return;
     }
-    
-    // Wait a moment for processes to fully terminate
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log(`Successfully killed process(es) on port ${port}`);
+
+    for (const pid of serverPids) {
+      console.log(`Killing process ${pid}`);
+      try {
+        await execAsync(`kill ${pid}`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+          await execAsync(`kill -0 ${pid}`);
+          await execAsync(`kill -9 ${pid}`);
+        } catch {}
+      } catch {}
+    }
+
+    console.log(`Killed ${serverPids.length} process(es) on port ${port}`);
   } catch (error: any) {
-    if (error.code === 1 && error.stdout === "") {
-      console.log(`No process running on port ${port}`);
+    if (error.code === 1) {
+      console.log(`No process on port ${port}`);
     } else {
-      console.error(`Error killing process on port ${port}:`, error.message);
+      console.error(`Error: ${error.message}`);
     }
   }
 }
