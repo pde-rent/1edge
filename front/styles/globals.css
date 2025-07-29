@@ -1,15 +1,20 @@
-/* Simple reset and base styles */
-* {
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* More selective reset - only for elements that actually need it */
+*, *::before, *::after {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 html, body {
   height: 100%;
   font-family: 'Inter Variable', system-ui, sans-serif;
-  background-color: var(--background-main);
+  background-color: black;
   color: var(--text-primary);
+  margin: 0;
+  padding: 0;
 }
 
 #__next {
@@ -46,7 +51,7 @@ html, body {
   --font-weight-bold: 700;
 
   /* Border radius */
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
   /* Custom variables for MUI components consistency */
   --mui-tooltip-bg: #1C1C1C; /* Match main background */
@@ -55,125 +60,159 @@ html, body {
 
   /* Force dark mode at the HTML level using direct CSS */
   color-scheme: dark;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
 }
 
-/* For the grid layout container */
-.layout {
-  min-height: 100%;
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --radius: var(----radius);
+  
+  @keyframes box1 {
+    0%, 50% {
+      transform: translate(100%, 0);
+    }
+    100% {
+      transform: translate(200%, 0);
+    }
+  }
+  @keyframes box2 {
+    0% {
+      transform: translate(0, 100%);
+    }
+    50% {
+      transform: translate(0, 0);
+    }
+    100% {
+      transform: translate(100%, 0);
+    }
+  }
+  @keyframes box3 {
+    0%, 50% {
+      transform: translate(100%, 100%);
+    }
+    100% {
+      transform: translate(0, 100%);
+    }
+  }
+  @keyframes box4 {
+    0% {
+      transform: translate(200%, 0);
+    }
+    50% {
+      transform: translate(200%, 100%);
+    }
+    100% {
+      transform: translate(100%, 100%);
+    }
+  }
 }
 
-/* Layout helpers */
-.h-full {
-  height: 100%;
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
 }
 
-.w-full {
-  width: 100%;
-}
-
-.overflow-hidden {
-  overflow: hidden;
-}
-
-/* Table styling */
-.table {
-  width: 100%;
-}
-
-.table th {
-  background-color: var(--background-secondary) !important;
-  color: var(--text-secondary) !important;
-  font-weight: 500;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table td {
-  border-top: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  font-size: 0.875rem;
-  padding: 0.5rem;
-}
-
-/* Status colors */
-.status-up {
-  color: #10b981; /* Green */
-}
-
-.status-down {
-  color: #ef4444; /* Red */
-}
-
-.status-unknown {
-  color: #f59e0b; /* Amber */
-}
-
-/* Custom MUI overrides for consistent styling */
-.MuiTooltip-tooltip {
-  background-color: var(--mui-tooltip-bg) !important;
-  border: none !important;
-  box-shadow: var(--mui-shadow) !important;
-  font-size: var(--font-size-xs) !important;
-  color: var(--text-primary) !important;
-}
-
-/* Target all MUI menu and popover components using more specific selectors */
-.MuiPaper-root.MuiMenu-paper,
-.MuiPaper-root.MuiPopover-paper,
-div.MuiMenu-paper,
-div.MuiPopover-paper,
-.MuiPaper-elevation,
-.MuiPaper-elevation1,
-.MuiPaper-rounded,
-.MuiPopover-paper,
-.MuiMenu-paper {
-  background-color: var(--mui-tooltip-bg) !important;
-  border: none !important;
-  /* box-shadow: var(--mui-shadow) !important; */
-  color: var(--text-primary) !important;
-}
-
-/* Target menu list and items */
-.MuiMenu-list,
-.MuiList-root,
-.MuiMenuItem-root,
-.MuiListItem-root,
-ul.MuiList-padding {
-  background-color: var(--mui-tooltip-bg) !important;
-  border: none !important;
-}
-
-/* Ensure menu items hover state is consistent */
-.MuiMenuItem-root:hover,
-.MuiListItem-root:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Override MUI TableCell horizontal padding */
-.MuiTableCell-root {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
-}
-
-/* Section header titles: slightly bigger and less grey */
-.MuiTypography-subtitle1 {
-  font-size: var(--font-size-sm) !important;
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Table styling: applied via className="table" on MUI Table components */
-.table {
-  width: 100%;
-}
-.table th {
-  /* Uniform header background and text style */
-  background-color: var(--background-secondary) !important;
-  color: var(--text-secondary) !important;
-}
-.table td {
-  /* Uniform cell borders and text */
-  border-top: 1px solid var(--border) !important;
-  color: var(--text-primary) !important;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }

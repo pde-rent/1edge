@@ -12,6 +12,9 @@ import {
 } from '@common/constants';
 import { useEffect } from 'react';
 import { WebSocketProvider } from '../contexts/WebSocketContext';
+import { PrivyProvider } from '@privy-io/react-auth';
+import FloatingNavbar from '@/components/Navbar';
+
 
 // Poppins font, adjust as needed
 
@@ -89,16 +92,7 @@ const darkTheme = createTheme({
         }
       }
     },
-    MuiMenu: {
-      styleOverrides: {
-        paper: {
-          backgroundColor: THEME.background.paper,
-          color: THEME.text.primary,
-          border: `1px solid ${THEME.border}`,
-          boxShadow: '0px 2px 4px rgba(0,0,0,0.15)',
-        }
-      }
-    },
+
     MuiCssBaseline: {
       styleOverrides: {
         body: {
@@ -122,13 +116,33 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
     syncThemeWithCSSVars();
   }, []);
 
+  const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+
+  if (!PRIVY_APP_ID) {
+  throw new Error('NEXT_PUBLIC_PRIVY_APP_ID is not defined in .env');
+}
+
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <WebSocketProvider url="ws://localhost:40007/ws">
-        <Component {...pageProps} />
-      </WebSocketProvider>
-    </ThemeProvider>
+    <PrivyProvider
+      appId={PRIVY_APP_ID}
+      config={{
+        embeddedWallets: {
+          ethereum: {
+            createOnLogin: 'users-without-wallets'
+          }
+        }
+      }}
+    >
+      <ThemeProvider theme={darkTheme}>
+        <CssBaseline />
+        <WebSocketProvider url="ws://localhost:40007/ws">
+          <div className="min-h-screen bg-black relative">
+            <FloatingNavbar />
+            <Component {...pageProps} />
+          </div>
+        </WebSocketProvider>
+      </ThemeProvider>
+    </PrivyProvider>
   );
 };
 

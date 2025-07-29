@@ -4,26 +4,31 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import AppInfoPanel from '../components/AppInfoPanel';
 import FeedsPanel from '../components/FeedsPanel';
 import ActiveFeedPanel from '../components/ActiveFeedPanel';
-import OrderBookPanel from '../components/OrderBookPanel';
+import ConfigPanel from '../components/ConfigPanel';
 import StatusPanel from '../components/StatusPanel';
 import PositionsPanel from '../components/PositionsPanel';
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import type { ApiResponse } from '@common/types';
 import { Paper } from '@mui/material';
-import DashboardGrid from "@/components/DashboardGrid";
-import { Loader } from "@/components/ui/luma-spin";
-import { usePrivy } from "@privy-io/react-auth";
-import { HeroSection } from "@/components/Hero-section";
+import Head from 'next/head';
 
-export default function Home() {
-  const { ready, authenticated } = usePrivy();
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import { GRID_CONFIG } from '@common/constants';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
+
+/**
+ * Dashboard grid component containing all the trading bot panels.
+ */
+export default function DashboardGrid() {
   const [selectedFeed, setSelectedFeed] = useState<string | null>(null);
   const [isLayoutLocked, setIsLayoutLocked] = useState(true);
   const [mounted, setMounted] = useState(false); // For preventing SSR layout issues with RGL
+  
   // Dynamic grid sizing based on viewport height and current breakpoint
   const [windowHeight, setWindowHeight] = useState(0);
-  
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setWindowHeight(window.innerHeight);
@@ -32,6 +37,7 @@ export default function Home() {
       return () => window.removeEventListener('resize', handleResize);
     }
   }, []);
+  
   const [breakpoint, setBreakpoint] = useState<'lg'|'md'|'sm'|'xs'|'xxs'>('lg');
   const handleBreakpoint = (newBreakpoint: string) => setBreakpoint(newBreakpoint as any);
   const totalRows = GRID_CONFIG.totalRowsMap[breakpoint] || GRID_CONFIG.totalRowsMap.lg;
@@ -84,66 +90,52 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Set BTCUSDC as default selected feed, fallback to first feed
-    // Only run when feedsResponse changes, not when selectedFeed changes
+    // Set the first feed as selected by default
     if (feedsResponse?.success && feedsResponse.data && feedsResponse.data.length > 0 && selectedFeed === null) {
-      // Look for BTCUSDC first
-      const btcFeed = feedsResponse.data.find(feed => 
-        feed.symbol && feed.symbol.includes('BTCUSDC')
-      );
-      
-      if (btcFeed && btcFeed.symbol) {
-        setSelectedFeed(btcFeed.symbol);
-      } else {
-        // Fallback to first feed if BTCUSDC not found
-        const firstFeed = feedsResponse.data[0];
-        if (firstFeed && firstFeed.symbol) {
-          setSelectedFeed(firstFeed.symbol);
-        }
+      const firstFeed = feedsResponse.data[0];
+      if (firstFeed && firstFeed.symbol) {
+        setSelectedFeed(firstFeed.symbol);
       }
     }
-  }, [feedsResponse]);
+  }, [feedsResponse, selectedFeed]);
 
   const handleLayoutChange = (layout, allLayouts) => {
     // Only update if mounted to avoid SSR mismatch
     if (mounted) {
       setCurrentLayouts(allLayouts);
-      // Automatically save layout changes
-      try {
-        localStorage.setItem('customLayouts', JSON.stringify(allLayouts));
-      } catch (e) {
-        console.error('Failed to auto-save layout', e);
-      }
     }
   };
 
   const handleResetLayout = () => setCurrentLayouts(GRID_CONFIG.initialLayouts);
 
-  // Show loading spinner while Privy is initializing  
-  if (!ready) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-black">
-        <Loader />
-      </div>
-    );
-  }
-
-  // Show hero section for non-authenticated users
-  if (!authenticated) {
-    return (
-      <div className="pt-24 px-4">
-        <HeroSection />
-      </div>
-    );
-  }
-
   // Prevent RGL from rendering on server to avoid layout mismatch
   if (!mounted) {
     return null;
   }
+
+  // Style for the content containers
+  const paperStyle = {
+    height: '100%',
+    width: '100%',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  };
   
+  // Grid item container style
+  const gridItemStyle = { height: '100%', width: '100%', overflow: 'hidden' };
+
   return (
     <>
+      <Head>
+        {/* Custom CSS for resizable corners and dividers */}
+        <style type="text/css">{`
+          /* Make grid items fill available space */
+          .react-grid-layout {
+            width: 100% !important;
+            height: 100vh;
+          }
+
           /* Allow resizing from all corners */
           .react-resizable-handle {
             visibility: ${isLayoutLocked ? 'hidden' : 'visible'};
@@ -249,6 +241,7 @@ export default function Home() {
             isLocked={isLayoutLocked}
             onToggleLock={() => setIsLayoutLocked(!isLayoutLocked)}
             onResetLayout={handleResetLayout}
+            onSaveLayout={handleSaveLayout}
             onLoadLayout={handleLoadLayout}
           />
         </div>
@@ -264,7 +257,7 @@ export default function Home() {
         </div>
         <div key="config" style={gridItemStyle}>
           <Paper sx={paperStyle} elevation={2}>
-            <OrderBookPanel selectedFeed={selectedFeed} />
+            <ConfigPanel />
           </Paper>
         </div>
         <div key="services" style={gridItemStyle}>
