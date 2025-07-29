@@ -20,7 +20,7 @@ module.exports = {
     if (!isServer) {
       config.ignoreWarnings = [
         { message: /ethereum/ },
-        { message: /can't redefine non-configurable property/ }
+        { message: /can't redefine non-configurable property/ },
       ];
     }
 

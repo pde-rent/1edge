@@ -5,39 +5,31 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatNumber(num: number): string {
-  if (Math.abs(num) >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
-  if (Math.abs(num) >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
-  if (Math.abs(num) >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
-  return num.toFixed(2);
-}
+// Re-export from common utils to avoid duplication
+export {
+  roundSig,
+  formatNumber,
+  formatDuration,
+  formatTimestamp as formatDateTime,
+  percentChange,
+  truncateAddress,
+} from "@common/utils";
 
+// Import roundSig for local use
+import { roundSig } from "@common/utils";
+
+/**
+ * Format percentage with sign
+ */
 export function formatPercent(num: number): string {
-  return `${num >= 0 ? "+" : ""}${num.toFixed(2)}%`;
+  return `${num >= 0 ? "+" : ""}${roundSig(num, 6)}%`;
 }
 
-export function formatPrice(price: number, decimals: number = 6): string {
-  return price.toFixed(decimals);
-}
-
-export function formatDateTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleString();
-}
-
-export function formatDuration(ms: number): string {
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-
-  if (days > 0) return `${days}d ${hours % 24}h`;
-  if (hours > 0) return `${hours}h ${minutes % 60}m`;
-  if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
-  return `${seconds}s`;
-}
-
-export function truncateAddress(address: string): string {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+/**
+ * Format price with 6 significant digits
+ */
+export function formatPrice(price: number): string {
+  return roundSig(price, 6).toString();
 }
 
 export function getStatusColor(status: string): string {

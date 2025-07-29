@@ -24,7 +24,10 @@ export const betbotHighlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: THEME.text.secondary, fontStyle: "italic" },
 
   // Punctuation, brackets, and operators - default text color
-  { tag: [tags.punctuation, tags.bracket, tags.operator], color: THEME.text.primary },
+  {
+    tag: [tags.punctuation, tags.bracket, tags.operator],
+    color: THEME.text.primary,
+  },
 
   // Keywords, class names, functions, attributes, and other content - default text color
   {
@@ -99,6 +102,9 @@ export const betbotEditorTheme = EditorView.theme({
 });
 
 // Combined theme export
-export const betbotTheme = [syntaxHighlighting(betbotHighlightStyle), betbotEditorTheme];
+export const betbotTheme = [
+  syntaxHighlighting(betbotHighlightStyle),
+  betbotEditorTheme,
+];
 
 export default betbotTheme;
