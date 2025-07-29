@@ -22,6 +22,7 @@
     "dev:services": "bun run start:collector & bun run start:api & bun run start:websocket & bun run start:status-checker & wait",
     "start:front": "bun run kill:front && cd front && bun run dev",
     "start:all": "bun run back/index.ts",
+    "dev": "bun run start:back & bun run start:front",
     "format:check": "bunx prettier --check '**/*.{ts,js,json,md}'",
     "format": "bunx prettier --write '**/*.{ts,js,json,md}'",
     "lint": "oxlint . && bun run format:check",

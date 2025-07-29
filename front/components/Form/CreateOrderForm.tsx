@@ -141,7 +141,7 @@ const CreateOrderForm = () => {
     };
 
     try {
-      const response = await fetch('/api/strategies', {
+      const response = await fetch('http://localhost:40005/strategies', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -187,8 +187,8 @@ const CreateOrderForm = () => {
                     setOrderType('TWAP');
                   }}
                   className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all ${orderCategory === 'Order'
-                      ? 'bg-green-600 text-white'
-                      : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
+                    ? 'bg-green-600 text-white'
+                    : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
                     }`}
                 >
                   <DollarSign className="w-4 h-4 inline mr-2" />
@@ -201,8 +201,8 @@ const CreateOrderForm = () => {
                     setOrderType('DCA');
                   }}
                   className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all ${orderCategory === 'Strategy'
-                      ? 'bg-green-600 text-white'
-                      : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
+                    ? 'bg-green-600 text-white'
+                    : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
                     }`}
                 >
                   <TrendingUp className="w-4 h-4 inline mr-2" />

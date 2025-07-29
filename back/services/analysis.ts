@@ -28,6 +28,9 @@ export function analyse(ohlcv: TickerOHLCV): TickerAnalysis {
   // Calculate ATR (Average True Range)
   analysis.atr = calculateATR(h, l, c, 14);
 
+  // Calculate ADX
+  analysis.adx = calculateADX(h, l, c, 14);
+
   // Calculate EMA
   analysis.ema = calculateEMA(c, INDICATOR_DEFAULTS.EMA.shortPeriod);
 
@@ -130,6 +133,27 @@ function calculateATR(
   // Pad with NaN for missing values
   const padding = new Array(period).fill(NaN);
   return [...padding, ...atr];
+}
+
+/**
+ * Calculate ADX
+ */
+function calculateADX(
+  high: number[],
+  low: number[],
+  close: number[],
+  period: number,
+): number[] {
+  const adx = ti.ADX.calculate({
+    high: high,
+    low: low,
+    close: close,
+    period: period,
+  });
+
+  // Pad with NaN for missing values
+  const padding = new Array(period * 2 - 1).fill(NaN);
+  return [...padding, ...adx.map((r: any) => r.adx)];
 }
 
 /**

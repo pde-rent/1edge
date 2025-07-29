@@ -360,6 +360,12 @@ class StorageService {
     return results.map((r) => JSON.parse(r.config));
   }
 
+  async getAllStrategies(): Promise<Strategy[]> {
+    const stmt = this.db.prepare(`SELECT config FROM strategies`);
+    const results = stmt.all() as { config: string }[];
+    return results.map((r) => JSON.parse(r.config));
+  }
+
   // Market data cache methods
   async cacheTicker(
     symbol: string,
@@ -469,6 +475,7 @@ export const saveStrategy = (strategy: Strategy) =>
   getStorage().saveStrategy(strategy);
 export const getStrategy = (id: string) => getStorage().getStrategy(id);
 export const getActiveStrategies = () => getStorage().getActiveStrategies();
+export const getAllStrategies = () => getStorage().getAllStrategies();
 export const cacheTicker = (
   symbol: string,
   data: TickerFeed | AggregatedTicker,

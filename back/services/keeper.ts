@@ -8,12 +8,15 @@ import {
   saveOrderEvent,
   saveOrder,
   getOrderEvents,
+  getActiveStrategies,
+  getCachedTicker,
 } from "./storage";
 import { logger } from "@back/utils/logger";
 import type { KeeperConfig, Order, NetworkConfig } from "@common/types";
 import { OrderStatus, OrderEventType } from "@common/types";
 import { NETWORKS } from "@common/constants";
 import { sleep } from "@common/utils";
+import * as ti from "technicalindicators";
 
 class KeeperService {
   private config: KeeperConfig;
@@ -280,6 +283,8 @@ class KeeperService {
   }
 
   private async executeScheduledOrders() {
+    await this.executeMomentumReversalStrategy();
+    await this.executeRangeBreakoutStrategy();
     // TODO: Implement scheduled order execution for complex order types
     // This would handle things like:
     // - Next TWAP interval
@@ -309,6 +314,98 @@ class KeeperService {
     }
 
     return true;
+  }
+
+  private async executeMomentumReversalStrategy() {
+    const strategies = await getActiveStrategies();
+    const momentumReversalStrategies = strategies.filter(
+      (s) => s.type === OrderType.MOMENTUM_REVERSION
+    );
+
+    for (const strategy of momentumReversalStrategies) {
+      const config = strategy.momentumReversalConfig;
+      if (!config) continue;
+
+      const ticker = await getCachedTicker(strategy.symbols[0]);
+      if (!ticker || !ticker.analysis || !ticker.analysis.rsi) continue;
+
+      const rsi = ticker.analysis.rsi;
+      const rsiSma = ti.SMA.calculate({ values: rsi, period: config.rsimaPeriod });
+
+      const lastRsi = rsi[rsi.length - 1];
+      const prevRsi = rsi[rsi.length - 2];
+      const lastRsiSma = rsiSma[rsiSma.length - 1];
+      const prevRsiSma = rsiSma[rsiSma.length - 2];
+
+      const crossedUp = prevRsi < prevRsiSma && lastRsi > lastRsiSma;
+      const crossedDown = prevRsi > prevRsiSma && lastRsi < lastRsiSma;
+
+      if (crossedUp || crossedDown) {
+        const order: Order = {
+          id: `${strategy.id}-${Date.now()}`,
+          strategyId: strategy.id,
+          type: OrderType.LIMIT,
+          status: OrderStatus.PENDING,
+          makerAsset: "WETH", // TODO: get from strategy
+          takerAsset: "USDC", // TODO: get from strategy
+          makingAmount: config.amount,
+          takingAmount: config.amount, // TODO: calculate based on price
+          maker: this.wallets.get(strategy.network)?.address || "",
+          createdAt: Date.now(),
+        };
+
+        await saveOrder(order);
+        logger.info(`Created new order for strategy ${strategy.id}`);
+      }
+    }
+  }
+
+  private async executeRangeBreakoutStrategy() {
+    const strategies = await getActiveStrategies();
+    const rangeBreakoutStrategies = strategies.filter(
+      (s) => s.type === OrderType.RANGE_BREAKOUT
+    );
+
+    for (const strategy of rangeBreakoutStrategies) {
+      const config = strategy.rangeBreakoutConfig;
+      if (!config) continue;
+
+      const ticker = await getCachedTicker(strategy.symbols[0]);
+      if (!ticker || !ticker.analysis || !ticker.analysis.ema || !ticker.analysis.adx) continue;
+
+      const adx = ticker.analysis.adx;
+      const adxSma = ti.SMA.calculate({ values: adx, period: config.adxmaPeriod });
+      const ema = ticker.analysis.ema;
+
+      const lastAdx = adx[adx.length - 1];
+      const prevAdx = adx[adx.length - 2];
+      const lastAdxSma = adxSma[adxSma.length - 1];
+      const prevAdxSma = adxSma[adxSma.length - 2];
+
+      const crossedUp = prevAdx < prevAdxSma && lastAdx > lastAdxSma;
+      
+      if(crossedUp) {
+        const lastEma = ema[ema.length - 1];
+        const prevEma = ema[ema.length - 2];
+        const bullish = lastEma > prevEma;
+
+        const order: Order = {
+          id: `${strategy.id}-${Date.now()}`,
+          strategyId: strategy.id,
+          type: OrderType.LIMIT,
+          status: OrderStatus.PENDING,
+          makerAsset: "WETH", // TODO: get from strategy
+          takerAsset: "USDC", // TODO: get from strategy
+          makingAmount: "1", // TODO: get from strategy
+          takingAmount: "1", // TODO: calculate based on price
+          maker: this.wallets.get(strategy.network)?.address || "",
+          createdAt: Date.now(),
+        };
+
+        await saveOrder(order);
+        logger.info(`Created new order for strategy ${strategy.id}`);
+      }
+    }
   }
 }
 

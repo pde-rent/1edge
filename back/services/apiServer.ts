@@ -1,13 +1,16 @@
 #!/usr/bin/env bun
 
 import { serve } from "bun";
-import { getServiceConfig, getConfig } from "./config";
+import { getServiceConfig, getConfig, getStorageConfig } from "./config";
 import {
+  initStorage,
   getActiveOrders,
   getOrdersByStrategy,
   getActiveStrategies,
   getOpenPositions,
   getCachedTicker,
+  saveStrategy,
+  getAllStrategies,
 } from "./storage";
 import { getTicker, getActiveTickers } from "./marketData";
 import { getActiveTickers as getActiveTickersFromMemory } from "./memoryStorage";
@@ -24,10 +27,11 @@ class ApiServer {
 
   constructor() {
     this.config = getServiceConfig("apiServer");
+    initStorage(getStorageConfig());
   }
 
   async start() {
-    const port = this.config.port || 40005;
+    const port = this.config.port || 40009;
 
     // Connect to price cache
     await priceCache.connect();
@@ -98,7 +102,7 @@ class ApiServer {
 
         case path.startsWith("/api/feeds/history/"):
           return this.handleGetTickerHistory(path, headers);
-          
+
         case path.startsWith("/ticker/"):
         case path.startsWith("/api/feeds/"):
           return this.handleGetTicker(path, headers);
@@ -110,6 +114,9 @@ class ApiServer {
           return this.handleGetOrdersByStrategy(path, headers);
 
         case path === "/strategies":
+          if (request.method === "POST") {
+            return this.handleSaveStrategy(request, headers);
+          }
           return this.handleGetStrategies(headers);
 
         case path === "/positions":
@@ -123,7 +130,7 @@ class ApiServer {
 
         case path.startsWith("/orderbook/"):
           return this.handleOrderbook(path, url, headers);
-        
+
         case path.startsWith("/orderbook-symbol/"):
           return this.handleOrderbookSymbol(path, url, headers);
 
@@ -251,13 +258,13 @@ class ApiServer {
         last:
           priceData.last || priceData.mid
             ? {
-                bid: priceData.bid || 0,
-                ask: priceData.ask || 0,
-                mid: priceData.mid || 0,
-                last: priceData.last || priceData.mid || 0,
-                volume: priceData.volume || 0,
-                timestamp: priceData.timestamp || Date.now(),
-              }
+              bid: priceData.bid || 0,
+              ask: priceData.ask || 0,
+              mid: priceData.mid || 0,
+              last: priceData.last || priceData.mid || 0,
+              volume: priceData.volume || 0,
+              timestamp: priceData.timestamp || Date.now(),
+            }
             : null,
         history: priceData.history || {
           ts: [],
@@ -310,13 +317,13 @@ class ApiServer {
       last:
         priceData.last || priceData.mid
           ? {
-              bid: priceData.bid || 0,
-              ask: priceData.ask || 0,
-              mid: priceData.mid || 0,
-              last: priceData.last || priceData.mid || 0,
-              volume: priceData.volume || 0,
-              timestamp: priceData.timestamp || Date.now(),
-            }
+            bid: priceData.bid || 0,
+            ask: priceData.ask || 0,
+            mid: priceData.mid || 0,
+            last: priceData.last || priceData.mid || 0,
+            volume: priceData.volume || 0,
+            timestamp: priceData.timestamp || Date.now(),
+          }
           : null,
       history: priceData.history || {
         ts: [],
@@ -347,8 +354,19 @@ class ApiServer {
   }
 
   private async handleGetStrategies(headers: any): Promise<Response> {
-    const strategies = await getActiveStrategies();
+    const strategies = await getAllStrategies();
     return this.jsonResponse({ success: true, data: strategies }, headers);
+  }
+
+  private async handleSaveStrategy(request: Request, headers: any): Promise<Response> {
+    try {
+      const strategy = await request.json();
+      await saveStrategy(strategy);
+      return this.jsonResponse({ success: true, message: "Strategy saved" }, headers);
+    } catch (error) {
+      logger.error("Failed to save strategy:", error);
+      return this.jsonResponse({ success: false, error: "Failed to save strategy" }, headers, 500);
+    }
   }
 
   private async handleGetPositions(url: URL, headers: any): Promise<Response> {
@@ -431,13 +449,13 @@ class ApiServer {
       last:
         priceData.last || priceData.mid
           ? {
-              bid: priceData.bid || 0,
-              ask: priceData.ask || 0,
-              mid: priceData.mid || 0,
-              last: priceData.last || priceData.mid || 0,
-              volume: priceData.volume || 0,
-              timestamp: priceData.timestamp || Date.now(),
-            }
+            bid: priceData.bid || 0,
+            ask: priceData.ask || 0,
+            mid: priceData.mid || 0,
+            last: priceData.last || priceData.mid || 0,
+            volume: priceData.volume || 0,
+            timestamp: priceData.timestamp || Date.now(),
+          }
           : null,
       history: filteredHistory,
       analysis: priceData.analysis || null,
@@ -499,7 +517,7 @@ class ApiServer {
           quoteAsset,
           limit,
         );
-        
+
         logger.info(`🔍 Orderbook result summary: bids=${orderbook.bids.length}, asks=${orderbook.asks.length}, spotPrice=${orderbook.summary.spotPrice}`);
       } else if (pathParts.length === 2) {
         // Market overview: /orderbook/{chain}
@@ -576,7 +594,7 @@ class ApiServer {
       }
 
       const symbol = pathParts[2];
-      
+
       // Get query parameters
       const limitParam = url.searchParams.get("limit");
       const limit = limitParam ? Math.min(parseInt(limitParam), 1000) : 500;

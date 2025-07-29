@@ -1,4 +1,5 @@
 // @ts-nocheck
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { roundSig } from '@common/utils';
@@ -9,8 +10,26 @@ import { TrendingUp, BarChart3 } from 'lucide-react';
  * Currently shows a placeholder until real positions are available.
  */
 export default function PositionsPanel() {
-  // Empty array for now, but will be populated with real positions later
-  const positions = [];
+  const [strategies, setStrategies] = useState([]);
+
+  useEffect(() => {
+    const fetchStrategies = async () => {
+      try {
+        const response = await fetch('http://localhost:40005/strategies');
+        if (response.ok) {
+          const data = await response.json();
+          setStrategies(data.data);
+        }
+      } catch (error) {
+        console.error('Failed to fetch strategies:', error);
+      }
+    };
+
+    fetchStrategies();
+    const interval = setInterval(fetchStrategies, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   /**
    * Formats a timestamp for display.
@@ -78,15 +97,15 @@ export default function PositionsPanel() {
     const shortTypes = ['short', 'short_limit', 'short_stop'];
 
     if (buyTypes.includes(type.toLowerCase())) {
-      return { 
-        variant: 'outline', 
-        className: 'bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20' 
+      return {
+        variant: 'outline',
+        className: 'bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20'
       };
     }
     if (shortTypes.includes(type.toLowerCase())) {
-      return { 
-        variant: 'outline', 
-        className: 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20' 
+      return {
+        variant: 'outline',
+        className: 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20'
       };
     }
 
@@ -112,7 +131,7 @@ export default function PositionsPanel() {
             <BarChart3 className="w-4 h-4 text-green-400" />
             <h2 className="text-lg font-semibold text-gray-100">Positions</h2>
           </div>
-          
+
           {/* Status indicator */}
           <div className="flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-gray-500" />
@@ -121,7 +140,7 @@ export default function PositionsPanel() {
             </span>
           </div>
         </div>
-        
+
         {/* Subtitle */}
         <p className="text-xs text-gray-400 mt-1 leading-relaxed">
           Monitoring aggregated strategy positions across platform. Positions can be ordered, open, or closed.
@@ -131,67 +150,52 @@ export default function PositionsPanel() {
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
         {/* Table Header */}
         <div className="grid grid-cols-12 gap-2 px-3 py-2 border-b border-gray-800 bg-gray-900/40 flex-shrink-0 text-xs font-medium text-gray-400 uppercase tracking-wide">
-          <div className="col-span-2">Strategy</div>
-          <div className="col-span-2">Market</div>
-          <div className="col-span-1">Type</div>
-          <div className="col-span-2 text-right">Size</div>
-          <div className="col-span-2 text-right">Entry</div>
-          <div className="col-span-2 text-right">Updated</div>
-          <div className="col-span-1 text-right">PnL</div>
+          <div className="col-span-3">Name</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-2">Status</div>
+          <div className="col-span-2 text-right">Started</div>
+          <div className="col-span-3 text-right">Last Update</div>
         </div>
 
         {/* Table Body - Scrollable */}
         <div className="flex-1 overflow-y-auto bg-gray-950">
-          {positions.length > 0 ? (
-            positions.map((position) => {
-              const typeBadgeStyle = getTypeBadgeStyle(position.type);
+          {strategies.length > 0 ? (
+            strategies.map((strategy) => {
               return (
                 <div
-                  key={position.id}
+                  key={strategy.id}
                   className="grid grid-cols-12 gap-2 px-3 py-2 hover:bg-gray-800/30 transition-colors duration-200 border-b border-gray-900/50"
                 >
-                  <div className="col-span-2 flex items-center">
+                  <div className="col-span-3 flex items-center">
                     <span className="text-sm text-gray-200 truncate font-medium">
-                      {position.strategy}
+                      {strategy.name}
                     </span>
                   </div>
-                  
+
                   <div className="col-span-2 flex items-center">
                     <span className="text-sm text-gray-300 truncate font-mono">
-                      {position.market}
+                      {strategy.type}
                     </span>
                   </div>
-                  
-                  <div className="col-span-1 flex items-center">
+
+                  <div className="col-span-2 flex items-center">
                     <Badge
-                      variant={typeBadgeStyle.variant}
-                      className={`text-xs h-5 px-2 ${typeBadgeStyle.className}`}
+                      variant={strategy.status === 'Running' ? 'default' : 'outline'}
+                      className={`text-xs h-5 px-2`}
                     >
-                      {position.type}
+                      {strategy.status}
                     </Badge>
                   </div>
-                  
-                  <div className="col-span-2 flex items-center justify-end">
-                    <span className="text-sm font-mono text-gray-300 tabular-nums">
-                      {formatSize(position.size)}
-                    </span>
-                  </div>
-                  
-                  <div className="col-span-2 flex items-center justify-end">
-                    <span className="text-sm font-mono text-gray-300 tabular-nums">
-                      {formatEntry(position.entry)}
-                    </span>
-                  </div>
-                  
+
                   <div className="col-span-2 flex items-center justify-end">
                     <span className="text-xs font-mono text-gray-400 tabular-nums">
-                      {formatTimestamp(position.updatedAt)}
+                      {formatTimestamp(strategy.startedAt)}
                     </span>
                   </div>
-                  
-                  <div className="col-span-1 flex items-center justify-end">
-                    <span className={`text-sm font-mono font-semibold tabular-nums ${getPnLColor(position.pnl)}`}>
-                      {formatPnL(position.pnl)}
+
+                  <div className="col-span-3 flex items-center justify-end">
+                    <span className="text-xs font-mono text-gray-400 tabular-nums">
+                      {formatTimestamp(strategy.updatedAt)}
                     </span>
                   </div>
                 </div>
@@ -214,7 +218,7 @@ export default function PositionsPanel() {
         <div className="px-3 py-2 border-t border-gray-800 bg-gray-900/40 flex-shrink-0">
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span className="font-mono">
-              {positions.length} position{positions.length !== 1 ? 's' : ''} shown
+              {strategies.length} position{strategies.length !== 1 ? 's' : ''} shown
             </span>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1">

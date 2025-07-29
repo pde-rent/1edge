@@ -175,6 +175,7 @@ export enum OrderType {
   // Strategy-based orders
   NAIVE_REVERSION = "NAIVE_REVERSION",
   MOMENTUM_REVERSION = "MOMENTUM_REVERSION",
+  RANGE_BREAKOUT = "RANGE_BREAKOUT",
   TREND_FOLLOWING = "TREND_FOLLOWING",
   // Control orders
   CANCEL = "CANCEL",
@@ -222,6 +223,28 @@ export interface IcebergConfig {
   visibleAmount: string;
   priceLimit: string;
   refreshThreshold: number; // Percentage before refresh
+}
+
+/**
+ * Momentum Reversal Trading configuration
+ */
+export interface MomentumReversalConfig {
+  amount: string;
+  rsiPeriod: number;
+  rsimaPeriod: number;
+  tpPct: number;
+  slPct: number;
+}
+
+/**
+ * Range Breakout Trading configuration
+ */
+export interface RangeBreakoutConfig {
+  adxPeriod: number;
+  adxmaPeriod: number;
+  emaPeriod: number;
+  tpPct: number;
+  slPct: number;
 }
 
 /**
@@ -279,6 +302,8 @@ export interface StrategyConfig {
   rangeConfig?: RangeOrderConfig;
   icebergConfig?: IcebergConfig;
   marketMakingConfig?: MarketMakingConfig;
+  momentumReversalConfig?: MomentumReversalConfig;
+  rangeBreakoutConfig?: RangeBreakoutConfig;
   // Triggers and conditions
   triggers?: TriggerCondition[];
   // Risk management
