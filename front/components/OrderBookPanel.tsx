@@ -424,7 +424,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             <Chip 
               label={orderbook.summary.totalBidOrders} 
               size="small" 
-              sx={{ fontSize: '0.65rem', height: 16, backgroundColor: THEME.success + '20', color: THEME.success }} 
+              sx={{ fontSize: THEME.font.size.xs, height: 16, backgroundColor: THEME.primary + '20', color: THEME.primary }} 
             />
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -432,13 +432,13 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             <Chip 
               label={orderbook.summary.totalAskOrders} 
               size="small" 
-              sx={{ fontSize: '0.65rem', height: 16, backgroundColor: THEME.error + '20', color: THEME.error }} 
+              sx={{ fontSize: THEME.font.size.xs, height: 16, backgroundColor: THEME.secondary + '20', color: THEME.secondary }} 
             />
           </Box>
           {orderbook.summary.spread && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography variant="caption" color="text.secondary">Spread:</Typography>
-              <Typography variant="caption" sx={{ fontFamily: 'monospace', color: THEME.text.primary }}>
+              <Typography variant="caption" sx={{ fontFamily: THEME.font.mono, color: THEME.text.primary }}>
                 {orderbook.summary.spread}
               </Typography>
             </Box>
@@ -446,8 +446,8 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         </Box>
       </Box>
 
-      {/* Orderbook Table */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
+      {/* Orderbook Table - match StatusPanel table styling */}
+      <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
         {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <Typography color="text.secondary">No active orders found</Typography>
@@ -456,13 +456,41 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             </Typography>
           </Box>
         ) : (
-          <Table size="small" stickyHeader>
+          <Table size="small" stickyHeader className="table" sx={{ width: '100%' }}>  // Match StatusPanel table
             <TableHead>
               <TableRow>
-                <TableCell sx={{ py: 1, px: 1, fontSize: '0.7rem', fontWeight: 600 }}>Price</TableCell>
-                <TableCell sx={{ py: 1, px: 1, fontSize: '0.7rem', fontWeight: 600 }}>Amount</TableCell>
-                <TableCell sx={{ py: 1, px: 1, fontSize: '0.7rem', fontWeight: 600 }}>Total</TableCell>
-                <TableCell sx={{ py: 1, px: 1, fontSize: '0.7rem', fontWeight: 600 }}>Orders</TableCell>
+                <TableCell sx={{ 
+                  py: 1, px: 1.5, 
+                  fontWeight: THEME.font.weight.medium,
+                  fontSize: THEME.font.size.xs,
+                  textTransform: 'uppercase',
+                  color: THEME.text.secondary,
+                  letterSpacing: '0.5px'
+                }}>Price</TableCell>
+                <TableCell sx={{ 
+                  py: 1, px: 1.5,
+                  fontWeight: THEME.font.weight.medium,
+                  fontSize: THEME.font.size.xs,
+                  textTransform: 'uppercase', 
+                  color: THEME.text.secondary,
+                  letterSpacing: '0.5px'
+                }}>Amount</TableCell>
+                <TableCell sx={{ 
+                  py: 1, px: 1.5,
+                  fontWeight: THEME.font.weight.medium,
+                  fontSize: THEME.font.size.xs,
+                  textTransform: 'uppercase',
+                  color: THEME.text.secondary,
+                  letterSpacing: '0.5px'
+                }}>Total</TableCell>
+                <TableCell sx={{ 
+                  py: 1, px: 1.5,
+                  fontWeight: THEME.font.weight.medium,
+                  fontSize: THEME.font.size.xs,
+                  textTransform: 'uppercase',
+                  color: THEME.text.secondary,
+                  letterSpacing: '0.5px'
+                }}>Orders</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -476,7 +504,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                     {spotPrice && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Typography variant="caption" color="text.secondary">Spot:</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', color: THEME.primary, fontWeight: 600 }}>
+                        <Typography variant="body2" sx={{ fontFamily: THEME.font.mono, color: THEME.primary, fontWeight: THEME.font.weight.bold }}>
                           {formatPrice(spotPrice.toString())}
                         </Typography>
                       </Box>
@@ -484,7 +512,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                     {orderbook.summary.bestBid && orderbook.summary.bestAsk && orderbook.summary.spread && (
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                         <Typography variant="caption" color="text.secondary">Spread:</Typography>
-                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: THEME.text.primary }}>
+                        <Typography variant="caption" sx={{ fontFamily: THEME.font.mono, color: THEME.text.primary }}>
                           {orderbook.summary.spread}
                         </Typography>
                       </Box>
@@ -498,16 +526,16 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             </TableBody>
           </Table>
         )}
-      </Box>
+      </TableContainer>
 
       {/* Footer with controls */}
       <Box sx={{ p: 1, borderTop: `1px solid ${THEME.border}`, backgroundColor: THEME.background.overlay05 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="caption" color="text.secondary">
+          <Typography variant="caption" sx={{ color: THEME.text.secondary, fontFamily: THEME.font.mono }}>
             Showing top 10 levels per side
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Auto-refresh: 60s
+          <Typography variant="caption" sx={{ color: THEME.text.secondary, fontFamily: THEME.font.mono }}>
+            Auto-refresh: 60s • Real-time filtering: {realtimeSpotPrice ? 'ON' : 'OFF'}
           </Typography>
         </Box>
       </Box>
