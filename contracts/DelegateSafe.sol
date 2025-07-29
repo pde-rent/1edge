@@ -25,8 +25,7 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
     error CallerNotApprovedKeeper();
     error KeeperNotApproved(address);
     error KeeperAlreadyApproved(address);
-    error StrategyAlreadyApproved(IStrategy);
-    error StrategyNotApproved(IStrategy);
+
     error CallerNotLimitOrderProtocol();
     error OrderAlreadyExecutedOrCancelled();
     error CallerNotOrderCreator();
@@ -34,8 +33,6 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
     error InvalidMakerTraits();
 
     // Events
-    event StrategyApproved(IStrategy strategy);
-    event StrategyRevoked(IStrategy strategy);
     event KeeperApproved(address keeper);
     event KeeperRevoked(address keeper);
     event OrderCreated(bytes32 indexed orderId, IStrategy strategy, IOrderMixin.Order order);
@@ -79,12 +76,6 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
     function createUserOrder(bytes memory data) external onlyApprovedKeeper {
         (IStrategy orderStrategy, bytes memory _orderDataWithSig) = abi.decode(data, (IStrategy, bytes));
         CreateOrderParams[] memory params = orderStrategy.computeStrategyOrders(_orderDataWithSig);
-        // ensure that the strategy is approved to interact with this contract.
-        _isApprovedStrategy(orderStrategy);
-
-        // if (ordersToExecute.length != extensions.length) {
-        //     revert StrategyOrderLengthMismatch();
-        // }
 
         for (uint256 i = 0; i < params.length; i++) {
             _pullFunds(IERC20(params[i].order.makerAsset.get()), params[i].orderCreator, params[i].order.makingAmount);
@@ -131,8 +122,8 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
         if (order.maker.get() != address(this)) {
             revert InvalidMakerAddress();
         }
-        bool isInvalidExtension = uint256(keccak256(extension)) & type(uint160).max != order.salt & type(uint160).max;
-        if (!order.makerTraits.hasExtension() || isInvalidExtension) {
+        bool validExtension = uint256(keccak256(extension)) & type(uint160).max == order.salt & type(uint160).max;
+        if (!order.makerTraits.hasExtension() || !validExtension) {
             revert InvalidMakerTraits();
         }
 
@@ -224,22 +215,5 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
         }
         approvedKeeper[keeper] = false;
         emit KeeperRevoked(keeper);
-    }
-
-    function approveStrategy(IStrategy strategy) external onlyOwner {
-        // approve the strategy to interact with this contract
-        if (approvedStrategy[strategy]) {
-            revert StrategyAlreadyApproved(strategy);
-        }
-        approvedStrategy[strategy] = true;
-        emit StrategyApproved(strategy);
-    }
-
-    function revokeStrategy(IStrategy strategy) external onlyOwner {
-        if (!approvedStrategy[strategy]) {
-            revert StrategyNotApproved(strategy);
-        }
-        approvedStrategy[strategy] = false;
-        emit StrategyRevoked(strategy);
     }
 }
