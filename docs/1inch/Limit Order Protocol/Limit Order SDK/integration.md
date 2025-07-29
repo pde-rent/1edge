@@ -11,17 +11,17 @@ Limit orders revolutionize DeFi trading by allowing users to define exact price 
 
 ### Order Lifecycle
 
-| Phase | 📍 Location | 🔧 Action | ⚙️ Technology |
-|-------|-------------|-----------|---------------|
-| **1. Creation** | 🌐 Off-chain | Define trade parameters | 📝 SDK |
-| **2. Signing** | 🔐 Off-chain | Cryptographic authorization | ✍️ EIP-712 |
-| **3. Sharing** | 📡 API | Broadcast to orderbook | 🌐 1inch API |
-| **4. Execution** | ⛓️ On-chain | Smart contract fulfillment | 🏗️ Protocol |
+| Phase            | 📍 Location  | 🔧 Action                   | ⚙️ Technology |
+| ---------------- | ------------ | --------------------------- | ------------- |
+| **1. Creation**  | 🌐 Off-chain | Define trade parameters     | 📝 SDK        |
+| **2. Signing**   | 🔐 Off-chain | Cryptographic authorization | ✍️ EIP-712    |
+| **3. Sharing**   | 📡 API       | Broadcast to orderbook      | 🌐 1inch API  |
+| **4. Execution** | ⛓️ On-chain  | Smart contract fulfillment  | 🏗️ Protocol   |
 
 ### Key Benefits
 
 - **🎯 Precision**: Execute trades at exact target prices
-- **⚡ Efficiency**: Gas-optimized smart contract execution  
+- **⚡ Efficiency**: Gas-optimized smart contract execution
 - **🔒 Security**: Cryptographically signed and verified
 - **🌐 Accessibility**: Available across multiple networks
 
@@ -46,7 +46,8 @@ import {
 import { Wallet } from "ethers";
 
 // ⚠️ Example private key (NEVER use in production!)
-const privateKey = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const privateKey =
+  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 const maker = new Wallet(privateKey);
 
 // 🔧 Initialize SDK with authentication
@@ -92,13 +93,13 @@ await sdk.submitOrder(order, signature);
 
 ### Step-by-Step Breakdown
 
-| Step | 🎯 Purpose | 📝 Details |
-|------|------------|------------|
-| **1. SDK Setup** | Initialize connection | Configure network, auth, and HTTP provider |
-| **2. Traits Config** | Define order behavior | Set expiration, nonce, and other parameters |
-| **3. Order Creation** | Specify trade details | Set tokens, amounts, and maker address |
-| **4. Signature** | Cryptographic proof | EIP-712 signing for security |
-| **5. Submission** | Broadcast order | Share with orderbook for matching |
+| Step                  | 🎯 Purpose            | 📝 Details                                  |
+| --------------------- | --------------------- | ------------------------------------------- |
+| **1. SDK Setup**      | Initialize connection | Configure network, auth, and HTTP provider  |
+| **2. Traits Config**  | Define order behavior | Set expiration, nonce, and other parameters |
+| **3. Order Creation** | Specify trade details | Set tokens, amounts, and maker address      |
+| **4. Signature**      | Cryptographic proof   | EIP-712 signing for security                |
+| **5. Submission**     | Broadcast order       | Share with orderbook for matching           |
 
 ---
 
@@ -112,7 +113,7 @@ await sdk.submitOrder(order, signature);
 The EIP-712 signature provides multiple layers of protection:
 
 - **🎯 Precision**: Order can only be filled with exact parameters specified
-- **🔐 Authentication**: Cryptographically proves maker authorization  
+- **🔐 Authentication**: Cryptographically proves maker authorization
 - **⛓️ Domain Binding**: Tied to specific network and protocol version
 - **🚫 Replay Protection**: Prevents cross-chain and cross-protocol attacks
 
@@ -128,13 +129,13 @@ The EIP-712 signature provides multiple layers of protection:
 
 ### Core Configuration Options
 
-| Feature | 📝 Description | 🔧 Method | ✅ Default |
-|---------|----------------|-----------|------------|
-| **Partial Fills** | Allow order to be filled in chunks | `.withPartialFill()` | Enabled |
-| **Multiple Fills** | Allow same order to be filled multiple times | `.allowMultipleFills()` | Disabled |
-| **Expiration** | Set order deadline timestamp | `.withExpiration(timestamp)` | None |
-| **Nonce** | Unique identifier for order | `.withNonce(value)` | Random |
-| **Private Orders** | Restrict filling to specific address | `.withAllowedSender(address)` | Public |
+| Feature            | 📝 Description                               | 🔧 Method                     | ✅ Default |
+| ------------------ | -------------------------------------------- | ----------------------------- | ---------- |
+| **Partial Fills**  | Allow order to be filled in chunks           | `.withPartialFill()`          | Enabled    |
+| **Multiple Fills** | Allow same order to be filled multiple times | `.allowMultipleFills()`       | Disabled   |
+| **Expiration**     | Set order deadline timestamp                 | `.withExpiration(timestamp)`  | None       |
+| **Nonce**          | Unique identifier for order                  | `.withNonce(value)`           | Random     |
+| **Private Orders** | Restrict filling to specific address         | `.withAllowedSender(address)` | Public     |
 
 ### Advanced Configuration Example
 
@@ -156,6 +157,7 @@ const advancedTraits = MakerTraits.default()
 ### Use Case Examples
 
 #### Standard Trading Order
+
 ```javascript
 // Simple buy/sell order with expiration
 const standardTraits = MakerTraits.default()
@@ -163,7 +165,8 @@ const standardTraits = MakerTraits.default()
   .withNonce(randBigInt(UINT_40_MAX));
 ```
 
-#### Market Maker Order  
+#### Market Maker Order
+
 ```javascript
 // Professional market maker configuration
 const marketMakerTraits = MakerTraits.default()
@@ -173,6 +176,7 @@ const marketMakerTraits = MakerTraits.default()
 ```
 
 #### Private Order
+
 ```javascript
 // Restricted to specific taker
 const privateTraits = MakerTraits.default()
@@ -190,24 +194,26 @@ const privateTraits = MakerTraits.default()
 
 ### Core Order Fields
 
-| Field | 📝 Type | 💭 Description | 📏 Format |
-|-------|---------|----------------|-----------|
-| **`makerAsset`** | `Address` | 💰 Token being sold by maker | ERC-20 contract address |
-| **`takerAsset`** | `Address` | 💎 Token expected from taker | ERC-20 contract address |
-| **`makingAmount`** | `bigint` | 📊 Amount maker is offering | Wei units (respect token decimals) |
-| **`takingAmount`** | `bigint` | 🎯 Amount maker wants in return | Wei units (respect token decimals) |
-| **`maker`** | `Address` | 👤 Order creator's wallet address | Ethereum address |
+| Field              | 📝 Type   | 💭 Description                    | 📏 Format                          |
+| ------------------ | --------- | --------------------------------- | ---------------------------------- |
+| **`makerAsset`**   | `Address` | 💰 Token being sold by maker      | ERC-20 contract address            |
+| **`takerAsset`**   | `Address` | 💎 Token expected from taker      | ERC-20 contract address            |
+| **`makingAmount`** | `bigint`  | 📊 Amount maker is offering       | Wei units (respect token decimals) |
+| **`takingAmount`** | `bigint`  | 🎯 Amount maker wants in return   | Wei units (respect token decimals) |
+| **`maker`**        | `Address` | 👤 Order creator's wallet address | Ethereum address                   |
 
 ### Field Best Practices
 
 #### Amount Calculations
+
 ```javascript
 // 🧮 Always account for token decimals
-const usdtAmount = 100n * 10n ** 6n;  // 100 USDT (6 decimals)
-const inchAmount = 10n * 10n ** 18n;  // 10 1INCH (18 decimals)
+const usdtAmount = 100n * 10n ** 6n; // 100 USDT (6 decimals)
+const inchAmount = 10n * 10n ** 18n; // 10 1INCH (18 decimals)
 ```
 
 #### Address Validation
+
 ```javascript
 // ✅ Use Address wrapper for type safety
 import { Address } from "@1inch/limit-order-sdk";
@@ -246,12 +252,12 @@ try {
 
 ### Benefits of Orderbook Submission
 
-| Advantage | 📝 Description | 🚀 Impact |
-|-----------|----------------|-----------|
-| **🌍 Global Reach** | Visible to all network participants | Higher fill probability |
-| **⚡ Fast Matching** | Professional resolver network | Quick execution |
-| **💰 Best Prices** | Competitive market environment | Optimal pricing |
-| **🔍 Transparency** | Public order visibility | Market confidence |
+| Advantage            | 📝 Description                      | 🚀 Impact               |
+| -------------------- | ----------------------------------- | ----------------------- |
+| **🌍 Global Reach**  | Visible to all network participants | Higher fill probability |
+| **⚡ Fast Matching** | Professional resolver network       | Quick execution         |
+| **💰 Best Prices**   | Competitive market environment      | Optimal pricing         |
+| **🔍 Transparency**  | Public order visibility             | Market confidence       |
 
 ### Alternative Approaches
 
@@ -259,7 +265,7 @@ try {
 > Orderbook submission is optional. You can also:
 
 - **🔗 Direct Integration**: Embed orders in your own application
-- **🤝 Private Sharing**: Share orders with specific counterparties  
+- **🤝 Private Sharing**: Share orders with specific counterparties
 - **📡 Custom APIs**: Build your own order distribution system
 
 ---

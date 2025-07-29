@@ -1,16 +1,16 @@
 /**
  * 🏢 Smart Contract Maker Implementation Example
- * 
+ *
  * This example demonstrates how smart contracts can act as order makers in the
  * 1inch Limit Order Protocol, including contract-signed RFQ orders and
  * automated market making strategies.
- * 
+ *
  * 📚 Related Documentation:
  * - Maker Contract Guide: ../limit-order-maker-contract.md
  * - RFQ Orders: ../Limit Order SDK/overview.md#rfq-orders
  * - Contract Integration: ../limit-order-taker-contract.md
  * - SDK Overview: ../Limit Order SDK/overview.md
- * 
+ *
  * 🎯 Key Features:
  * - Contract-signed order creation
  * - RFQ (Request for Quote) order patterns
@@ -19,21 +19,17 @@
  * - Multi-token pair support
  */
 
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { expect } from '@1inch/solidity-utils';
-import { ethers, HardhatEthersSigner } from 'hardhat';
-import { ether } from './helpers/utils';
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { expect } from "@1inch/solidity-utils";
+import { ethers, HardhatEthersSigner } from "hardhat";
+import { ether } from "./helpers/utils";
 import {
   ABIOrder,
   fillWithMakingAmount,
   buildMakerTraitsRFQ,
   buildOrderRFQ,
-} from './helpers/orderUtils';
-import {
-  deploySwap,
-  deployUSDC,
-  deployUSDT,
-} from './helpers/fixtures';
+} from "./helpers/orderUtils";
+import { deploySwap, deployUSDC, deployUSDT } from "./helpers/fixtures";
 
 // 📝 Type definitions for contract maker testing
 interface TestTokens {
@@ -68,7 +64,7 @@ interface BalanceSnapshot {
   takerUsdt: bigint;
 }
 
-describe('🏢 Smart Contract Maker Implementation', function () {
+describe("🏢 Smart Contract Maker Implementation", function () {
   let testAccount: HardhatEthersSigner;
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
@@ -78,7 +74,7 @@ describe('🏢 Smart Contract Maker Implementation', function () {
 
   /**
    * 🏗️ Deploy and initialize maker contract system
-   * 
+   *
    * Sets up:
    * - LimitOrderProtocol swap contract
    * - USDC and USDT test tokens
@@ -92,21 +88,21 @@ describe('🏢 Smart Contract Maker Implementation', function () {
     const { usdt } = await deployUSDT();
 
     // 🏢 Deploy RFQ Maker Contract
-    const MakerContract = await ethers.getContractFactory('MakerContract');
-    const exchangeRate = ether('0.9993'); // Slightly below 1:1 for fees
+    const MakerContract = await ethers.getContractFactory("MakerContract");
+    const exchangeRate = ether("0.9993"); // Slightly below 1:1 for fees
     const makerContract = await MakerContract.deploy(
       swap.address,
       usdc.address,
       usdt.address,
       exchangeRate,
-      'USDT+USDC', // Token pair name
-      'USDX'       // LP token symbol
+      "USDT+USDC", // Token pair name
+      "USDX", // LP token symbol
     );
     await makerContract.waitForDeployment();
 
     // 💰 Initialize token balances
-    const tokenAmount = '1000000000'; // 1B tokens (considering decimals)
-    
+    const tokenAmount = "1000000000"; // 1B tokens (considering decimals)
+
     // Mint tokens to test account and maker contract
     await usdc.mint(testAccount.address, tokenAmount);
     await usdt.mint(testAccount.address, tokenAmount);
@@ -130,11 +126,15 @@ describe('🏢 Smart Contract Maker Implementation', function () {
   async function captureBalances(
     tokens: TestTokens,
     contracts: TestContracts,
-    account: HardhatEthersSigner
+    account: HardhatEthersSigner,
   ): Promise<BalanceSnapshot> {
     return {
-      contractUsdc: await tokens.usdc.balanceOf(contracts.makerContract.address),
-      contractUsdt: await tokens.usdt.balanceOf(contracts.makerContract.address),
+      contractUsdc: await tokens.usdc.balanceOf(
+        contracts.makerContract.address,
+      ),
+      contractUsdt: await tokens.usdt.balanceOf(
+        contracts.makerContract.address,
+      ),
       takerUsdc: await tokens.usdc.balanceOf(account.address),
       takerUsdt: await tokens.usdt.balanceOf(account.address),
     };
@@ -142,23 +142,29 @@ describe('🏢 Smart Contract Maker Implementation', function () {
 
   /**
    * 🚀 Test: Contract-Signed RFQ Order Execution
-   * 
+   *
    * Scenario:
    * - Smart contract acts as maker for USDC → USDT exchange
    * - Create RFQ order with contract signature
    * - Execute order using fillContractOrder
    * - Verify automated market making functionality
-   * 
+   *
    * 💡 Use Case:
    * Automated market makers, liquidity pools, or treasury management contracts
    */
-  it('🚀 Execute contract-signed RFQ order', async function () {
-    const { tokens, contracts, testAccount } = await loadFixture(deployMakerContractSystem);
+  it("🚀 Execute contract-signed RFQ order", async function () {
+    const { tokens, contracts, testAccount } = await loadFixture(
+      deployMakerContractSystem,
+    );
     const { usdc, usdt } = tokens;
     const { swap, makerContract } = contracts;
 
     // 📊 Capture initial balances
-    const balancesBefore = await captureBalances(tokens, contracts, testAccount);
+    const balancesBefore = await captureBalances(
+      tokens,
+      contracts,
+      testAccount,
+    );
 
     // 📝 Create first RFQ order: USDC → USDT
     const firstOrderConfig: RFQOrderConfig = {
@@ -196,68 +202,80 @@ describe('🏢 Smart Contract Maker Implementation', function () {
       firstOrder,
       firstSignature,
       fillAmount,
-      makingAmountFlag
+      makingAmountFlag,
     );
 
     // ✅ Verify first order execution
-    const balancesAfterFirst = await captureBalances(tokens, contracts, testAccount);
-    
-    expect(balancesAfterFirst.contractUsdc)
-      .to.equal(balancesBefore.contractUsdc - 1000000n);
-    expect(balancesAfterFirst.takerUsdc)
-      .to.equal(balancesBefore.takerUsdc + 1000000n);
-    expect(balancesAfterFirst.contractUsdt)
-      .to.equal(balancesBefore.contractUsdt + 1000700n);
-    expect(balancesAfterFirst.takerUsdt)
-      .to.equal(balancesBefore.takerUsdt - 1000700n);
+    const balancesAfterFirst = await captureBalances(
+      tokens,
+      contracts,
+      testAccount,
+    );
+
+    expect(balancesAfterFirst.contractUsdc).to.equal(
+      balancesBefore.contractUsdc - 1000000n,
+    );
+    expect(balancesAfterFirst.takerUsdc).to.equal(
+      balancesBefore.takerUsdc + 1000000n,
+    );
+    expect(balancesAfterFirst.contractUsdt).to.equal(
+      balancesBefore.contractUsdt + 1000700n,
+    );
+    expect(balancesAfterFirst.takerUsdt).to.equal(
+      balancesBefore.takerUsdt - 1000700n,
+    );
 
     // 🚀 Execute second RFQ order to verify contract can handle multiple orders
     await swap.fillContractOrder(
       secondOrder,
       secondSignature,
       fillAmount,
-      makingAmountFlag
+      makingAmountFlag,
     );
 
     // ✅ Verify cumulative results after second order
     const finalBalances = await captureBalances(tokens, contracts, testAccount);
-    
-    expect(finalBalances.contractUsdc)
-      .to.equal(balancesBefore.contractUsdc - 2000000n); // 2 USDC total
-    expect(finalBalances.takerUsdc)
-      .to.equal(balancesBefore.takerUsdc + 2000000n);
-    expect(finalBalances.contractUsdt)
-      .to.equal(balancesBefore.contractUsdt + 2001400n); // 2001.4 USDT total
-    expect(finalBalances.takerUsdt)
-      .to.equal(balancesBefore.takerUsdt - 2001400n);
+
+    expect(finalBalances.contractUsdc).to.equal(
+      balancesBefore.contractUsdc - 2000000n,
+    ); // 2 USDC total
+    expect(finalBalances.takerUsdc).to.equal(
+      balancesBefore.takerUsdc + 2000000n,
+    );
+    expect(finalBalances.contractUsdt).to.equal(
+      balancesBefore.contractUsdt + 2001400n,
+    ); // 2001.4 USDT total
+    expect(finalBalances.takerUsdt).to.equal(
+      balancesBefore.takerUsdt - 2001400n,
+    );
   });
 });
 
 /**
  * 🚀 Smart Contract Maker Patterns
- * 
+ *
  * 1. **🏢 Automated Market Making**:
  *    - Contracts can create and sign orders automatically
  *    - Enables algorithmic trading and liquidity provision
  *    - Supports dynamic pricing based on external data
- * 
+ *
  * 2. **💼 RFQ (Request for Quote) Orders**:
  *    - Lightweight orders optimized for professional traders
  *    - Gas-efficient for high-frequency trading
  *    - Perfect for market makers and institutional users
- * 
+ *
  * 3. **🔒 EIP-1271 Signature Validation**:
  *    - Contracts can validate their own signatures
  *    - Enables complex authorization logic
  *    - Supports multi-sig and governance-based approvals
- * 
+ *
  * 4. **⚡ Gas Optimization Strategies**:
  *    - Use RFQ orders for maximum efficiency
  *    - Batch multiple order operations
  *    - Optimize contract storage for frequent updates
- * 
+ *
  * 📚 Advanced Implementation Patterns:
- * 
+ *
  * ```typescript
  * // Example: Dynamic pricing contract maker
  * class DynamicPricingMaker {
@@ -267,24 +285,24 @@ describe('🏢 Smart Contract Maker Implementation', function () {
  *       maker: this.contractAddress,
  *       makingAmount: this.liquidity,
  *       takingAmount: adjustedPrice,
- *       makerTraits: buildMakerTraitsRFQ({ 
- *         nonce: await this.getNextNonce() 
+ *       makerTraits: buildMakerTraitsRFQ({
+ *         nonce: await this.getNextNonce()
  *       })
  *     });
  *   }
- * 
+ *
  *   private calculatePrice(base: bigint, volatility: bigint): bigint {
  *     // Implement dynamic pricing logic
  *     return base + (volatility * this.riskMultiplier);
  *   }
  * }
  * ```
- * 
+ *
  * 📚 Related Documentation:
  * - Maker Contract Guide: ../limit-order-maker-contract.md
  * - RFQ Order Types: ../Limit Order SDK/overview.md
  * - Contract Integration: ../limit-order-taker-contract.md
- * 
+ *
  * 🔗 Example Cross-References:
  * - Limit Orders: ./limit-order.ts
  * - Extensions: ./extensions.ts

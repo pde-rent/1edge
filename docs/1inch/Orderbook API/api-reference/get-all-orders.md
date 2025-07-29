@@ -11,13 +11,13 @@ graph LR
         MAKER[makerAsset] --> FILTER
         TAKER[takerAsset] --> FILTER
     end
-    
+
     subgraph "Processing"
         FILTER --> DB[(Orderbook DB)]
         DB --> SORT[Sort by Creation Time]
         SORT --> PAGINATE[Apply Pagination]
     end
-    
+
     subgraph "Response"
         PAGINATE --> ORDERS[Order List]
         PAGINATE --> META[Pagination Meta]
@@ -36,21 +36,20 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/all
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `chain` | `number` | Yes | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
+| Parameter | Type     | Required | Description                                      |
+| --------- | -------- | -------- | ------------------------------------------------ |
+| `chain`   | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
 
 ### Query Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `page` | `number` | No | Page number for pagination (default: 1) |
-| `limit` | `number` | No | Number of items per page (default: 100, max: 1000) |
-| `statuses` | `string` | No | Comma-separated order statuses (1,2,3) |
-| `takerAsset` | `string` | No | Filter by taker asset address |
-| `makerAsset` | `string` | No | Filter by maker asset address |
-| `sortBy` | `string` | No | Sort field. One of: `createDateTime`, `takerRate`, `makerRate`, `makerAmount`, `takerAmount` |
-
+| Parameter    | Type     | Required | Description                                                                                  |
+| ------------ | -------- | -------- | -------------------------------------------------------------------------------------------- |
+| `page`       | `number` | No       | Page number for pagination (default: 1)                                                      |
+| `limit`      | `number` | No       | Number of items per page (default: 100, max: 1000)                                           |
+| `statuses`   | `string` | No       | Comma-separated order statuses (1,2,3)                                                       |
+| `takerAsset` | `string` | No       | Filter by taker asset address                                                                |
+| `makerAsset` | `string` | No       | Filter by maker asset address                                                                |
+| `sortBy`     | `string` | No       | Sort field. One of: `createDateTime`, `takerRate`, `makerRate`, `makerAmount`, `takerAmount` |
 
 ## Request Example
 
@@ -93,28 +92,28 @@ Returns an array of queried limit orders.
 
 ### Schema
 
-| Field | Type | Required | Description |
-| ----- | ---- | -------- | ----------- |
-| `signature` | `string` | Yes | Order signature |
-| `orderHash` | `string` | Yes | Unique order identifier |
-| `createDateTime` | `string` | Yes | Order creation timestamp |
-| `remainingMakerAmount` | `string` | Yes | Remaining amount to be filled |
-| `makerBalance` | `string` | Yes | Maker's token balance |
-| `makerAllowance` | `string` | Yes | Maker's token allowance |
-| `data` | `object` | Yes | Order data structure |
-| `data.makerAsset` | `string` | Yes | Maker asset address |
-| `data.takerAsset` | `string` | Yes | Taker asset address |
-| `data.maker` | `string` | Yes | Maker address |
-| `data.receiver` | `string` | No | Receiver address |
-| `data.makingAmount` | `string` | Yes | Total making amount |
-| `data.takingAmount` | `string` | Yes | Total taking amount |
-| `data.salt` | `string` | Yes | Order salt |
-| `data.extension` | `string` | No | Order extension data |
-| `data.makerTraits` | `string` | No | Maker traits |
-| `makerRate` | `string` | Yes | Maker exchange rate |
-| `takerRate` | `string` | Yes | Taker exchange rate |
-| `isMakerContract` | `boolean` | Yes | Whether maker is a contract |
-| `orderInvalidReason` | `string` | Yes | Reason if order is invalid | 
+| Field                  | Type      | Required | Description                   |
+| ---------------------- | --------- | -------- | ----------------------------- |
+| `signature`            | `string`  | Yes      | Order signature               |
+| `orderHash`            | `string`  | Yes      | Unique order identifier       |
+| `createDateTime`       | `string`  | Yes      | Order creation timestamp      |
+| `remainingMakerAmount` | `string`  | Yes      | Remaining amount to be filled |
+| `makerBalance`         | `string`  | Yes      | Maker's token balance         |
+| `makerAllowance`       | `string`  | Yes      | Maker's token allowance       |
+| `data`                 | `object`  | Yes      | Order data structure          |
+| `data.makerAsset`      | `string`  | Yes      | Maker asset address           |
+| `data.takerAsset`      | `string`  | Yes      | Taker asset address           |
+| `data.maker`           | `string`  | Yes      | Maker address                 |
+| `data.receiver`        | `string`  | No       | Receiver address              |
+| `data.makingAmount`    | `string`  | Yes      | Total making amount           |
+| `data.takingAmount`    | `string`  | Yes      | Total taking amount           |
+| `data.salt`            | `string`  | Yes      | Order salt                    |
+| `data.extension`       | `string`  | No       | Order extension data          |
+| `data.makerTraits`     | `string`  | No       | Maker traits                  |
+| `makerRate`            | `string`  | Yes      | Maker exchange rate           |
+| `takerRate`            | `string`  | Yes      | Taker exchange rate           |
+| `isMakerContract`      | `boolean` | Yes      | Whether maker is a contract   |
+| `orderInvalidReason`   | `string`  | Yes      | Reason if order is invalid    |
 
 ### Example Response
 
@@ -144,3 +143,4 @@ Returns an array of queried limit orders.
     "signature": "0x9b2097ae806d5212ea48fd0d79aab10d330cea08ccf8a7e8aceaad24a8f4c3ae5121132fa69c5ef2fe1cbe5d484322d1c5da986516a69ed1be22341a4a8c02a51b"
   },...
 ]
+```

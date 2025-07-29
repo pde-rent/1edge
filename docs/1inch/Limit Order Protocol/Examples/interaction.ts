@@ -1,16 +1,16 @@
 /**
  * 🎭 Order Interactions & Recursive Matching Example
- * 
+ *
  * This comprehensive example demonstrates advanced interaction patterns in the
  * 1inch Limit Order Protocol, including recursive order matching, hash validation,
  * and order ID management.
- * 
+ *
  * 📚 Related Documentation:
  * - Interactions Overview: ../extensions.md#preinteraction--postinteraction
  * - Order Building: ../limit-order-maker-contract.md
  * - Taker Traits: ../limit-order-taker-contract.md
  * - Extensions Guide: ../extensions.md
- * 
+ *
  * 🎯 Key Features:
  * - Recursive order matching for complex strategies
  * - Hash-based order validation
@@ -18,17 +18,17 @@
  * - Multi-order execution patterns
  */
 
-import { expect } from '@1inch/solidity-utils';
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { ethers, HardhatEthersSigner } from 'hardhat';
-import { deploySwapTokens } from './helpers/fixtures';
-import { ether } from './helpers/utils';
+import { expect } from "@1inch/solidity-utils";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { ethers, HardhatEthersSigner } from "hardhat";
+import { deploySwapTokens } from "./helpers/fixtures";
+import { ether } from "./helpers/utils";
 import {
   signOrder,
   buildOrder,
   buildMakerTraits,
   buildTakerTraits,
-} from './helpers/orderUtils';
+} from "./helpers/orderUtils";
 
 // 📝 Type definitions for interaction testing
 interface TestTokens {
@@ -56,7 +56,7 @@ interface BalanceSnapshot {
   takerDai: bigint;
 }
 
-describe('🎭 Advanced Order Interactions', function () {
+describe("🎭 Advanced Order Interactions", function () {
   let maker: HardhatEthersSigner;
   let taker: HardhatEthersSigner;
   const abiCoder = ethers.AbiCoder.defaultAbiCoder();
@@ -67,7 +67,7 @@ describe('🎭 Advanced Order Interactions', function () {
 
   /**
    * 🏗️ Initialize base contracts and token setup
-   * 
+   *
    * Sets up the foundational infrastructure:
    * - DAI and WETH tokens with initial balances
    * - LimitOrderProtocol swap contract
@@ -77,8 +77,8 @@ describe('🎭 Advanced Order Interactions', function () {
     const { dai, weth, swap, chainId } = await deploySwapTokens();
 
     // 💰 Initialize substantial token balances for testing
-    const daiAmount = ether('100');
-    const wethAmount = ether('1');
+    const daiAmount = ether("100");
+    const wethAmount = ether("1");
 
     await dai.mint(maker.address, daiAmount);
     await dai.mint(taker.address, daiAmount);
@@ -110,14 +110,15 @@ describe('🎭 Advanced Order Interactions', function () {
     };
   }
 
-  describe('🔄 Recursive Order Matching', function () {
+  describe("🔄 Recursive Order Matching", function () {
     /**
      * 🎯 Initialize RecursiveMatcher for advanced order combinations
      */
     async function initRecursiveMatcher() {
       const baseFixture = await initBaseContracts();
 
-      const RecursiveMatcher = await ethers.getContractFactory('RecursiveMatcher');
+      const RecursiveMatcher =
+        await ethers.getContractFactory("RecursiveMatcher");
       const matcher = await RecursiveMatcher.deploy();
       await matcher.waitForDeployment();
 
@@ -129,17 +130,18 @@ describe('🎭 Advanced Order Interactions', function () {
 
     /**
      * ↔️ Test: Opposite Direction Recursive Swap
-     * 
+     *
      * Scenario:
      * - Create two complementary orders (DAI→WETH and WETH→DAI)
      * - Use recursive matcher to execute both simultaneously
      * - Verify tokens are exchanged correctly between parties
-     * 
+     *
      * 💡 Use Case:
      * Atomic swaps between two parties with exact opposite needs
      */
-    it('↔️ Execute opposite direction recursive swap', async function () {
-      const { tokens, contracts, chainId } = await loadFixture(initRecursiveMatcher);
+    it("↔️ Execute opposite direction recursive swap", async function () {
+      const { tokens, contracts, chainId } =
+        await loadFixture(initRecursiveMatcher);
       const { dai, weth } = tokens;
       const { swap, matcher } = contracts;
 
@@ -147,8 +149,8 @@ describe('🎭 Advanced Order Interactions', function () {
       const primaryOrder = buildOrder({
         makerAsset: await dai.getAddress(),
         takerAsset: await weth.getAddress(),
-        makingAmount: ether('100'), // 100 DAI
-        takingAmount: ether('0.1'), // 0.1 WETH
+        makingAmount: ether("100"), // 100 DAI
+        takingAmount: ether("0.1"), // 0.1 WETH
         maker: maker.address,
       });
 
@@ -156,43 +158,70 @@ describe('🎭 Advanced Order Interactions', function () {
       const backOrder = buildOrder({
         makerAsset: await weth.getAddress(),
         takerAsset: await dai.getAddress(),
-        makingAmount: ether('0.1'), // 0.1 WETH
-        takingAmount: ether('100'), // 100 DAI
+        makingAmount: ether("0.1"), // 0.1 WETH
+        takingAmount: ether("100"), // 100 DAI
         maker: taker.address,
       });
 
       // ✍️ Sign both orders
-      const primarySignature = await signOrder(primaryOrder, chainId, await swap.getAddress(), maker);
-      const backSignature = await signOrder(backOrder, chainId, await swap.getAddress(), taker);
+      const primarySignature = await signOrder(
+        primaryOrder,
+        chainId,
+        await swap.getAddress(),
+        maker,
+      );
+      const backSignature = await signOrder(
+        backOrder,
+        chainId,
+        await swap.getAddress(),
+        taker,
+      );
 
       // 🔧 Prepare matching parameters for recursive execution
-      const matchingParams = (await matcher.getAddress()) + '01' + abiCoder.encode(
-        ['address[]', 'bytes[]'],
-        [
-          [await weth.getAddress(), await dai.getAddress()],
-          [
-            weth.interface.encodeFunctionData('approve', [await swap.getAddress(), ether('0.1')]),
-            dai.interface.encodeFunctionData('approve', [await swap.getAddress(), ether('100')]),
-          ],
-        ],
-      ).substring(2);
+      const matchingParams =
+        (await matcher.getAddress()) +
+        "01" +
+        abiCoder
+          .encode(
+            ["address[]", "bytes[]"],
+            [
+              [await weth.getAddress(), await dai.getAddress()],
+              [
+                weth.interface.encodeFunctionData("approve", [
+                  await swap.getAddress(),
+                  ether("0.1"),
+                ]),
+                dai.interface.encodeFunctionData("approve", [
+                  await swap.getAddress(),
+                  ether("100"),
+                ]),
+              ],
+            ],
+          )
+          .substring(2);
 
       // 🎭 Build interaction for nested order execution
-      const { r: backOrderR, yParityAndS: backOrderVs } = ethers.Signature.from(backSignature);
+      const { r: backOrderR, yParityAndS: backOrderVs } =
+        ethers.Signature.from(backSignature);
       const takerTraits = buildTakerTraits({
         interaction: matchingParams,
         makingAmount: true,
-        threshold: ether('100'),
+        threshold: ether("100"),
       });
-      
-      const nestedInteraction = (await matcher.getAddress()) + '00' + swap.interface.encodeFunctionData('fillOrderArgs', [
-        backOrder,
-        backOrderR,
-        backOrderVs,
-        ether('0.1'),
-        takerTraits.traits,
-        takerTraits.args,
-      ]).substring(10);
+
+      const nestedInteraction =
+        (await matcher.getAddress()) +
+        "00" +
+        swap.interface
+          .encodeFunctionData("fillOrderArgs", [
+            backOrder,
+            backOrderR,
+            backOrderVs,
+            ether("0.1"),
+            takerTraits.traits,
+            takerTraits.args,
+          ])
+          .substring(10);
 
       // 📊 Capture balances before execution
       const balancesBefore = await captureBalances(tokens);
@@ -202,43 +231,48 @@ describe('🎭 Advanced Order Interactions', function () {
       const matcherTraits = buildTakerTraits({
         interaction: nestedInteraction,
         makingAmount: true,
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
       });
-      
+
       await matcher.matchOrders(
         await swap.getAddress(),
         primaryOrder,
         r,
         vs,
-        ether('100'),
+        ether("100"),
         matcherTraits.traits,
-        matcherTraits.args
+        matcherTraits.args,
       );
 
       // ✅ Verify successful token exchange
-      expect(await weth.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerWeth + ether('0.1'));
-      expect(await weth.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerWeth - ether('0.1'));
-      expect(await dai.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerDai - ether('100'));
-      expect(await dai.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerDai + ether('100'));
+      expect(await weth.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerWeth + ether("0.1"),
+      );
+      expect(await weth.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerWeth - ether("0.1"),
+      );
+      expect(await dai.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerDai - ether("100"),
+      );
+      expect(await dai.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerDai + ether("100"),
+      );
     });
 
     /**
      * ➡️ Test: Unidirectional Recursive Swap
-     * 
+     *
      * Scenario:
      * - Execute multiple orders in the same direction
      * - Use additional WETH input to fill larger combined order
      * - Demonstrate complex multi-order strategies
-     * 
+     *
      * 💡 Use Case:
      * Aggregating liquidity from multiple smaller orders
      */
-    it('➡️ Execute unidirectional recursive swap', async function () {
-      const { tokens, contracts, chainId } = await loadFixture(initRecursiveMatcher);
+    it("➡️ Execute unidirectional recursive swap", async function () {
+      const { tokens, contracts, chainId } =
+        await loadFixture(initRecursiveMatcher);
       const { dai, weth } = tokens;
       const { swap, matcher } = contracts;
 
@@ -246,8 +280,8 @@ describe('🎭 Advanced Order Interactions', function () {
       const firstOrder = buildOrder({
         makerAsset: await dai.getAddress(),
         takerAsset: await weth.getAddress(),
-        makingAmount: ether('10'),
-        takingAmount: ether('0.01'),
+        makingAmount: ether("10"),
+        takingAmount: ether("0.01"),
         maker: taker.address,
         makerTraits: buildMakerTraits({ nonce: 0 }),
       });
@@ -256,96 +290,134 @@ describe('🎭 Advanced Order Interactions', function () {
       const secondOrder = buildOrder({
         makerAsset: await dai.getAddress(),
         takerAsset: await weth.getAddress(),
-        makingAmount: ether('15'),
-        takingAmount: ether('0.015'),
+        makingAmount: ether("15"),
+        takingAmount: ether("0.015"),
         maker: taker.address,
         makerTraits: buildMakerTraits({ nonce: 0 }),
       });
 
       // ✍️ Sign orders
-      const firstSignature = await signOrder(firstOrder, chainId, await swap.getAddress(), taker);
-      const secondSignature = await signOrder(secondOrder, chainId, await swap.getAddress(), taker);
+      const firstSignature = await signOrder(
+        firstOrder,
+        chainId,
+        await swap.getAddress(),
+        taker,
+      );
+      const secondSignature = await signOrder(
+        secondOrder,
+        chainId,
+        await swap.getAddress(),
+        taker,
+      );
 
       // 🔧 Build complex matching interaction
-      const matchingParams = (await matcher.getAddress()) + '01' + abiCoder.encode(
-        ['address[]', 'bytes[]'],
-        [
-          [
-            await weth.getAddress(),
-            await weth.getAddress(),
-            await dai.getAddress(),
-          ],
-          [
-            weth.interface.encodeFunctionData('transferFrom', [maker.address, await matcher.getAddress(), ether('0.025')]),
-            weth.interface.encodeFunctionData('approve', [await swap.getAddress(), ether('0.025')]),
-            dai.interface.encodeFunctionData('transfer', [maker.address, ether('25')]),
-          ],
-        ],
-      ).substring(2);
+      const matchingParams =
+        (await matcher.getAddress()) +
+        "01" +
+        abiCoder
+          .encode(
+            ["address[]", "bytes[]"],
+            [
+              [
+                await weth.getAddress(),
+                await weth.getAddress(),
+                await dai.getAddress(),
+              ],
+              [
+                weth.interface.encodeFunctionData("transferFrom", [
+                  maker.address,
+                  await matcher.getAddress(),
+                  ether("0.025"),
+                ]),
+                weth.interface.encodeFunctionData("approve", [
+                  await swap.getAddress(),
+                  ether("0.025"),
+                ]),
+                dai.interface.encodeFunctionData("transfer", [
+                  maker.address,
+                  ether("25"),
+                ]),
+              ],
+            ],
+          )
+          .substring(2);
 
       // 🎭 Build nested execution
-      const { r: secondOrderR, yParityAndS: secondOrderVs } = ethers.Signature.from(secondSignature);
+      const { r: secondOrderR, yParityAndS: secondOrderVs } =
+        ethers.Signature.from(secondSignature);
       const takerTraits = buildTakerTraits({
         interaction: matchingParams,
         makingAmount: true,
-        threshold: ether('0.015'),
+        threshold: ether("0.015"),
       });
-      
-      const nestedInteraction = (await matcher.getAddress()) + '00' + swap.interface.encodeFunctionData('fillOrderArgs', [
-        secondOrder,
-        secondOrderR,
-        secondOrderVs,
-        ether('15'),
-        takerTraits.traits,
-        takerTraits.args,
-      ]).substring(10);
+
+      const nestedInteraction =
+        (await matcher.getAddress()) +
+        "00" +
+        swap.interface
+          .encodeFunctionData("fillOrderArgs", [
+            secondOrder,
+            secondOrderR,
+            secondOrderVs,
+            ether("15"),
+            takerTraits.traits,
+            takerTraits.args,
+          ])
+          .substring(10);
 
       // 📊 Capture initial balances
       const balancesBefore = await captureBalances(tokens);
 
       // ✅ Approve additional WETH for complex strategy
-      await weth.connect(maker).approve(matcher.address, ether('0.025'));
-      
+      await weth.connect(maker).approve(matcher.address, ether("0.025"));
+
       // 🚀 Execute unidirectional recursive matching
       const { r, yParityAndS: vs } = ethers.Signature.from(firstSignature);
       const matcherTraits = buildTakerTraits({
         interaction: nestedInteraction,
         makingAmount: true,
-        threshold: ether('0.01'),
+        threshold: ether("0.01"),
       });
-      
+
       await matcher.matchOrders(
         await swap.getAddress(),
         firstOrder,
         r,
         vs,
-        ether('10'),
+        ether("10"),
         matcherTraits.traits,
-        matcherTraits.args
+        matcherTraits.args,
       );
 
       // ✅ Verify complex strategy execution
-      expect(await weth.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerWeth - ether('0.025'));
-      expect(await weth.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerWeth + ether('0.025'));
-      expect(await dai.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerDai + ether('25'));
-      expect(await dai.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerDai - ether('25'));
+      expect(await weth.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerWeth - ether("0.025"),
+      );
+      expect(await weth.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerWeth + ether("0.025"),
+      );
+      expect(await dai.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerDai + ether("25"),
+      );
+      expect(await dai.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerDai - ether("25"),
+      );
     });
   });
 
-  describe('🔍 Hash-Based Order Validation', function () {
+  describe("🔍 Hash-Based Order Validation", function () {
     /**
      * 🏗️ Initialize HashChecker for order validation
      */
     async function initHashChecker() {
       const baseFixture = await initBaseContracts();
-      
+
       const [owner] = await ethers.getSigners();
-      const HashChecker = await ethers.getContractFactory('HashChecker');
-      const hashChecker = await HashChecker.deploy(baseFixture.contracts.swap, owner);
+      const HashChecker = await ethers.getContractFactory("HashChecker");
+      const hashChecker = await HashChecker.deploy(
+        baseFixture.contracts.swap,
+        owner,
+      );
       await hashChecker.waitForDeployment();
 
       return {
@@ -356,16 +428,16 @@ describe('🎭 Advanced Order Interactions', function () {
 
     /**
      * ✅ Test: Successful Hash Validation and Fill
-     * 
+     *
      * Scenario:
      * - Create order with hash validation pre-interaction
      * - Whitelist the order hash
      * - Execute order successfully with validation
-     * 
+     *
      * 💡 Use Case:
      * Restricted order execution with explicit approval required
      */
-    it('✅ Execute order with valid hash check', async function () {
+    it("✅ Execute order with valid hash check", async function () {
       const { tokens, contracts, chainId } = await loadFixture(initHashChecker);
       const { dai, weth } = tokens;
       const { swap, hashChecker } = contracts;
@@ -375,8 +447,8 @@ describe('🎭 Advanced Order Interactions', function () {
         {
           makerAsset: await dai.getAddress(),
           takerAsset: await weth.getAddress(),
-          makingAmount: ether('100'),
-          takingAmount: ether('0.1'),
+          makingAmount: ether("100"),
+          takingAmount: ether("0.1"),
           maker: taker.address,
           makerTraits: buildMakerTraits(),
         },
@@ -384,8 +456,13 @@ describe('🎭 Advanced Order Interactions', function () {
           preInteraction: await hashChecker.getAddress(), // Hash validation before execution
         },
       );
-      
-      const signature = await signOrder(order, chainId, await swap.getAddress(), taker);
+
+      const signature = await signOrder(
+        order,
+        chainId,
+        await swap.getAddress(),
+        taker,
+      );
 
       // 📊 Capture balances before execution
       const balancesBefore = await captureBalances(tokens);
@@ -396,36 +473,47 @@ describe('🎭 Advanced Order Interactions', function () {
       // 🚀 Execute order with hash validation
       const { r, yParityAndS: vs } = ethers.Signature.from(signature);
       const takerTraits = buildTakerTraits({
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
         makingAmount: true,
         extension: order.extension,
       });
-      
-      await swap.fillOrderArgs(order, r, vs, ether('100'), takerTraits.traits, takerTraits.args);
+
+      await swap.fillOrderArgs(
+        order,
+        r,
+        vs,
+        ether("100"),
+        takerTraits.traits,
+        takerTraits.args,
+      );
 
       // ✅ Verify successful execution
-      expect(await dai.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerDai - ether('100'));
-      expect(await dai.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerDai + ether('100'));
-      expect(await weth.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerWeth + ether('0.1'));
-      expect(await weth.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerWeth - ether('0.1'));
+      expect(await dai.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerDai - ether("100"),
+      );
+      expect(await dai.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerDai + ether("100"),
+      );
+      expect(await weth.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerWeth + ether("0.1"),
+      );
+      expect(await weth.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerWeth - ether("0.1"),
+      );
     });
 
     /**
      * ❌ Test: Hash Validation Failure
-     * 
+     *
      * Scenario:
      * - Create order with hash validation but don't whitelist
      * - Attempt to execute order
      * - Verify transaction reverts with correct error
-     * 
+     *
      * 💡 Use Case:
      * Security mechanism to prevent unauthorized order execution
      */
-    it('❌ Reject order with invalid hash check', async function () {
+    it("❌ Reject order with invalid hash check", async function () {
       const { tokens, contracts, chainId } = await loadFixture(initHashChecker);
       const { dai, weth } = tokens;
       const { swap, hashChecker } = contracts;
@@ -435,8 +523,8 @@ describe('🎭 Advanced Order Interactions', function () {
         {
           makerAsset: await dai.getAddress(),
           takerAsset: await weth.getAddress(),
-          makingAmount: ether('100'),
-          takingAmount: ether('0.1'),
+          makingAmount: ether("100"),
+          takingAmount: ether("0.1"),
           maker: taker.address,
           makerTraits: buildMakerTraits(),
         },
@@ -445,31 +533,46 @@ describe('🎭 Advanced Order Interactions', function () {
         },
       );
 
-      const signature = await signOrder(order, chainId, await swap.getAddress(), taker);
+      const signature = await signOrder(
+        order,
+        chainId,
+        await swap.getAddress(),
+        taker,
+      );
 
       // 🚫 Attempt execution without whitelisting (should fail)
       const { r, yParityAndS: vs } = ethers.Signature.from(signature);
       const takerTraits = buildTakerTraits({
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
         makingAmount: true,
         extension: order.extension,
       });
-      
+
       await expect(
-        swap.fillOrderArgs(order, r, vs, ether('100'), takerTraits.traits, takerTraits.args)
-      ).to.be.revertedWithCustomError(hashChecker, 'IncorrectOrderHash');
+        swap.fillOrderArgs(
+          order,
+          r,
+          vs,
+          ether("100"),
+          takerTraits.traits,
+          takerTraits.args,
+        ),
+      ).to.be.revertedWithCustomError(hashChecker, "IncorrectOrderHash");
     });
   });
 
-  describe('🆔 Order ID Validation & Management', function () {
+  describe("🆔 Order ID Validation & Management", function () {
     /**
      * 🏗️ Initialize OrderIdInvalidator for order tracking
      */
     async function initOrderIdInvalidator() {
       const baseFixture = await initBaseContracts();
-      
-      const OrderIdInvalidator = await ethers.getContractFactory('OrderIdInvalidator');
-      const orderIdInvalidator = await OrderIdInvalidator.deploy(baseFixture.contracts.swap);
+
+      const OrderIdInvalidator =
+        await ethers.getContractFactory("OrderIdInvalidator");
+      const orderIdInvalidator = await OrderIdInvalidator.deploy(
+        baseFixture.contracts.swap,
+      );
       await orderIdInvalidator.waitForDeployment();
 
       return {
@@ -480,17 +583,19 @@ describe('🎭 Advanced Order Interactions', function () {
 
     /**
      * 🔄 Test: Multiple Partial Fills with Same Order ID
-     * 
+     *
      * Scenario:
      * - Create order allowing multiple fills with specific order ID
      * - Execute two separate partial fills
      * - Verify both fills succeed and track the same order ID
-     * 
+     *
      * 💡 Use Case:
      * Market maker orders that can be filled multiple times
      */
-    it('🔄 Execute multiple partial fills with order ID tracking', async function () {
-      const { tokens, contracts, chainId } = await loadFixture(initOrderIdInvalidator);
+    it("🔄 Execute multiple partial fills with order ID tracking", async function () {
+      const { tokens, contracts, chainId } = await loadFixture(
+        initOrderIdInvalidator,
+      );
       const { dai, weth } = tokens;
       const { swap, orderIdInvalidator } = contracts;
 
@@ -501,17 +606,24 @@ describe('🎭 Advanced Order Interactions', function () {
         {
           makerAsset: await dai.getAddress(),
           takerAsset: await weth.getAddress(),
-          makingAmount: ether('100'),
-          takingAmount: ether('0.1'),
+          makingAmount: ether("100"),
+          takingAmount: ether("0.1"),
           maker: maker.address,
           makerTraits: buildMakerTraits({ allowMultipleFills: true }),
         },
         {
-          preInteraction: (await orderIdInvalidator.getAddress()) + orderId.toString(16).padStart(8, '0'),
+          preInteraction:
+            (await orderIdInvalidator.getAddress()) +
+            orderId.toString(16).padStart(8, "0"),
         },
       );
-      
-      const signature = await signOrder(order, chainId, await swap.getAddress(), maker);
+
+      const signature = await signOrder(
+        order,
+        chainId,
+        await swap.getAddress(),
+        maker,
+      );
 
       // 📊 Capture initial balances
       const balancesBefore = await captureBalances(tokens);
@@ -519,84 +631,96 @@ describe('🎭 Advanced Order Interactions', function () {
       // 🚀 Execute first partial fill (50%)
       const { r, yParityAndS: vs } = ethers.Signature.from(signature);
       const firstFillTraits = buildTakerTraits({
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
         makingAmount: true,
         extension: order.extension,
       });
-      
+
       await swap.connect(taker).fillOrderArgs(
         order,
         r,
         vs,
-        ether('50'), // Fill 50 DAI
+        ether("50"), // Fill 50 DAI
         firstFillTraits.traits,
-        firstFillTraits.args
+        firstFillTraits.args,
       );
 
       // ✅ Verify first fill
-      expect(await weth.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerWeth + ether('0.05'));
-      expect(await weth.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerWeth - ether('0.05'));
-      expect(await dai.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerDai - ether('50'));
-      expect(await dai.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerDai + ether('50'));
+      expect(await weth.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerWeth + ether("0.05"),
+      );
+      expect(await weth.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerWeth - ether("0.05"),
+      );
+      expect(await dai.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerDai - ether("50"),
+      );
+      expect(await dai.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerDai + ether("50"),
+      );
 
       // 🚀 Execute second partial fill (remaining 50%)
       const secondFillTraits = buildTakerTraits({
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
         makingAmount: true,
         extension: order.extension,
       });
-      
+
       await swap.connect(taker).fillOrderArgs(
         order,
         r,
         vs,
-        ether('50'), // Fill remaining 50 DAI
+        ether("50"), // Fill remaining 50 DAI
         secondFillTraits.traits,
-        secondFillTraits.args
+        secondFillTraits.args,
       );
 
       // ✅ Verify complete order execution
-      expect(await weth.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerWeth + ether('0.1'));
-      expect(await weth.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerWeth - ether('0.1'));
-      expect(await dai.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerDai - ether('100'));
-      expect(await dai.balanceOf(taker.address))
-        .to.equal(balancesBefore.takerDai + ether('100'));
+      expect(await weth.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerWeth + ether("0.1"),
+      );
+      expect(await weth.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerWeth - ether("0.1"),
+      );
+      expect(await dai.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerDai - ether("100"),
+      );
+      expect(await dai.balanceOf(taker.address)).to.equal(
+        balancesBefore.takerDai + ether("100"),
+      );
     });
 
     /**
      * 🚫 Test: Order ID Collision Prevention
-     * 
+     *
      * Scenario:
      * - Create two different orders with same order ID
      * - Execute first order successfully
      * - Attempt to execute second order with same ID
      * - Verify second order is rejected
-     * 
+     *
      * 💡 Use Case:
      * Preventing order replay attacks and ensuring order uniqueness
      */
-    it('🚫 Prevent execution of different order with same ID', async function () {
-      const { tokens, contracts, chainId } = await loadFixture(initOrderIdInvalidator);
+    it("🚫 Prevent execution of different order with same ID", async function () {
+      const { tokens, contracts, chainId } = await loadFixture(
+        initOrderIdInvalidator,
+      );
       const { dai, weth } = tokens;
       const { swap, orderIdInvalidator } = contracts;
 
       const orderId = 13341n;
-      const preInteraction = (await orderIdInvalidator.getAddress()) + orderId.toString(16).padStart(8, '0');
+      const preInteraction =
+        (await orderIdInvalidator.getAddress()) +
+        orderId.toString(16).padStart(8, "0");
 
       // 📝 Create first order with specific ID
       const firstOrder = buildOrder(
         {
           makerAsset: await dai.getAddress(),
           takerAsset: await weth.getAddress(),
-          makingAmount: ether('100'),
-          takingAmount: ether('0.1'),
+          makingAmount: ether("100"),
+          takingAmount: ether("0.1"),
           maker: maker.address,
           makerTraits: buildMakerTraits(),
         },
@@ -610,8 +734,8 @@ describe('🎭 Advanced Order Interactions', function () {
         {
           makerAsset: await dai.getAddress(),
           takerAsset: await weth.getAddress(),
-          makingAmount: ether('50'), // Different amount
-          takingAmount: ether('0.05'),
+          makingAmount: ether("50"), // Different amount
+          takingAmount: ether("0.05"),
           maker: maker.address,
           makerTraits: buildMakerTraits(),
         },
@@ -621,8 +745,18 @@ describe('🎭 Advanced Order Interactions', function () {
       );
 
       // ✍️ Sign both orders
-      const firstSignature = await signOrder(firstOrder, chainId, await swap.getAddress(), maker);
-      const secondSignature = await signOrder(secondOrder, chainId, await swap.getAddress(), maker);
+      const firstSignature = await signOrder(
+        firstOrder,
+        chainId,
+        await swap.getAddress(),
+        maker,
+      );
+      const secondSignature = await signOrder(
+        secondOrder,
+        chainId,
+        await swap.getAddress(),
+        maker,
+      );
 
       // 📊 Capture balances
       const balancesBefore = await captureBalances(tokens);
@@ -630,71 +764,76 @@ describe('🎭 Advanced Order Interactions', function () {
       // 🚀 Execute first order successfully
       const { r, yParityAndS: vs } = ethers.Signature.from(firstSignature);
       const firstTraits = buildTakerTraits({
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
         makingAmount: true,
         extension: firstOrder.extension,
       });
-      
+
       await swap.connect(taker).fillOrderArgs(
         firstOrder,
         r,
         vs,
-        ether('50'), // Partial fill
+        ether("50"), // Partial fill
         firstTraits.traits,
-        firstTraits.args
+        firstTraits.args,
       );
 
       // ✅ Verify first order execution
-      expect(await weth.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerWeth + ether('0.05'));
-      expect(await dai.balanceOf(maker.address))
-        .to.equal(balancesBefore.makerDai - ether('50'));
+      expect(await weth.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerWeth + ether("0.05"),
+      );
+      expect(await dai.balanceOf(maker.address)).to.equal(
+        balancesBefore.makerDai - ether("50"),
+      );
 
       // 🚫 Attempt to execute second order with same ID (should fail)
-      const { r: r2, yParityAndS: vs2 } = ethers.Signature.from(secondSignature);
+      const { r: r2, yParityAndS: vs2 } =
+        ethers.Signature.from(secondSignature);
       const secondTraits = buildTakerTraits({
-        threshold: ether('0.1'),
+        threshold: ether("0.1"),
         makingAmount: true,
         extension: secondOrder.extension,
       });
-      
+
       await expect(
-        swap.connect(taker).fillOrderArgs(
-          secondOrder,
-          r2,
-          vs2,
-          ether('50'),
-          secondTraits.traits,
-          secondTraits.args
-        )
-      ).to.be.revertedWithCustomError(orderIdInvalidator, 'InvalidOrderHash');
+        swap
+          .connect(taker)
+          .fillOrderArgs(
+            secondOrder,
+            r2,
+            vs2,
+            ether("50"),
+            secondTraits.traits,
+            secondTraits.args,
+          ),
+      ).to.be.revertedWithCustomError(orderIdInvalidator, "InvalidOrderHash");
     });
   });
 });
 
 /**
  * 🚀 Advanced Interaction Patterns Summary
- * 
+ *
  * 1. **🔄 Recursive Matching**:
  *    - Enables complex multi-order strategies
  *    - Perfect for arbitrage and liquidity aggregation
  *    - Requires careful gas management
- * 
+ *
  * 2. **🔍 Hash Validation**:
  *    - Provides additional security layer
  *    - Useful for restricted or private orders
  *    - Enables conditional order execution
- * 
+ *
  * 3. **🆔 Order ID Management**:
  *    - Prevents replay attacks
  *    - Enables sophisticated order tracking
  *    - Essential for market maker strategies
- * 
+ *
  * 📚 Related Documentation:
  * - Extension System: ../extensions.md
  * - Order Creation: ../limit-order-maker-contract.md
  * - Order Execution: ../limit-order-taker-contract.md
- * 
+ *
  * 🔗 Example Cross-References:
  * - Dutch Auctions: ./dutch-auction.ts
  * - Extensions: ./extensions.ts

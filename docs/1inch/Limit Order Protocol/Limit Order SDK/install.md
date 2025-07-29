@@ -10,30 +10,21 @@
 Install the SDK using your preferred package manager:
 
 ### Using Bun
+
 ```bash
 bun add '@1inch/limit-order-sdk'
-```
-
-### Using npm
-```bash
-npm install '@1inch/limit-order-sdk'
-```
-
-### Using yarn
-```bash
-yarn add '@1inch/limit-order-sdk'
 ```
 
 ---
 
 ## Documentation Hub
 
-| 📖 Resource | 📝 Description | 🔗 Link |
-|-------------|----------------|----------|
-| **Limit Order Integration** | Creating and managing limit orders | [Integration Guide](./integration.md) |
-| **Contract Interactions** | Taker contract methods and usage | [Taker Contract](../limit-order-taker-contract.md) |
-| **Maker Contract** | Maker contract functionality | [Maker Contract](../limit-order-maker-contract.md) |
-| **SDK Overview** | Complete feature overview | [SDK Overview](./overview.md) |
+| 📖 Resource                 | 📝 Description                     | 🔗 Link                                            |
+| --------------------------- | ---------------------------------- | -------------------------------------------------- |
+| **Limit Order Integration** | Creating and managing limit orders | [Integration Guide](./integration.md)              |
+| **Contract Interactions**   | Taker contract methods and usage   | [Taker Contract](../limit-order-taker-contract.md) |
+| **Maker Contract**          | Maker contract functionality       | [Maker Contract](../limit-order-maker-contract.md) |
+| **SDK Overview**            | Complete feature overview          | [SDK Overview](./overview.md)                      |
 
 ---
 
@@ -45,51 +36,62 @@ yarn add '@1inch/limit-order-sdk'
 > The private key shown below is for testing purposes only. **NEVER** use it in production!
 
 ```javascript
-import {LimitOrder, MakerTraits, Address, Sdk, randBigInt, FetchProviderConnector} from "@1inch/limit-order-sdk"
-import {Wallet} from 'ethers'
+import {
+  LimitOrder,
+  MakerTraits,
+  Address,
+  Sdk,
+  randBigInt,
+  FetchProviderConnector,
+} from "@1inch/limit-order-sdk";
+import { Wallet } from "ethers";
 
 // ⚠️ Test private key - DO NOT use in production!
-const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
-const apiKey = '...' // 🔑 Get from https://portal.1inch.dev/
-const maker = new Wallet(privateKey)
-const expiresIn = 120n // ⏰ 2 minutes
-const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn
+const privateKey =
+  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
+const apiKey = "..."; // 🔑 Get from https://portal.1inch.dev/
+const maker = new Wallet(privateKey);
+const expiresIn = 120n; // ⏰ 2 minutes
+const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 
-const UINT_40_MAX = (1n << 48n) - 1n
+const UINT_40_MAX = (1n << 48n) - 1n;
 
 // 🎛️ Configure order traits
 const makerTraits = MakerTraits.default()
   .withExpiration(expiration)
-  .withNonce(randBigInt(UINT_40_MAX))
+  .withNonce(randBigInt(UINT_40_MAX));
 
 // 🔗 Initialize SDK
-const sdk = new Sdk({ 
-  authKey: apiKey, 
-  networkId: 1, 
-  httpConnector: new FetchProviderConnector() 
-})
+const sdk = new Sdk({
+  authKey: apiKey,
+  networkId: 1,
+  httpConnector: new FetchProviderConnector(),
+});
 
 // 📝 Create order
-const order = await sdk.createOrder({
-    makerAsset: new Address('0xdac17f958d2ee523a2206206994597c13d831ec7'), // 💵 USDT
-    takerAsset: new Address('0x111111111117dc0aa78b770fa6a738034120c302'), // 🪙 1INCH
+const order = await sdk.createOrder(
+  {
+    makerAsset: new Address("0xdac17f958d2ee523a2206206994597c13d831ec7"), // 💵 USDT
+    takerAsset: new Address("0x111111111117dc0aa78b770fa6a738034120c302"), // 🪙 1INCH
     makingAmount: 100_000000n, // 💰 100 USDT (6 decimals)
     takingAmount: 10_00000000000000000n, // 💎 10 1INCH (18 decimals)
     maker: new Address(maker.address),
     // 🧂 salt?: bigint (optional)
     // 📬 receiver?: Address (optional)
-}, makerTraits)
+  },
+  makerTraits,
+);
 
 // ✍️ Sign the order
-const typedData = order.getTypedData()
+const typedData = order.getTypedData();
 const signature = await maker.signTypedData(
-    typedData.domain,
-    {Order: typedData.types.Order},
-    typedData.message
-)
+  typedData.domain,
+  { Order: typedData.types.Order },
+  typedData.message,
+);
 
 // 🚀 Submit to orderbook
-await sdk.submitOrder(order, signature)
+await sdk.submitOrder(order, signature);
 ```
 
 ### RFQ Order Creation
@@ -98,48 +100,52 @@ await sdk.submitOrder(order, signature)
 > RfqOrder is a lightweight, gas-efficient version of LimitOrder optimized for market makers. It doesn't support multiple fills and extensions but offers superior performance.
 
 ```javascript
-import {RfqOrder, Address, randBigInt} from "@1inch/limit-order-sdk"
-import {UINT_40_MAX} from "@1inch/byte-utils"
-import {Wallet} from 'ethers'
+import { RfqOrder, Address, randBigInt } from "@1inch/limit-order-sdk";
+import { UINT_40_MAX } from "@1inch/byte-utils";
+import { Wallet } from "ethers";
 
 // ⚠️ Test private key - DO NOT use in production!
-const privateKey = '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
+const privateKey =
+  "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 
-const maker = new Wallet(privateKey)
-const expiresIn = 120n // ⏰ 2 minutes
-const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn
+const maker = new Wallet(privateKey);
+const expiresIn = 120n; // ⏰ 2 minutes
+const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 
 // 🏗️ Create RFQ order
-const order = new RfqOrder({
-    makerAsset: new Address('0xdac17f958d2ee523a2206206994597c13d831ec7'), // 💵 USDT
-    takerAsset: new Address('0x111111111117dc0aa78b770fa6a738034120c302'), // 🪙 1INCH
+const order = new RfqOrder(
+  {
+    makerAsset: new Address("0xdac17f958d2ee523a2206206994597c13d831ec7"), // 💵 USDT
+    takerAsset: new Address("0x111111111117dc0aa78b770fa6a738034120c302"), // 🪙 1INCH
     makingAmount: 100_000000n, // 💰 100 USDT (6 decimals)
     takingAmount: 10_00000000000000000n, // 💎 10 1INCH (18 decimals)
-    maker: new Address(maker.address)
-}, {
-    allowedSender: new Address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'), // 🎯 Specific taker only
+    maker: new Address(maker.address),
+  },
+  {
+    allowedSender: new Address("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"), // 🎯 Specific taker only
     expiration,
     nonce: randBigInt(UINT_40_MAX),
-})
+  },
+);
 
 // ✍️ Sign the RFQ order
-const typedData = order.getTypedData()
+const typedData = order.getTypedData();
 const signature = await maker.signTypedData(
-    typedData.domain,
-    {Order: typedData.types.Order},
-    typedData.message
-)
+  typedData.domain,
+  { Order: typedData.types.Order },
+  typedData.message,
+);
 ```
 
 #### RFQ vs Standard Orders Comparison
 
-| Feature | ✅ Standard Orders | ⚡ RFQ Orders |
-|---------|-------------------|---------------|
-| **Gas Efficiency** | 🟡 Moderate | 🟢 **High** |
-| **Partial Fills** | ✅ Supported | ❌ Not supported |
-| **Multiple Fills** | ✅ Supported | ❌ Not supported |
-| **Extensions** | ✅ Supported | ❌ Not supported |
-| **Market Making** | 🟡 Good | 🟢 **Excellent** |
+| Feature            | ✅ Standard Orders | ⚡ RFQ Orders    |
+| ------------------ | ------------------ | ---------------- |
+| **Gas Efficiency** | 🟡 Moderate        | 🟢 **High**      |
+| **Partial Fills**  | ✅ Supported       | ❌ Not supported |
+| **Multiple Fills** | ✅ Supported       | ❌ Not supported |
+| **Extensions**     | ✅ Supported       | ❌ Not supported |
+| **Market Making**  | 🟡 Good            | 🟢 **Excellent** |
 
 ---
 
@@ -186,21 +192,21 @@ bun add axios
 ```
 
 ```javascript
-import {Api, LimitOrder} from "@1inch/limit-order-sdk"
-import {AxiosProviderConnector} from '@1inch/limit-order-sdk/axios'
+import { Api, LimitOrder } from "@1inch/limit-order-sdk";
+import { AxiosProviderConnector } from "@1inch/limit-order-sdk/axios";
 
 const api = new Api({
-    networkId: 1, // 🌍 Ethereum mainnet
-    authKey: 'your_api_key', // 🔑 Get from https://portal.1inch.dev/
-    httpConnector: new AxiosProviderConnector() // 🔧 Axios-based connector
-})
+  networkId: 1, // 🌍 Ethereum mainnet
+  authKey: "your_api_key", // 🔑 Get from https://portal.1inch.dev/
+  httpConnector: new AxiosProviderConnector(), // 🔧 Axios-based connector
+});
 ```
 
 #### HTTP Connector Comparison
 
-| Connector | 📦 Dependencies | 🔧 Setup | 🚀 Performance |
-|-----------|----------------|----------|----------------|
-| **FetchProviderConnector** | ✅ Built-in | 🟢 Simple | 🟢 Native |
+| Connector                  | 📦 Dependencies   | 🔧 Setup      | 🚀 Performance  |
+| -------------------------- | ----------------- | ------------- | --------------- |
+| **FetchProviderConnector** | ✅ Built-in       | 🟢 Simple     | 🟢 Native       |
 | **AxiosProviderConnector** | ⚠️ Requires axios | 🟡 Extra step | 🟢 Feature-rich |
 
 ---
@@ -213,12 +219,14 @@ const api = new Api({
 ### Unit Tests
 
 #### Setup Dependencies
+
 ```bash
 # Install all required packages
 bun install
 ```
 
 #### Run Unit Tests
+
 ```bash
 # Execute the complete unit test suite
 bun test
@@ -230,12 +238,14 @@ bun test
 > Integration tests use Foundry fork nodes to simulate real blockchain transactions in a controlled environment.
 
 #### Setup Dependencies
+
 ```bash
 # Install SDK dependencies and Foundry contracts
 bun install && forge install
 ```
 
 #### Run Integration Tests
+
 ```bash
 # Execute full integration test suite
 bun test:integration
@@ -243,9 +253,9 @@ bun test:integration
 
 ### Test Coverage Overview
 
-| Test Type | 🎯 Purpose | 📁 Location | ⚡ Speed |
-|-----------|------------|-------------|----------|
-| **Unit Tests** | Component validation | `/tests/unit/` | 🟢 Fast |
+| Test Type             | 🎯 Purpose           | 📁 Location           | ⚡ Speed    |
+| --------------------- | -------------------- | --------------------- | ----------- |
+| **Unit Tests**        | Component validation | `/tests/unit/`        | 🟢 Fast     |
 | **Integration Tests** | End-to-end workflows | `/tests/integration/` | 🟡 Moderate |
 
 > **💡 Development Tip**  
@@ -260,7 +270,7 @@ bun test:integration
 ### What's Next?
 
 1. **📖 Read the Integration Guide** - [Learn order creation and management](./integration.md)
-2. **🏗️ Explore SDK Features** - [Review the complete SDK overview](./overview.md)  
+2. **🏗️ Explore SDK Features** - [Review the complete SDK overview](./overview.md)
 3. **⚙️ Understand Contracts** - [Study maker and taker contracts](../limit-order-maker-contract.md)
 4. **🔧 Build Extensions** - [Add custom functionality](../extensions.md)
 

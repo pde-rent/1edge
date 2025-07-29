@@ -12,10 +12,10 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/events/{orderHash}
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `chain` | `number` | Yes | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
-| `orderHash` | `string` | Yes | The order hash to get events for |
+| Parameter   | Type     | Required | Description                                      |
+| ----------- | -------- | -------- | ------------------------------------------------ |
+| `chain`     | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
+| `orderHash` | `string` | Yes      | The order hash to get events for                 |
 
 ## Request Example
 
@@ -55,19 +55,19 @@ Returns events related to the specified order hash.
 
 The response is an object where the key is the order hash and the value is an array of events.
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | `number` | Event ID |
-| `network` | `number` | Network/chain ID |
-| `logId` | `string` | Log identifier |
-| `version` | `number` | Protocol version |
-| `action` | `string` | Event action ("fill" or "cancel") |
-| `orderHash` | `string` | Order hash |
-| `taker` | `string` | Taker address |
+| Field                  | Type     | Description                        |
+| ---------------------- | -------- | ---------------------------------- |
+| `id`                   | `number` | Event ID                           |
+| `network`              | `number` | Network/chain ID                   |
+| `logId`                | `string` | Log identifier                     |
+| `version`              | `number` | Protocol version                   |
+| `action`               | `string` | Event action ("fill" or "cancel")  |
+| `orderHash`            | `string` | Order hash                         |
+| `taker`                | `string` | Taker address                      |
 | `remainingMakerAmount` | `string` | Remaining maker amount after event |
-| `transactionHash` | `string` | Transaction hash |
-| `blockNumber` | `number` | Block number |
-| `createDateTime` | `string` | Event timestamp | 
+| `transactionHash`      | `string` | Transaction hash                   |
+| `blockNumber`          | `number` | Block number                       |
+| `createDateTime`       | `string` | Event timestamp                    |
 
 ### Example Response
 

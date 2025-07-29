@@ -1,16 +1,16 @@
 /**
  * 🔑 EIP-2612 Permit Integration Example
- * 
+ *
  * This example demonstrates gasless token approvals using EIP-2612 permits
  * in conjunction with 1inch Limit Order Protocol orders. Permits allow users
  * to approve token spending without a separate transaction.
- * 
+ *
  * 📚 Related Documentation:
  * - Permit Integration: ../limit-order-maker-contract.md#permit-support
  * - Gasless Transactions: ../Limit Order SDK/install.md#gasless-approvals
  * - Taker Traits: ../limit-order-taker-contract.md
  * - SDK Integration: ../Limit Order SDK/integration.md
- * 
+ *
  * 🎯 Key Features:
  * - EIP-2612 permit-based token approvals
  * - Gasless approval workflows
@@ -18,8 +18,8 @@
  * - Improved user experience for DeFi interactions
  */
 
-import { expect, permit2Contract, getPermit2 } from '@1inch/solidity-utils';
-import { ethers, HardhatEthersSigner } from 'hardhat';
+import { expect, permit2Contract, getPermit2 } from "@1inch/solidity-utils";
+import { ethers, HardhatEthersSigner } from "hardhat";
 import {
   fillWithMakingAmount,
   unwrapWethTaker,
@@ -29,12 +29,18 @@ import {
   signOrder,
   buildOrderData,
   buildTakerTraits,
-} from './helpers/orderUtils';
-import { getPermit, withTarget } from './helpers/eip712';
-import { joinStaticCalls, ether, findTrace, countAllItems, withTrace } from './helpers/utils';
-import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
-import { deploySwapTokens, deployArbitraryPredicate } from './helpers/fixtures';
-import { parseUnits } from 'ethers';
+} from "./helpers/orderUtils";
+import { getPermit, withTarget } from "./helpers/eip712";
+import {
+  joinStaticCalls,
+  ether,
+  findTrace,
+  countAllItems,
+  withTrace,
+} from "./helpers/utils";
+import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
+import { deploySwapTokens, deployArbitraryPredicate } from "./helpers/fixtures";
+import { parseUnits } from "ethers";
 
 // 📝 Type definitions for permit testing
 interface TestTokens {
@@ -71,7 +77,7 @@ interface PermitData {
   deadline: bigint;
 }
 
-describe('🔑 EIP-2612 Permit Integration', function () {
+describe("🔑 EIP-2612 Permit Integration", function () {
   let maker: HardhatEthersSigner;
   let taker: HardhatEthersSigner;
   let resolver: HardhatEthersSigner;
@@ -83,7 +89,7 @@ describe('🔑 EIP-2612 Permit Integration', function () {
 
   /**
    * 🏗️ Deploy contracts and prepare permit testing environment
-   * 
+   *
    * Sets up:
    * - DAI and WETH tokens with EIP-2612 permit support
    * - LimitOrderProtocol swap contract
@@ -92,16 +98,16 @@ describe('🔑 EIP-2612 Permit Integration', function () {
    */
   async function deployAndInitializePermitSystem(): Promise<PermitTestFixture> {
     const { dai, weth, swap, chainId } = await deploySwapTokens();
-    
+
     // 💰 Initialize substantial token balances
-    const daiAmount = ether('1000000');
-    const wethAmount = ether('100');
-    
+    const daiAmount = ether("1000000");
+    const wethAmount = ether("100");
+
     await dai.mint(maker.address, daiAmount);
     await dai.mint(taker.address, daiAmount);
     await weth.connect(maker).deposit({ value: wethAmount });
     await weth.connect(taker).deposit({ value: wethAmount });
-    
+
     // ✅ Standard approvals for maker (taker will use permit)
     await dai.connect(maker).approve(swap.address, daiAmount);
     await dai.connect(taker).approve(swap.address, daiAmount);
@@ -116,9 +122,14 @@ describe('🔑 EIP-2612 Permit Integration', function () {
       takingAmount: 1,
       maker: maker.address,
     });
-    
+
     // ✍️ Pre-sign the order
-    const orderSignature = await signOrder(permitOrder, chainId, await swap.getAddress(), maker);
+    const orderSignature = await signOrder(
+      permitOrder,
+      chainId,
+      await swap.getAddress(),
+      maker,
+    );
     const { r, yParityAndS: vs } = ethers.Signature.from(orderSignature);
 
     return {
@@ -135,36 +146,39 @@ describe('🔑 EIP-2612 Permit Integration', function () {
 
   /**
    * 🔑 Test: Gasless Token Approval with Permit
-   * 
+   *
    * Scenario:
    * - Taker has no WETH allowance for swap contract
    * - Generate EIP-2612 permit for WETH approval
    * - Execute order fill with permit in single transaction
    * - Verify tokens are exchanged without prior approval transaction
-   * 
+   *
    * 💡 Use Case:
    * Improved UX by eliminating separate approval transactions
    */
-  it('🔑 Execute order with gasless WETH permit approval', async function () {
+  it("🔑 Execute order with gasless WETH permit approval", async function () {
     const {
       tokens: { dai, weth },
       contracts: { swap },
       chainId,
-      permitOrder: { order, signature: { r, vs } },
+      permitOrder: {
+        order,
+        signature: { r, vs },
+      },
     } = await loadFixture(deployAndInitializePermitSystem);
 
     // 🗺️ Generate EIP-2612 permit for taker's WETH
-    const permitAmount = '1'; // Permit 1 wei WETH
-    const permitNonce = '1';  // Permit nonce
-    
+    const permitAmount = "1"; // Permit 1 wei WETH
+    const permitNonce = "1"; // Permit nonce
+
     const permit = await getPermit(
-      taker.address,    // Token owner
-      taker,            // Signer
-      weth,             // Token contract
-      permitAmount,     // Amount to approve
-      chainId,          // Chain ID
+      taker.address, // Token owner
+      taker, // Signer
+      weth, // Token contract
+      permitAmount, // Amount to approve
+      chainId, // Chain ID
       await swap.getAddress(), // Spender (swap contract)
-      permitNonce       // Permit nonce
+      permitNonce, // Permit nonce
     );
 
     // 🎛️ Configure taker traits for execution
@@ -174,8 +188,8 @@ describe('🔑 EIP-2612 Permit Integration', function () {
     });
 
     // 🚫 Remove any existing WETH allowance to test permit
-    await weth.connect(taker).approve(swap.address, '0');
-    
+    await weth.connect(taker).approve(swap.address, "0");
+
     // 📊 Capture balances before execution
     const balancesBefore = {
       takerDai: await dai.balanceOf(taker.address),
@@ -188,39 +202,45 @@ describe('🔑 EIP-2612 Permit Integration', function () {
     const permitAndFillTx = swap.permitAndCall(
       // 📰 Pack permit data
       ethers.solidityPacked(
-        ['address', 'bytes'],
-        [await weth.getAddress(), permit]
+        ["address", "bytes"],
+        [await weth.getAddress(), permit],
       ),
       // 💼 Encode order fill call
-      swap.interface.encodeFunctionData('fillOrderArgs', [
+      swap.interface.encodeFunctionData("fillOrderArgs", [
         order,
         r,
         vs,
         1, // Fill amount
         takerTraits.traits,
         takerTraits.args,
-      ])
+      ]),
     );
 
     // ✅ Verify atomic permit + fill execution
-    await expect(permitAndFillTx)
-      .to.changeTokenBalances(dai, [taker, maker], [1, -1]);
-    await expect(permitAndFillTx)
-      .to.changeTokenBalances(weth, [taker, maker], [-1, 1]);
+    await expect(permitAndFillTx).to.changeTokenBalances(
+      dai,
+      [taker, maker],
+      [1, -1],
+    );
+    await expect(permitAndFillTx).to.changeTokenBalances(
+      weth,
+      [taker, maker],
+      [-1, 1],
+    );
   });
 
   /**
    * 🔄 Test: Multiple Permit Operations
-   * 
+   *
    * Scenario:
    * - Execute multiple permit-based operations
    * - Demonstrate permit nonce management
    * - Verify each permit is single-use
-   * 
+   *
    * 💡 Use Case:
    * Complex trading strategies requiring multiple approvals
    */
-  it('🔄 Execute multiple permits with proper nonce management', async function () {
+  it("🔄 Execute multiple permits with proper nonce management", async function () {
     const {
       tokens: { dai, weth },
       contracts: { swap },
@@ -231,28 +251,38 @@ describe('🔑 EIP-2612 Permit Integration', function () {
     const firstOrder = buildOrder({
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
-      makingAmount: ether('10'),
-      takingAmount: ether('0.01'),
+      makingAmount: ether("10"),
+      takingAmount: ether("0.01"),
       maker: maker.address,
     });
 
     const secondOrder = buildOrder({
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
-      makingAmount: ether('20'),
-      takingAmount: ether('0.02'),
+      makingAmount: ether("20"),
+      takingAmount: ether("0.02"),
       maker: maker.address,
     });
 
     // ✍️ Sign both orders
-    const firstSig = await signOrder(firstOrder, chainId, await swap.getAddress(), maker);
-    const secondSig = await signOrder(secondOrder, chainId, await swap.getAddress(), maker);
-    
+    const firstSig = await signOrder(
+      firstOrder,
+      chainId,
+      await swap.getAddress(),
+      maker,
+    );
+    const secondSig = await signOrder(
+      secondOrder,
+      chainId,
+      await swap.getAddress(),
+      maker,
+    );
+
     const { r: r1, yParityAndS: vs1 } = ethers.Signature.from(firstSig);
     const { r: r2, yParityAndS: vs2 } = ethers.Signature.from(secondSig);
 
     // 🚫 Clear WETH allowances to force permit usage
-    await weth.connect(taker).approve(swap.address, '0');
+    await weth.connect(taker).approve(swap.address, "0");
 
     // 📊 Get initial permit nonce for taker
     const initialNonce = await weth.nonces(taker.address);
@@ -262,31 +292,31 @@ describe('🔑 EIP-2612 Permit Integration', function () {
       taker.address,
       taker,
       weth,
-      ether('0.01').toString(), // Exact amount for first order
+      ether("0.01").toString(), // Exact amount for first order
       chainId,
       await swap.getAddress(),
-      (initialNonce + 1n).toString() // Next nonce
+      (initialNonce + 1n).toString(), // Next nonce
     );
 
     // 🚀 Execute first order with permit
     const firstTraits = buildTakerTraits({
-      threshold: ether('0.01'),
+      threshold: ether("0.01"),
       makingAmount: true,
     });
 
     await swap.permitAndCall(
       ethers.solidityPacked(
-        ['address', 'bytes'],
-        [await weth.getAddress(), firstPermit]
+        ["address", "bytes"],
+        [await weth.getAddress(), firstPermit],
       ),
-      swap.interface.encodeFunctionData('fillOrderArgs', [
+      swap.interface.encodeFunctionData("fillOrderArgs", [
         firstOrder,
         r1,
         vs1,
-        ether('10'),
+        ether("10"),
         firstTraits.traits,
         firstTraits.args,
-      ])
+      ]),
     );
 
     // 🔑 Generate second permit with incremented nonce
@@ -294,38 +324,44 @@ describe('🔑 EIP-2612 Permit Integration', function () {
       taker.address,
       taker,
       weth,
-      ether('0.02').toString(), // Amount for second order
+      ether("0.02").toString(), // Amount for second order
       chainId,
       await swap.getAddress(),
-      (initialNonce + 2n).toString() // Incremented nonce
+      (initialNonce + 2n).toString(), // Incremented nonce
     );
 
     // 🚀 Execute second order with new permit
     const secondTraits = buildTakerTraits({
-      threshold: ether('0.02'),
+      threshold: ether("0.02"),
       makingAmount: true,
     });
 
     const secondTx = swap.permitAndCall(
       ethers.solidityPacked(
-        ['address', 'bytes'],
-        [await weth.getAddress(), secondPermit]
+        ["address", "bytes"],
+        [await weth.getAddress(), secondPermit],
       ),
-      swap.interface.encodeFunctionData('fillOrderArgs', [
+      swap.interface.encodeFunctionData("fillOrderArgs", [
         secondOrder,
         r2,
         vs2,
-        ether('20'),
+        ether("20"),
         secondTraits.traits,
         secondTraits.args,
-      ])
+      ]),
     );
 
     // ✅ Verify second transaction executes successfully
-    await expect(secondTx)
-      .to.changeTokenBalances(dai, [taker, maker], [ether('20'), -ether('20')]);
-    await expect(secondTx)
-      .to.changeTokenBalances(weth, [taker, maker], [-ether('0.02'), ether('0.02')]);
+    await expect(secondTx).to.changeTokenBalances(
+      dai,
+      [taker, maker],
+      [ether("20"), -ether("20")],
+    );
+    await expect(secondTx).to.changeTokenBalances(
+      weth,
+      [taker, maker],
+      [-ether("0.02"), ether("0.02")],
+    );
 
     // ✅ Verify nonce was incremented properly
     const finalNonce = await weth.nonces(taker.address);
@@ -334,21 +370,24 @@ describe('🔑 EIP-2612 Permit Integration', function () {
 
   /**
    * ⏰ Test: Permit with Expiration
-   * 
+   *
    * Scenario:
    * - Create permit with future expiration
    * - Execute order before expiration (should succeed)
    * - Demonstrate time-based permit security
-   * 
+   *
    * 💡 Use Case:
    * Time-limited approvals for enhanced security
    */
-  it('⏰ Execute permit with expiration constraint', async function () {
+  it("⏰ Execute permit with expiration constraint", async function () {
     const {
       tokens: { dai, weth },
       contracts: { swap },
       chainId,
-      permitOrder: { order, signature: { r, vs } },
+      permitOrder: {
+        order,
+        signature: { r, vs },
+      },
     } = await loadFixture(deployAndInitializePermitSystem);
 
     // ⏰ Set permit expiration for 1 hour from now
@@ -360,11 +399,11 @@ describe('🔑 EIP-2612 Permit Integration', function () {
       taker.address,
       taker,
       weth,
-      '1',
+      "1",
       chainId,
       await swap.getAddress(),
-      '1',
-      permitExpiration // Custom expiration
+      "1",
+      permitExpiration, // Custom expiration
     );
 
     const takerTraits = buildTakerTraits({
@@ -373,61 +412,67 @@ describe('🔑 EIP-2612 Permit Integration', function () {
     });
 
     // 🚫 Clear allowance to force permit usage
-    await weth.connect(taker).approve(swap.address, '0');
+    await weth.connect(taker).approve(swap.address, "0");
 
     // 🚀 Execute before expiration (should succeed)
     const timedPermitTx = swap.permitAndCall(
       ethers.solidityPacked(
-        ['address', 'bytes'],
-        [await weth.getAddress(), timedPermit]
+        ["address", "bytes"],
+        [await weth.getAddress(), timedPermit],
       ),
-      swap.interface.encodeFunctionData('fillOrderArgs', [
+      swap.interface.encodeFunctionData("fillOrderArgs", [
         order,
         r,
         vs,
         1,
         takerTraits.traits,
         takerTraits.args,
-      ])
+      ]),
     );
 
     // ✅ Verify successful execution before expiration
-    await expect(timedPermitTx)
-      .to.changeTokenBalances(dai, [taker, maker], [1, -1]);
-    await expect(timedPermitTx)
-      .to.changeTokenBalances(weth, [taker, maker], [-1, 1]);
+    await expect(timedPermitTx).to.changeTokenBalances(
+      dai,
+      [taker, maker],
+      [1, -1],
+    );
+    await expect(timedPermitTx).to.changeTokenBalances(
+      weth,
+      [taker, maker],
+      [-1, 1],
+    );
   });
 });
 
 /**
  * 🚀 EIP-2612 Permit Best Practices
- * 
+ *
  * 1. **🔑 Permit Security**:
  *    - Always use unique nonces for each permit
  *    - Set reasonable expiration times
  *    - Validate permit parameters before signing
  *    - Store permit data securely until use
- * 
+ *
  * 2. **⚡ Gas Optimization**:
  *    - Combine permit + action in single transaction
  *    - Use precise approval amounts when possible
  *    - Consider permit2 for advanced use cases
  *    - Batch multiple permits when applicable
- * 
+ *
  * 3. **📱 UX Improvements**:
  *    - Eliminate separate approval transactions
  *    - Provide clear permit explanations to users
  *    - Handle permit failures gracefully
  *    - Support both permit and standard approvals
- * 
+ *
  * 4. **🔄 Nonce Management**:
  *    - Track nonce state for each user
  *    - Handle nonce collisions appropriately
  *    - Implement nonce recovery mechanisms
  *    - Consider permit batching strategies
- * 
+ *
  * 📚 Advanced Permit Patterns:
- * 
+ *
  * ```typescript
  * // Example: Conditional permit execution
  * class PermitManager {
@@ -441,7 +486,7 @@ describe('🔑 EIP-2612 Permit Integration', function () {
  *       user.address,
  *       this.spenderAddress
  *     );
- * 
+ *
  *     if (currentAllowance < amount) {
  *       // Generate permit for exact shortfall
  *       const permitAmount = amount - currentAllowance;
@@ -450,7 +495,7 @@ describe('🔑 EIP-2612 Permit Integration', function () {
  *         token,
  *         permitAmount
  *       );
- *       
+ *
  *       return this.executeWithPermitData(permit, action);
  *     } else {
  *       // Sufficient allowance, execute directly
@@ -459,12 +504,12 @@ describe('🔑 EIP-2612 Permit Integration', function () {
  *   }
  * }
  * ```
- * 
+ *
  * 📚 Related Documentation:
  * - Permit Integration: ../limit-order-maker-contract.md
  * - Gasless Workflows: ../Limit Order SDK/install.md
  * - SDK Integration: ../Limit Order SDK/integration.md
- * 
+ *
  * 🔗 Example Cross-References:
  * - Limit Orders: ./limit-order.ts
  * - Maker Contracts: ./maker-contract.ts

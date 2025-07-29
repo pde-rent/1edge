@@ -12,15 +12,15 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/events
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `chain` | `number` | Yes | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
+| Parameter | Type     | Required | Description                                      |
+| --------- | -------- | -------- | ------------------------------------------------ |
+| `chain`   | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
 
 ### Query Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `limit` | `number` | No | Number of events to return (default: 100, max: 1000) |
+| Parameter | Type     | Required | Description                                          |
+| --------- | -------- | -------- | ---------------------------------------------------- |
+| `limit`   | `number` | No       | Number of events to return (default: 100, max: 1000) |
 
 ## Request Example
 
@@ -59,19 +59,19 @@ Returns an array of fill and cancel events.
 
 ### Schema
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `id` | `number` | Event ID |
-| `network` | `number` | Network/chain ID |
-| `logId` | `string` | Log identifier |
-| `version` | `number` | Protocol version |
-| `action` | `string` | Event action ("fill" or "cancel") |
-| `orderHash` | `string` | Order hash |
-| `taker` | `string` | Taker address |
+| Field                  | Type     | Description                        |
+| ---------------------- | -------- | ---------------------------------- |
+| `id`                   | `number` | Event ID                           |
+| `network`              | `number` | Network/chain ID                   |
+| `logId`                | `string` | Log identifier                     |
+| `version`              | `number` | Protocol version                   |
+| `action`               | `string` | Event action ("fill" or "cancel")  |
+| `orderHash`            | `string` | Order hash                         |
+| `taker`                | `string` | Taker address                      |
 | `remainingMakerAmount` | `string` | Remaining maker amount after event |
-| `transactionHash` | `string` | Transaction hash |
-| `blockNumber` | `number` | Block number |
-| `createDateTime` | `string` | Event timestamp |
+| `transactionHash`      | `string` | Transaction hash                   |
+| `blockNumber`          | `number` | Block number                       |
+| `createDateTime`       | `string` | Event timestamp                    |
 
 ### Example Response
 

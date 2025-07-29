@@ -12,13 +12,13 @@ flowchart TD
     SIGN --> SUBMIT[Submit to API]
     SUBMIT --> WAIT[Wait for Taker]
     WAIT --> EXECUTE[Order Executed]
-    
+
     subgraph "Development Steps"
         SETUP --> INSTALL[Install Dependencies]
         SETUP --> CONFIG[Configure Wallet]
         SETUP --> CONNECT[Connect to Network]
     end
-    
+
     subgraph "Order Lifecycle"
         SUBMIT --> PENDING[Order Pending]
         PENDING --> PARTIAL[Partial Fill]
@@ -31,10 +31,10 @@ flowchart TD
 
 This guide demonstrates how to create and submit a Limit Order v4 using the `@1inch/limit-order-sdk` in a JavaScript environment. You'll learn how to:
 
-- Configure your development environment  
-- Approve token transfers securely  
-- Construct and sign a limit order  
-- Submit the signed order to the 1inch Orderbook API  
+- Configure your development environment
+- Approve token transfers securely
+- Construct and sign a limit order
+- Submit the signed order to the 1inch Orderbook API
 
 ---
 
@@ -54,10 +54,10 @@ bun add @1inch/limit-order-sdk ethers
 
 ### Dependencies Overview
 
-| Package | Purpose | Version |
-|---------|---------|---------|
-| `@1inch/limit-order-sdk` | Core SDK for creating, signing, and submitting limit orders | Latest |
-| `ethers` | Lightweight library for Ethereum blockchain interaction | v6+ |
+| Package                  | Purpose                                                     | Version |
+| ------------------------ | ----------------------------------------------------------- | ------- |
+| `@1inch/limit-order-sdk` | Core SDK for creating, signing, and submitting limit orders | Latest  |
+| `ethers`                 | Lightweight library for Ethereum blockchain interaction     | v6+     |
 
 ---
 
@@ -114,10 +114,10 @@ const expiresIn = 120n; // seconds
 const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 ```
 
-| Token | Symbol | Address | Decimals |
-|-------|--------|---------|----------|
-| Maker Asset | USDC | `0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48` | 6 |
-| Taker Asset | 1INCH | `0x111111111117dc0aa78b770fa6a738034120c302` | 18 |
+| Token       | Symbol | Address                                      | Decimals |
+| ----------- | ------ | -------------------------------------------- | -------- |
+| Maker Asset | USDC   | `0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48` | 6        |
+| Taker Asset | 1INCH  | `0x111111111117dc0aa78b770fa6a738034120c302` | 18       |
 
 ---
 
@@ -147,12 +147,12 @@ const currentAllowance = await makerAssetContract.allowance(
 // Approve if insufficient allowance
 if (currentAllowance < makingAmount) {
   console.log("🔄 Approving token transfer...");
-  
+
   const approveTx = await makerAssetContract.approve(
     limitOrderContractAddress,
     makingAmount, // or MaxUint256 for unlimited approval
   );
-  
+
   await approveTx.wait();
   console.log("✅ Token approval confirmed!");
 }
@@ -162,6 +162,7 @@ if (currentAllowance < makingAmount) {
 
 > **Tip: One-time Approval**  
 > To avoid repeated approvals, you can approve the maximum amount:
+>
 > ```javascript
 > await makerAssetContract.approve(limitOrderContractAddress, MaxUint256);
 > ```
@@ -177,12 +178,12 @@ The `MakerTraits` define how your order behaves. Configure rules for partial fil
 
 ### Available Trait Methods
 
-| Method | Description | Use Case |
-|--------|-------------|----------|
-| `.withExpiration(timestamp)` | Sets order expiration time | Time-sensitive trading |
-| `.allowPartialFills()` | Enables partial order execution | Large orders, better liquidity |
-| `.allowMultipleFills()` | Allows multiple executions | Market making strategies |
-| `.withNonce(value)` | Sets unique order identifier | Order management |
+| Method                       | Description                     | Use Case                       |
+| ---------------------------- | ------------------------------- | ------------------------------ |
+| `.withExpiration(timestamp)` | Sets order expiration time      | Time-sensitive trading         |
+| `.allowPartialFills()`       | Enables partial order execution | Large orders, better liquidity |
+| `.allowMultipleFills()`      | Allows multiple executions      | Market making strategies       |
+| `.withNonce(value)`          | Sets unique order identifier    | Order management               |
 
 ### Implementation
 
@@ -237,6 +238,7 @@ console.log("✅ Order signed successfully!");
 ### What's Being Signed
 
 The signature includes:
+
 - Order details (amounts, tokens, expiration)
 - Maker address and traits
 - Unique salt for order identification
@@ -268,16 +270,15 @@ const api = new Api({
 ```javascript
 try {
   console.log("📡 Submitting order to 1inch Orderbook...");
-  
+
   const result = await api.submitOrder(order, signature);
-  
+
   console.log("🎉 Order submitted successfully!");
   console.log("Order Hash:", result.orderHash);
   console.log("Status:", result.success ? "Active" : "Failed");
-  
 } catch (error) {
   console.error("❌ Failed to submit order:", error.message);
-  
+
   // Handle common errors
   if (error.message.includes("insufficient allowance")) {
     console.log("💡 Tip: Check your token approval");
@@ -298,14 +299,14 @@ try {
 
 The 1inch Limit Order Protocol supports multiple networks:
 
-| Network | Chain ID | Status |
-|---------|----------|--------|
-| Ethereum | 1 | ✅ Active |
-| Polygon | 137 | ✅ Active |
-| BSC | 56 | ✅ Active |
-| Arbitrum | 42161 | ✅ Active |
-| Optimism | 10 | ✅ Active |
-| Avalanche | 43114 | ✅ Active |
+| Network   | Chain ID | Status    |
+| --------- | -------- | --------- |
+| Ethereum  | 1        | ✅ Active |
+| Polygon   | 137      | ✅ Active |
+| BSC       | 56       | ✅ Active |
+| Arbitrum  | 42161    | ✅ Active |
+| Optimism  | 10       | ✅ Active |
+| Avalanche | 43114    | ✅ Active |
 
 ---
 

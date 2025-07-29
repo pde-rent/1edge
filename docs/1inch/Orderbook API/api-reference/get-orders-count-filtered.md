@@ -12,17 +12,17 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/count
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `chain` | `number` | Yes | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
+| Parameter | Type     | Required | Description                                      |
+| --------- | -------- | -------- | ------------------------------------------------ |
+| `chain`   | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
 
 ### Query Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `statuses` | `string` | No | Comma-separated order statuses (1,2,3) |
-| `takerAsset` | `string` | No | Filter by taker asset address |
-| `makerAsset` | `string` | No | Filter by maker asset address |
+| Parameter    | Type     | Required | Description                            |
+| ------------ | -------- | -------- | -------------------------------------- |
+| `statuses`   | `string` | No       | Comma-separated order statuses (1,2,3) |
+| `takerAsset` | `string` | No       | Filter by taker asset address          |
+| `makerAsset` | `string` | No       | Filter by maker asset address          |
 
 ## Request Example
 
@@ -63,12 +63,12 @@ Returns the count of orders matching the filters.
 
 ### Schema
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
+| Field   | Type     | Description                            |
+| ------- | -------- | -------------------------------------- |
 | `count` | `number` | Number of orders matching the criteria |
 
 ### Example Response
 
 ```json
-{"count":4347}
+{ "count": 4347 }
 ```

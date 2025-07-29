@@ -12,17 +12,17 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/estimate-fees
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `chain` | `number` | Yes | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
+| Parameter | Type     | Required | Description                                      |
+| --------- | -------- | -------- | ------------------------------------------------ |
+| `chain`   | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
 
 ### Query Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `orderHash` | `string` | Yes | The hash of the order to estimate fees for |
-| `takerAddress` | `string` | Yes | Address of the taker who will fill the order |
-| `makingAmount` | `string` | No | Amount to be filled (if partial fill) |
+| Parameter      | Type     | Required | Description                                  |
+| -------------- | -------- | -------- | -------------------------------------------- |
+| `orderHash`    | `string` | Yes      | The hash of the order to estimate fees for   |
+| `takerAddress` | `string` | Yes      | Address of the taker who will fill the order |
+| `makingAmount` | `string` | No       | Amount to be filled (if partial fill)        |
 
 ## Request Example
 
@@ -37,9 +37,10 @@ async function httpCall() {
       Authorization: "Bearer {API_KEY}",
     },
     params: {
-      orderHash: "0xf2637aec6b34381238f8c7c0a2e2e5b1bbcfa62c8e6411c7304f3f10e30d74b4",
+      orderHash:
+        "0xf2637aec6b34381238f8c7c0a2e2e5b1bbcfa62c8e6411c7304f3f10e30d74b4",
       takerAddress: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
-      makingAmount: "100000000"
+      makingAmount: "100000000",
     },
     paramsSerializer: {
       indexes: null,
@@ -63,13 +64,13 @@ Returns estimated fees for the order execution.
 
 ### Schema
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
-| `resolverFee` | `string` | Fee amount paid to the resolver |
-| `integratorFee` | `string` | Fee amount for the integrator |
-| `protocolFee` | `string` | Protocol fee amount |
-| `totalFee` | `string` | Total fees to be paid |
-| `estimatedGas` | `string` | Estimated gas units for the transaction |
+| Field           | Type     | Description                             |
+| --------------- | -------- | --------------------------------------- |
+| `resolverFee`   | `string` | Fee amount paid to the resolver         |
+| `integratorFee` | `string` | Fee amount for the integrator           |
+| `protocolFee`   | `string` | Protocol fee amount                     |
+| `totalFee`      | `string` | Total fees to be paid                   |
+| `estimatedGas`  | `string` | Estimated gas units for the transaction |
 
 ### Example Response
 

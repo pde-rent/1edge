@@ -12,11 +12,11 @@ GET https://api.1inch.dev/orderbook/v4.0/{chain}/has-active-orders-with-permit/{
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-| --------- | ---- | -------- | ----------- |
-| `chain` | `number` | Yes | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
-| `walletAddress` | `string` | Yes | Wallet address to check |
-| `token` | `string` | Yes | Token address to check for permits |
+| Parameter       | Type     | Required | Description                                      |
+| --------------- | -------- | -------- | ------------------------------------------------ |
+| `chain`         | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, etc.) |
+| `walletAddress` | `string` | Yes      | Wallet address to check                          |
+| `token`         | `string` | Yes      | Token address to check for permits               |
 
 ## Request Example
 
@@ -54,8 +54,8 @@ Returns whether there are active orders with permit for the specified wallet and
 
 ### Schema
 
-| Field | Type | Description |
-| ----- | ---- | ----------- |
+| Field    | Type      | Description                                              |
+| -------- | --------- | -------------------------------------------------------- |
 | `result` | `boolean` | True if active orders with permit exist, false otherwise |
 
 ### Example Response

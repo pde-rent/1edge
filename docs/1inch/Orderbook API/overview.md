@@ -11,7 +11,7 @@ graph TD
         API --> EVENTS[Event Processor]
         API --> VALIDATOR[Order Validator]
     end
-    
+
     subgraph "Order Flow"
         MAKER[Maker] -->|Submit Signed Order| API
         API -->|Store| DB
@@ -21,7 +21,7 @@ graph TD
         BLOCKCHAIN -->|Emit Events| EVENTS
         EVENTS -->|Update Status| DB
     end
-    
+
     subgraph "Data Access"
         DB --> SEARCH[Order Search]
         DB --> STATS[Market Statistics]
@@ -35,12 +35,12 @@ graph TD
 
 The Orderbook API bridges the gap between off-chain order creation and on-chain execution by providing:
 
-| Function | Description | Benefit |
-|----------|-------------|---------|
-| Order Storage | Store signed limit orders from makers | Centralized discovery |
-| Order Discovery | Enable takers and resolvers to find orders | Efficient matching |
-| Status Tracking | Monitor order lifecycle and events | Real-time insights |
-| Price Discovery | Facilitate market depth analysis | Better pricing |
+| Function        | Description                                | Benefit               |
+| --------------- | ------------------------------------------ | --------------------- |
+| Order Storage   | Store signed limit orders from makers      | Centralized discovery |
+| Order Discovery | Enable takers and resolvers to find orders | Efficient matching    |
+| Status Tracking | Monitor order lifecycle and events         | Real-time insights    |
+| Price Discovery | Facilitate market depth analysis           | Better pricing        |
 
 ---
 
@@ -60,7 +60,7 @@ The Orderbook API bridges the gap between off-chain order creation and on-chain 
 > **Stay updated with real-time order events**
 
 - **Fill Events**: Monitor partial and complete order executions
-- **Cancel Events**: Track order cancellations and invalidations  
+- **Cancel Events**: Track order cancellations and invalidations
 - **Real-time Updates**: WebSocket support for live order state changes
 - **Historical Data**: Access complete event history for analysis
 
@@ -79,21 +79,21 @@ The Orderbook API bridges the gap between off-chain order creation and on-chain 
 
 ### Core Order Operations
 
-| Endpoint | Method | Description | Use Case |
-|----------|--------|-------------|----------|
-| `/{chain}` | `POST` | Submit new order | Order creation |
-| `/{chain}/all` | `GET` | List all orders with filters | Market scanning |
-| `/{chain}/order/{hash}` | `GET` | Get specific order details | Order verification |
-| `/{chain}/address/{addr}` | `GET` | Get orders by maker | Portfolio tracking |
+| Endpoint                  | Method | Description                  | Use Case           |
+| ------------------------- | ------ | ---------------------------- | ------------------ |
+| `/{chain}`                | `POST` | Submit new order             | Order creation     |
+| `/{chain}/all`            | `GET`  | List all orders with filters | Market scanning    |
+| `/{chain}/order/{hash}`   | `GET`  | Get specific order details   | Order verification |
+| `/{chain}/address/{addr}` | `GET`  | Get orders by maker          | Portfolio tracking |
 
 ### Event & Analytics
 
-| Endpoint | Method | Description | Use Case |
-|----------|--------|-------------|----------|
-| `/{chain}/events` | `GET` | Get all order events | Market analysis |
-| `/{chain}/events/{hash}` | `GET` | Get events for specific order | Order tracking |
-| `/{chain}/count` | `GET` | Get order counts with filters | Statistics |
-| `/{chain}/unique-active-pairs` | `GET` | Get active trading pairs | Market discovery |
+| Endpoint                       | Method | Description                   | Use Case         |
+| ------------------------------ | ------ | ----------------------------- | ---------------- |
+| `/{chain}/events`              | `GET`  | Get all order events          | Market analysis  |
+| `/{chain}/events/{hash}`       | `GET`  | Get events for specific order | Order tracking   |
+| `/{chain}/count`               | `GET`  | Get order counts with filters | Statistics       |
+| `/{chain}/unique-active-pairs` | `GET`  | Get active trading pairs      | Market discovery |
 
 ---
 
@@ -111,7 +111,8 @@ Authorization: Bearer YOUR_API_KEY
 
 ### Security Best Practices
 
-> **⚠️ Security Guidelines**  
+> **⚠️ Security Guidelines**
+>
 > - Never expose API keys in client-side code
 > - Use environment variables for key storage
 > - Rotate keys regularly for enhanced security
@@ -123,16 +124,17 @@ Authorization: Bearer YOUR_API_KEY
 
 ### Current Limits
 
-| Limit Type | Quota | Scope |
-|------------|-------|-------|
-| **Per Second** | 10 requests | Per API key |
-| **Per Minute** | 1,000 requests | Per API key |
-| **Per Hour** | 50,000 requests | Per API key |
-| **Daily** | 1M requests | Per API key |
+| Limit Type     | Quota           | Scope       |
+| -------------- | --------------- | ----------- |
+| **Per Second** | 10 requests     | Per API key |
+| **Per Minute** | 1,000 requests  | Per API key |
+| **Per Hour**   | 50,000 requests | Per API key |
+| **Daily**      | 1M requests     | Per API key |
 
 ### Optimization Tips
 
 > **💡 Pro Tips for Better Performance**
+>
 > - Use appropriate filters to reduce response size
 > - Implement client-side caching for static data
 > - Batch requests when possible
@@ -171,13 +173,13 @@ Authorization: Bearer YOUR_API_KEY
 
 ### HTTP Status Codes
 
-| Code | Status | Meaning |
-|------|--------|---------|
-| `200` | ✅ OK | Request successful |
-| `400` | ❌ Bad Request | Invalid parameters |
-| `401` | 🔒 Unauthorized | Invalid API key |
-| `404` | 🔍 Not Found | Resource not found |
-| `429` | ⏸️ Rate Limited | Too many requests |
+| Code  | Status          | Meaning               |
+| ----- | --------------- | --------------------- |
+| `200` | ✅ OK           | Request successful    |
+| `400` | ❌ Bad Request  | Invalid parameters    |
+| `401` | 🔒 Unauthorized | Invalid API key       |
+| `404` | 🔍 Not Found    | Resource not found    |
+| `429` | ⏸️ Rate Limited | Too many requests     |
 | `500` | 🔥 Server Error | Internal server issue |
 
 ---
@@ -186,15 +188,15 @@ Authorization: Bearer YOUR_API_KEY
 
 ### Supported Blockchains
 
-| Network | Chain ID | Status | Features |
-|---------|----------|--------|----------|
-| **Ethereum** | `1` | 🟢 Active | Full support |
-| **Polygon** | `137` | 🟢 Active | Full support |
-| **BSC** | `56` | 🟢 Active | Full support |
-| **Arbitrum** | `42161` | 🟢 Active | Full support |
-| **Optimism** | `10` | 🟢 Active | Full support |
-| **Avalanche** | `43114` | 🟢 Active | Full support |
-| **Base** | `8453` | 🟡 Beta | Limited support |
+| Network       | Chain ID | Status    | Features        |
+| ------------- | -------- | --------- | --------------- |
+| **Ethereum**  | `1`      | 🟢 Active | Full support    |
+| **Polygon**   | `137`    | 🟢 Active | Full support    |
+| **BSC**       | `56`     | 🟢 Active | Full support    |
+| **Arbitrum**  | `42161`  | 🟢 Active | Full support    |
+| **Optimism**  | `10`     | 🟢 Active | Full support    |
+| **Avalanche** | `43114`  | 🟢 Active | Full support    |
+| **Base**      | `8453`   | 🟡 Beta   | Limited support |
 
 ### Network Configuration
 
@@ -246,7 +248,7 @@ console.log(`Found ${orders.length} active orders`);
 ### Quick Links
 
 - [🚀 **Quickstart Guide**](./quickstart.md) - Get up and running in 5 minutes
-- [📖 **API Reference**](./api-reference/) - Comprehensive endpoint documentation  
+- [📖 **API Reference**](./api-reference/) - Comprehensive endpoint documentation
 - [🛠️ **SDK Integration**](../1inch%20LOP/Limit%20Order%20SDK/install.md) - JavaScript/TypeScript SDK
 - [🏗️ **Contract Integration**](../1inch%20LOP/limit-order-maker-contract.md) - Direct contract interaction
 
