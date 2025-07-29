@@ -12,16 +12,27 @@ import type { CollectorConfig, Symbol, AggregatedTicker } from "@common/types";
 import { sleep } from "@common/utils";
 import { pubSubServer } from "./pubSubServer";
 
+interface TradeEvent {
+  symbol: Symbol;
+  price: number;
+  amount: number;
+  side: 'buy' | 'sell'; // buy = bid volume, sell = ask volume
+  timestamp: number;
+  exchange: string;
+}
+
 interface IndexData {
   bid: number;
   ask: number;
   mid: number;
-  vask: number; // volume ask
-  vbid: number; // volume bid
+  vask: number; // volume ask (accumulated from sell trades)
+  vbid: number; // volume bid (accumulated from buy trades)
   velocity: number; // sqrt of trades/ticks per period
   dispersion: number; // stdev of exchange prices vs index mid
   timestamp: number;
   tickCount: number; // internal counter for velocity calculation
+  lastVolumeReset: number; // timestamp of last volume reset
+  tradeBuffer: TradeEvent[]; // buffer to store recent trades for volume calculation
 }
 
 interface PerformanceMetrics {
@@ -136,6 +147,8 @@ class CollectorService {
         dispersion: 0,
         timestamp: Date.now(),
         tickCount: 0,
+        lastVolumeReset: Date.now(),
+        tradeBuffer: [],
       });
     }
 
@@ -175,6 +188,50 @@ class CollectorService {
     logger.error("WebSocket ticker error:", error);
   }
 
+  /**
+   * Process a trade event and update bid/ask volumes accordingly
+   */
+  private processTradeEvent(trade: TradeEvent) {
+    if (!this.isRunning) return;
+
+    const indexData = this.indexData.get(trade.symbol);
+    if (!indexData) return;
+
+    // Add trade to buffer
+    indexData.tradeBuffer.push(trade);
+
+    // Keep only trades from the last 5 minutes for volume calculation
+    const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+    indexData.tradeBuffer = indexData.tradeBuffer.filter(t => t.timestamp > fiveMinutesAgo);
+
+    // Calculate volumes from recent trades
+    this.calculateVolumeFromTrades(trade.symbol, indexData);
+  }
+
+  /**
+   * Calculate bid/ask volumes from trade buffer
+   */
+  private calculateVolumeFromTrades(symbol: Symbol, indexData: IndexData) {
+    if (indexData.tradeBuffer.length === 0) return;
+
+    let bidVolume = 0;
+    let askVolume = 0;
+
+    // Aggregate volumes by trade side
+    for (const trade of indexData.tradeBuffer) {
+      if (trade.side === 'buy') {
+        bidVolume += trade.amount; // Buy orders hit asks, but create bid pressure
+      } else {
+        askVolume += trade.amount; // Sell orders hit bids, but create ask pressure
+      }
+    }
+
+    // Update volumes with exponential moving average for smoothing
+    const alpha = 0.1; // Smoothing factor
+    indexData.vbid = indexData.vbid * (1 - alpha) + bidVolume * alpha;
+    indexData.vask = indexData.vask * (1 - alpha) + askVolume * alpha;
+  }
+
   private calculateWeightedAverages(
     symbol: Symbol,
     data: AggregatedTicker,
@@ -189,6 +246,14 @@ class CollectorService {
     let totalAskVolume = 0;
     let totalWeight = 0;
     const activePrices: number[] = [];
+    const now = Date.now();
+
+    // Reset volumes every minute to get fresh volume data
+    if (now - indexData.lastVolumeReset > 60000) { // 60 seconds
+      indexData.vbid = 0;
+      indexData.vask = 0;
+      indexData.lastVolumeReset = now;
+    }
 
     // Calculate weighted averages from all active sources
     for (const [srcSymbol, srcData] of Object.entries(data.sources)) {
@@ -203,9 +268,18 @@ class CollectorService {
       totalBidWeighted += bid * weight;
       totalAskWeighted += ask * weight;
 
-      // Simulate different bid/ask volumes (bid volume typically higher for selling pressure)
-      const bidVolume = volume * 0.6; // 60% of volume on bid side
-      const askVolume = volume * 0.4; // 40% of volume on ask side
+      // For now, still use volume estimation but improved logic
+      // TODO: Replace with real trade data when trade streams are implemented
+      const spreadPercent = ask > 0 && bid > 0 ? ((ask - bid) / bid) * 100 : 0.1;
+      
+      // Dynamic volume split based on spread (tighter spreads = more balanced)
+      // Wide spreads indicate more uncertainty, so more conservative split
+      const bidRatio = Math.max(0.45, Math.min(0.65, 0.55 + (spreadPercent * 2)));
+      const askRatio = 1 - bidRatio;
+      
+      const bidVolume = volume * bidRatio;
+      const askVolume = volume * askRatio;
+      
       totalBidVolume += bidVolume * weight;
       totalAskVolume += askVolume * weight;
 
@@ -217,8 +291,15 @@ class CollectorService {
       indexData.bid = totalBidWeighted / totalWeight;
       indexData.ask = totalAskWeighted / totalWeight;
       indexData.mid = (indexData.bid + indexData.ask) / 2;
-      indexData.vbid = totalBidVolume / totalWeight;
-      indexData.vask = totalAskVolume / totalWeight;
+      
+      // Accumulate volumes instead of replacing (for realistic volume buildup)
+      const newBidVolume = totalBidVolume / totalWeight;
+      const newAskVolume = totalAskVolume / totalWeight;
+      
+      // Add new volume with decay factor to prevent infinite accumulation
+      const decayFactor = 0.95; // Slight decay to keep volumes realistic
+      indexData.vbid = (indexData.vbid * decayFactor) + newBidVolume;
+      indexData.vask = (indexData.vask * decayFactor) + newAskVolume;
 
       // Calculate dispersion as relative percentage (stdev of source prices vs our index mid)
       if (activePrices.length > 1 && indexData.mid > 0) {
