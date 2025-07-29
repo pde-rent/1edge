@@ -3,7 +3,7 @@ import { TIME } from "./constants";
 /**
  * Sleep for a given number of milliseconds
  */
-export const sleep = (ms: number): Promise<void> => 
+export const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -29,7 +29,7 @@ export function formatNumber(num: number): string {
  * Parse a symbol string into components
  */
 export function parseSymbol(
-  symbol: string
+  symbol: string,
 ): { exchange: string; type?: string; pair: string } | null {
   const parts = symbol.split(":");
   if (parts.length === 3) {
@@ -50,7 +50,11 @@ export function parseSymbol(
 /**
  * Create a symbol string from components
  */
-export function createSymbol(exchange: string, pair: string, type?: string): string {
+export function createSymbol(
+  exchange: string,
+  pair: string,
+  type?: string,
+): string {
   return type ? `${exchange}:${type}:${pair}` : `${exchange}:${pair}`;
 }
 
@@ -110,14 +114,14 @@ export function mergeDeep<T extends object>(target: T, source: Partial<T>): T {
     Object.keys(source).forEach((key) => {
       const sourceValue = source[key as keyof T];
       const targetValue = target[key as keyof T];
-      
+
       if (isObject(sourceValue)) {
         if (!(key in target)) {
           Object.assign(output, { [key]: sourceValue });
         } else if (isObject(targetValue)) {
           (output as any)[key] = mergeDeep(
             targetValue as any,
-            sourceValue as any
+            sourceValue as any,
           );
         }
       } else {
@@ -142,17 +146,12 @@ export async function retry<T>(
     delay?: number;
     factor?: number;
     maxDelay?: number;
-  } = {}
+  } = {},
 ): Promise<T> {
-  const {
-    attempts = 3,
-    delay = 1000,
-    factor = 2,
-    maxDelay = 30000,
-  } = options;
+  const { attempts = 3, delay = 1000, factor = 2, maxDelay = 30000 } = options;
 
   let lastError: Error;
-  
+
   for (let i = 0; i < attempts; i++) {
     try {
       return await fn();
@@ -164,7 +163,7 @@ export async function retry<T>(
       }
     }
   }
-  
+
   throw lastError!;
 }
 
@@ -188,7 +187,9 @@ export function movingAverage(values: number[], period: number): number[] {
     if (i < period - 1) {
       result.push(NaN);
     } else {
-      const sum = values.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+      const sum = values
+        .slice(i - period + 1, i + 1)
+        .reduce((a, b) => a + b, 0);
       result.push(sum / period);
     }
   }
@@ -201,7 +202,7 @@ export function movingAverage(values: number[], period: number): number[] {
 export function ema(values: number[], period: number): number[] {
   const k = 2 / (period + 1);
   const result: number[] = [];
-  
+
   for (let i = 0; i < values.length; i++) {
     if (i === 0) {
       result.push(values[0]);
@@ -209,7 +210,7 @@ export function ema(values: number[], period: number): number[] {
       result.push(values[i] * k + result[i - 1] * (1 - k));
     }
   }
-  
+
   return result;
 }
 
@@ -220,13 +221,13 @@ export function formatTokenAmount(amount: string, decimals: number): string {
   const divisor = BigInt(10) ** BigInt(decimals);
   const quotient = BigInt(amount) / divisor;
   const remainder = BigInt(amount) % divisor;
-  
+
   const quotientStr = quotient.toString();
   const remainderStr = remainder.toString().padStart(decimals, "0");
-  
+
   // Remove trailing zeros
   const trimmedRemainder = remainderStr.replace(/0+$/, "");
-  
+
   return trimmedRemainder ? `${quotientStr}.${trimmedRemainder}` : quotientStr;
 }
 
@@ -244,7 +245,7 @@ export function parseTokenAmount(amount: string, decimals: number): string {
  */
 export function calculatePriceImpact(
   currentPrice: number,
-  executionPrice: number
+  executionPrice: number,
 ): number {
   return Math.abs(percentChange(currentPrice, executionPrice));
 }
@@ -255,7 +256,7 @@ export function calculatePriceImpact(
 export function isWithinRange(
   value: number,
   target: number,
-  percentRange: number
+  percentRange: number,
 ): boolean {
   const diff = Math.abs(value - target);
   const threshold = target * (percentRange / 100);
