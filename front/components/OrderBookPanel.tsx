@@ -174,14 +174,14 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       key={level.price} 
       sx={{ 
         '&:hover': { backgroundColor: THEME.background.overlay05 },
-        borderLeft: isBid ? `3px solid ${THEME.primary}` : `3px solid ${THEME.secondary}`,  // Cyan for bids, orange for asks
+        borderLeft: isBid ? `3px solid ${THEME.primary}` : `3px solid ${THEME.secondary}`, // Cyan for bids, orange for asks
         backgroundColor: level.isRemainder ? THEME.background.overlay05 : 'transparent'
       }}
     >
       <TableCell sx={{ py: 0.5, px: 1.5, fontSize: THEME.font.size.xs }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           {isBid ? <TrendingUpIcon sx={{ fontSize: 12, color: THEME.primary }} /> : <TrendingDownIcon sx={{ fontSize: 12, color: THEME.secondary }} />}
-          <Typography variant="caption" sx={{ color: isBid ? THEME.primary : THEME.secondary, fontFamily: THEME.font.mono }}>  // Use theme colors and font
+          <Typography variant="caption" sx={{ color: isBid ? THEME.primary : THEME.secondary, fontFamily: THEME.font.mono }}> {/* Use theme colors and font */}
             {level.isRemainder ? `${formatPrice(level.price.toString())}+` : formatPrice(level.price.toString())}
           </Typography>
         </Box>
@@ -369,7 +369,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         borderBottom: `1px solid ${THEME.background.overlay10}`,
         backgroundColor: THEME.background.paper
       }}>
-        <Typography variant="h6" sx={{ fontSize: THEME.font.size.base, fontWeight: THEME.font.weight.medium, color: THEME.text.primary }}>  // Match StatusPanel header styling
+        <Typography variant="h6" sx={{ fontSize: THEME.font.size.base, fontWeight: THEME.font.weight.medium, color: THEME.text.primary }}> {/* Match StatusPanel header styling */}
           Order Book
         </Typography>
         <ToggleButtonGroup
@@ -456,7 +456,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             </Typography>
           </Box>
         ) : (
-          <Table size="small" stickyHeader className="table" sx={{ width: '100%' }}>  // Match StatusPanel table
+          <Table size="small" stickyHeader className="table" sx={{ width: '100%' }}> {/* Match StatusPanel table */}
             <TableHead>
               <TableRow>
                 <TableCell sx={{ 
