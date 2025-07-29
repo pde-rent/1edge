@@ -178,7 +178,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         backgroundColor: level.isRemainder ? THEME.background.overlay05 : 'transparent'
       }}
     >
-      <TableCell sx={{ py: 0.5, px: 1.5, fontSize: THEME.font.size.xs }}>
+      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           {isBid ? <TrendingUpIcon sx={{ fontSize: 12, color: THEME.primary }} /> : <TrendingDownIcon sx={{ fontSize: 12, color: THEME.secondary }} />}
           <Typography variant="caption" sx={{ color: isBid ? THEME.primary : THEME.secondary, fontFamily: THEME.font.mono }}> {/* Use theme colors and font */}
@@ -186,19 +186,19 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           </Typography>
         </Box>
       </TableCell>
-      <TableCell sx={{ py: 0.5, px: 1.5, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
+      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
         {formatAmount(level.amount.toString())}
       </TableCell>
-      <TableCell sx={{ py: 0.5, px: 1.5, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
+      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs, fontFamily: THEME.font.mono }}>
         {formatAmount(level.total.toString())}
       </TableCell>
-      <TableCell sx={{ py: 0.5, px: 1.5, fontSize: THEME.font.size.xs }}>
+      <TableCell sx={{ py: 0.25, px: 1.5, fontSize: THEME.font.size.xs }}>
         <Chip 
           label={level.count} 
           size="small" 
           sx={{ 
-            fontSize: THEME.font.size.xs, 
-            height: 16, 
+            fontSize: '0.6rem', 
+            height: 14, 
             backgroundColor: level.isRemainder ? THEME.primary + '20' : THEME.background.overlay10,
             color: level.isRemainder ? THEME.primary : THEME.text.secondary
           }} 
@@ -331,24 +331,24 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       level.total = runningTotal;
     });
     
-    // Keep top 9 levels, aggregate the rest into 10th level
-    if (sortedLevels.length > 9) {
-      const topNine = sortedLevels.slice(0, 9);
-      const remainder = sortedLevels.slice(9);
+    // Keep top 14 levels, aggregate the rest into 15th level
+    if (sortedLevels.length > 14) {
+      const topFourteen = sortedLevels.slice(0, 14);
+      const remainder = sortedLevels.slice(14);
       
       if (remainder.length > 0) {
         const remainderLevel: AggregatedLevel = {
           price: remainder[0].price, // Use first price as representative
           amount: remainder.reduce((sum, level) => sum + level.amount, 0),
-          total: topNine[topNine.length - 1].total + remainder.reduce((sum, level) => sum + level.amount, 0),
+          total: topFourteen[topFourteen.length - 1].total + remainder.reduce((sum, level) => sum + level.amount, 0),
           count: remainder.reduce((sum, level) => sum + level.count, 0),
           isRemainder: true
         };
         
-        return [...topNine, remainderLevel];
+        return [...topFourteen, remainderLevel];
       }
       
-      return topNine;
+      return topFourteen;
     }
     
     return sortedLevels;
@@ -447,7 +447,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       </Box>
 
       {/* Orderbook Table - match StatusPanel table styling */}
-      <TableContainer sx={{ flex: 1, overflow: 'auto' }}>
+      <TableContainer sx={{ flex: 1, overflow: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
         {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
           <Box sx={{ p: 2, textAlign: 'center' }}>
             <Typography color="text.secondary">No active orders found</Typography>
@@ -456,7 +456,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             </Typography>
           </Box>
         ) : (
-          <Table size="small" stickyHeader className="table" sx={{ width: '100%' }}> {/* Match StatusPanel table */}
+          <Table size="small" stickyHeader className="table" sx={{ width: '100%' }}>{/* Match StatusPanel table */}
             <TableHead>
               <TableRow>
                 <TableCell sx={{ 
@@ -532,7 +532,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       <Box sx={{ p: 1, borderTop: `1px solid ${THEME.border}`, backgroundColor: THEME.background.overlay05 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="caption" sx={{ color: THEME.text.secondary, fontFamily: THEME.font.mono }}>
-            Showing top 10 levels per side
+            Showing top 15 levels per side
           </Typography>
           <Typography variant="caption" sx={{ color: THEME.text.secondary, fontFamily: THEME.font.mono }}>
             Auto-refresh: 60s • Real-time filtering: {realtimeSpotPrice ? 'ON' : 'OFF'}
