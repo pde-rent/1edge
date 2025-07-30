@@ -1,7 +1,7 @@
 // @ts-nocheck
-'use client'
-import React, { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+"use client";
+import React, { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
 import {
   ChevronDown,
   TrendingUp,
@@ -14,19 +14,56 @@ import {
   Target,
   Zap,
   DollarSign,
-  Settings
-} from 'lucide-react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import TWAPForm from './components/TWAPForm';
-import RangeForm from './components/RangeForm';
-import IcebergForm from './components/IcebergForm';
-import DCAForm from './components/DSAForm';
-import GridMarketMakingForm from './components/GridMarketMakingForm';
-import MomentumReversalForm from './components/MomentumReversalForm';
-import RangeBreakoutForm from './components/RangeBreakoutForm';
-import TrendFollowingForm from './components/TrendFollowingStrategyForm';
+  Settings,
+} from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import TWAPForm from "./components/TWAPForm";
+import RangeForm, { getDefaultExpiry } from "./components/RangeForm";
+import IcebergForm from "./components/IcebergForm";
+import DCAForm from "./components/DSAForm";
+import GridMarketMakingForm from "./components/GridMarketMakingForm";
+import MomentumReversalForm from "./components/MomentumReversalForm";
+import RangeBreakoutForm from "./components/RangeBreakoutForm";
+import { toast } from "sonner";
+import StopLimitForm from "./components/StopLimitForm";
+import ChaseLimitForm from "./components/ChaseLimitForm";
 
 export interface FormData {
+  // TWAP fields
+  startDate: string;
+  endDate: string;
+  interval: string;
+  maxPrice: string;
+  // Legacy fields (you can remove these if not needed)
+
+  // Range fields
+  startPrice: string;
+  endPrice: string;
+  stepPct: string;
+  expiry: string;
+  steps: string;
+
+  tpPct: string;
+  singleSide: boolean;
+  stepMultiplier: string;
+  rsiPeriod: string;
+  rsimaPeriod: string;
+  slPct: string;
+  adxPeriod: string;
+  adxmaPeriod: string;
+  emaPeriod: string;
+  stopPrice: string;
+  limitPrice: string;
+  distancePct: string;
+
   twapDuration: string;
   twapInterval: string;
   minBuyPrice: string;
@@ -44,7 +81,7 @@ export interface FormData {
   breakoutThreshold: string;
   fastEMA: string;
   slowEMA: string;
-  budgetAmount?: string;
+  amount?: string;
   fromCoin: string;
   toCoin: string;
 }
@@ -63,232 +100,463 @@ export interface Coin {
 }
 
 const CreateOrderForm = () => {
-  const [orderCategory, setOrderCategory] = useState<'Order' | 'Strategy'>('Order');
-  const [orderType, setOrderType] = useState<string>('TWAP');
+  const [orderCategory, setOrderCategory] = useState<"Order" | "Strategy">(
+    "Order",
+  );
+  const [orderType, setOrderType] = useState<string>("TWAP");
 
-  const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormData>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    watch,
+    setValue,
+  } = useForm<FormData>({
     defaultValues: {
-      twapDuration: '60',
-      twapInterval: '5',
-      minBuyPrice: '3739.17',
-      maxSellPrice: '3814.71',
-      totalSize: '',
-      hiddenSize: '',
-      dcaAmount: '',
-      dcaFrequency: '',
-      gridLower: '',
-      gridUpper: '',
-      gridLevels: '10',
-      rsiThreshold: '30',
-      stopLoss: '',
-      takeProfit: '',
-      breakoutThreshold: '25',
-      fastEMA: '12',
-      slowEMA: '26',
-      budgetAmount: '',
-      fromCoin: 'ETH',
-      toCoin: 'USDC'
-    }
+      // TWAP defaults
+      startDate: new Date().toISOString().slice(0, 16),
+      endDate: (() => {
+        const date = new Date();
+        date.setMonth(date.getMonth() + 1);
+        return date.toISOString().slice(0, 16);
+      })(),
+      interval: "24",
+      maxPrice: "",
+      startPrice: "",
+      endPrice: "",
+      stepPct: "0.3",
+      expiry: getDefaultExpiry(),
+      steps: "",
+
+      tpPct: "",
+      singleSide: true,
+      stepMultiplier: "1.0",
+      rsiPeriod: "",
+      rsimaPeriod: "",
+      slPct: "",
+      adxPeriod: "",
+      adxmaPeriod: "",
+      emaPeriod: "",
+      stopPrice: "",
+      limitPrice: "",
+      distancePct: "",
+
+      twapDuration: "60",
+      twapInterval: "5",
+      minBuyPrice: "3739.17",
+      maxSellPrice: "3814.71",
+      totalSize: "",
+      hiddenSize: "",
+      dcaAmount: "",
+      dcaFrequency: "",
+      gridLower: "",
+      gridUpper: "",
+      gridLevels: "10",
+      rsiThreshold: "30",
+      stopLoss: "",
+      takeProfit: "",
+      breakoutThreshold: "25",
+      fastEMA: "12",
+      slowEMA: "26",
+      amount: "",
+      fromCoin: "ETH",
+      toCoin: "USDC",
+    },
   });
 
-  const orderTypes: Record<'Order' | 'Strategy', OrderType[]> = {
+  const orderTypes: Record<"Order" | "Strategy", OrderType[]> = {
     Order: [
-      { id: 'TWAP', name: 'TWAP', icon: Clock, description: 'Time-weighted average price' },
-      { id: 'Range', name: 'Range', icon: BarChart3, description: 'Liquidity position' },
-      { id: 'Iceberg', name: 'Iceberg', icon: Target, description: 'Hidden execution' }
+      {
+        id: "TWAP",
+        name: "TWAP",
+        icon: Clock,
+        description: "Time-weighted average price",
+      },
+      {
+        id: "Range",
+        name: "Range",
+        icon: BarChart3,
+        description: "Liquidity position",
+      },
+      {
+        id: "Iceberg",
+        name: "Iceberg",
+        icon: Target,
+        description: "Hidden execution",
+      },
+      {
+        id: "StopLimit",
+        name: "Stop Limit",
+        icon: Settings,
+        description: "Stop loss with limit",
+      },
+      {
+        id: "ChaseLimit",
+        name: "Chase Limit",
+        icon: TrendingUp,
+        description: "Dynamic limit chasing",
+      },
     ],
     Strategy: [
-      { id: 'DCA', name: 'DCA', icon: Repeat, description: 'Dollar cost averaging' },
-      { id: 'GridMarketMaking', name: 'Grid', icon: Grid3X3, description: 'Market making' },
-      { id: 'MomentumReversal', name: 'Momentum', icon: Activity, description: 'RSI reversal' },
-      { id: 'RangeBreakout', name: 'Breakout', icon: Zap, description: 'Range breakouts' },
-      { id: 'TrendFollowing', name: 'Trend', icon: TrendingUp, description: 'EMA strategy' }
-    ]
+      {
+        id: "DCA",
+        name: "DCA",
+        icon: Repeat,
+        description: "Dollar cost averaging",
+      },
+      {
+        id: "GridMarketMaking",
+        name: "Grid",
+        icon: Grid3X3,
+        description: "Market making",
+      },
+      {
+        id: "MomentumReversal",
+        name: "Momentum",
+        icon: Activity,
+        description: "RSI reversal",
+      },
+      {
+        id: "RangeBreakout",
+        name: "Breakout",
+        icon: Zap,
+        description: "Range breakouts",
+      },
+      {
+        id: "TrendFollowing",
+        name: "Trend",
+        icon: TrendingUp,
+        description: "EMA strategy",
+      },
+    ],
   };
 
   const renderForm = () => {
     switch (orderType) {
-      case 'TWAP':
+      case "TWAP":
         return <TWAPForm control={control} errors={errors} />;
-      case 'Range':
+      case "Range":
         return <RangeForm control={control} errors={errors} watch={watch} />;
-      case 'Iceberg':
+      case "Iceberg":
         return <IcebergForm control={control} errors={errors} />;
-      case 'DCA':
+      case "DCA":
         return <DCAForm control={control} errors={errors} />;
-      case 'GridMarketMaking':
+      case "GridMarketMaking":
         return <GridMarketMakingForm control={control} errors={errors} />;
-      case 'MomentumReversal':
+      case "MomentumReversal":
         return <MomentumReversalForm control={control} errors={errors} />;
-      case 'RangeBreakout':
+      case "RangeBreakout":
         return <RangeBreakoutForm control={control} errors={errors} />;
-      case 'TrendFollowing':
-        return <TrendFollowingForm control={control} errors={errors} />;
+      case "StopLimit":
+        return <StopLimitForm control={control} errors={errors} />;
+      case "ChaseLimit":
+        return <ChaseLimitForm control={control} errors={errors} />;
       default:
         return null;
     }
   };
 
   const onSubmit = async (data: FormData) => {
+    // Define which fields belong to each order type
+    const getRelevantParams = (orderType: string, formData: FormData) => {
+      switch (orderType) {
+        case "TWAP":
+          return {
+            amount: formData.amount,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+            interval: formData.interval,
+            maxPrice: formData.maxPrice,
+          };
+
+        case "Range":
+          return {
+            amount: formData.amount,
+            startPrice: formData.startPrice,
+            endPrice: formData.endPrice,
+            stepPct: formData.stepPct,
+            expiry: formData.expiry,
+          };
+
+        case "Iceberg":
+          return {
+            amount: formData.amount,
+            startPrice: formData.startPrice,
+            endPrice: formData.endPrice,
+            steps: formData.steps,
+            expiry: formData.expiry,
+          };
+
+        case "DCA":
+          return {
+            amount: formData.amount,
+            interval: formData.interval,
+            maxPrice: formData.maxPrice,
+            startDate: formData.startDate,
+          };
+
+        case "GridMarketMaking":
+          return {
+            amount: formData.amount,
+            startPrice: formData.startPrice,
+            endPrice: formData.endPrice,
+            stepPct: formData.stepPct,
+            stepMultiplier: formData.stepMultiplier,
+            singleSide: formData.singleSide,
+            tpPct: formData.tpPct,
+          };
+
+        case "MomentumReversal":
+          return {
+            amount: formData.amount,
+            rsiPeriod: formData.rsiPeriod,
+            rsimaPeriod: formData.rsimaPeriod,
+            slPct: formData.slPct,
+            tpPct: formData.tpPct,
+          };
+
+        case "RangeBreakout":
+          return {
+            amount: formData.amount,
+            adxPeriod: formData.adxPeriod,
+            adxmaPeriod: formData.adxmaPeriod,
+            emaPeriod: formData.emaPeriod,
+            slPct: formData.slPct,
+            tpPct: formData.tpPct,
+          };
+        case "StopLimit":
+          return {
+            amount: formData.amount,
+            stopPrice: formData.stopPrice,
+            limitPrice: formData.limitPrice,
+            expiry: formData.expiry,
+          };
+        case "ChaseLimit":
+          return {
+            amount: formData.amount,
+            distancePct: formData.distancePct,
+            expiry: formData.expiry,
+            maxPrice: formData.maxPrice,
+          };
+
+        default:
+          return {
+            amount: formData.amount,
+          };
+      }
+    };
+
+    const relevantParams = getRelevantParams(orderType, data);
+
     const strategy = {
       id: new Date().toISOString(),
       name: orderType,
       type: orderType,
-      status: 'Running',
-      network: 1,
-      enabled: true,
-      config: JSON.stringify(data),
+      config: relevantParams,
     };
 
     try {
-      const response = await fetch('http://localhost:40005/strategies', {
-        method: 'POST',
+      const response = await fetch("http://localhost:40005/strategies", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(strategy),
       });
 
       if (response.ok) {
-        console.log('Strategy saved successfully');
+        toast.success("Strategy saved successfully");
+        console.log("Strategy saved successfully");
+        console.log("Submitted params:", relevantParams); // Debug log
       } else {
-        console.error('Failed to save strategy');
+        toast.error("Failed to save strategy");
+        console.error("Failed to save strategy");
       }
     } catch (error) {
-      console.error('An error occurred while saving the strategy:', error);
+      toast.error("An error occurred while saving the strategy");
+      console.error("An error occurred while saving the strategy:", error);
     }
   };
 
   return (
-    <Card className="h-full bg-gray-950 border-gray-800 overflow-hidden flex flex-col p-0 gap-0">
-      {/* Header */}
-      <CardHeader className="border-b border-gray-800 bg-gray-900/50 flex-shrink-0 pb-3">
-        <h2 className="text-lg font-semibold text-gray-100">Create Order</h2>
-      </CardHeader>
+    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+        <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl ">
+          <h2 className="text-lg font-bold pl-4 pt-3 relative z-10 text-teal-600 ">
+            Create Order
+          </h2>
 
-      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
-        <form onSubmit={handleSubmit(onSubmit)} className="h-full flex flex-col">
-
-          {/* Order Configuration - Scrollable */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-            {/* Order Type & Category Selection */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-gray-300">Type & Parameters</span>
-              </div>
-
-              {/* Category Toggle */}
-              <div className="flex rounded-md bg-gray-800/60 p-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOrderCategory('Order');
-                    setOrderType('TWAP');
-                  }}
-                  className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all ${orderCategory === 'Order'
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
-                    }`}
-                >
-                  <DollarSign className="w-4 h-4 inline mr-2" />
-                  Orders
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOrderCategory('Strategy');
-                    setOrderType('DCA');
-                  }}
-                  className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-all ${orderCategory === 'Strategy'
-                    ? 'bg-green-600 text-white'
-                    : 'text-gray-300 hover:text-gray-100 hover:bg-gray-700'
-                    }`}
-                >
-                  <TrendingUp className="w-4 h-4 inline mr-2" />
-                  Strategies
-                </button>
-              </div>
-
-              {/* Type Selection Dropdown */}
-              <div className="relative">
-                <select
-                  value={orderType}
-                  onChange={(e) => setOrderType(e.target.value)}
-                  className="w-full px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded text-gray-100 text-sm focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50 appearance-none cursor-pointer"
-                >
-                  {orderTypes[orderCategory].map((type) => (
-                    <option key={type.id} value={type.id} className="bg-gray-900">
-                      {type.name} - {type.description}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Size in USD */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Size (USD)</label>
-              <Controller
-                name="budgetAmount"
-                control={control}
-                rules={{ required: 'Size is required' }}
-                render={({ field }) => (
-                  <input
-                    {...field}
-                    type="number"
-                    step="0.01"
-                    className="w-full px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded text-gray-100 placeholder-gray-400 text-sm focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50"
-                    placeholder="Enter amount in USD"
-                  />
-                )}
-              />
-              {errors.budgetAmount && (
-                <span className="text-xs text-red-400">{errors.budgetAmount.message}</span>
-              )}
-            </div>
-
-            {/* Dynamic Form Fields Based on Order Type */}
-            <div className="space-y-3">
-              <div className="border-t border-gray-800 pt-3">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-300">
-                    {orderTypes[orderCategory].find(t => t.id === orderType)?.name} Parameters
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  {renderForm()}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer with Submit Button */}
-          <div className="border-t border-gray-800 bg-gray-900/40 p-4 flex-shrink-0">
-            <button
-              type="submit"
-              className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-medium text-sm rounded-lg transition-all transform hover:scale-[1.01] shadow-lg"
+          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="h-full flex flex-col"
             >
-              Create {orderTypes[orderCategory].find(t => t.id === orderType)?.name} {orderCategory}
-            </button>
+              {/* Order Configuration - Scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Order Type & Category Selection */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm font-medium text-teal-200">
+                      Type & Parameters
+                    </span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-teal-500/30 to-transparent"></div>
+                  </div>
 
-            {/* Info Footer */}
-            <div className="mt-3 p-2 rounded bg-gray-800/30 border border-gray-700/30">
-              <div className="flex items-center gap-2">
-                <Info className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                <div className="text-xs text-gray-400">
-                  {orderCategory === 'Order'
-                    ? 'Executed based on market conditions and parameters'
-                    : 'Runs continuously with automated strategy execution'
-                  }
+                  {/* Category Toggle */}
+                  <div className="flex rounded-lg bg-black/60 backdrop-blur-sm p-1 border border-slate-700/50 shadow-inner">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setOrderCategory("Order");
+                        setOrderType("TWAP");
+                      }}
+                      variant={orderCategory === "Order" ? "default" : "ghost"}
+                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-300 ${
+                        orderCategory === "Order"
+                          ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-300/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
+                          : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
+                      }`}
+                    >
+                      Orders
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setOrderCategory("Strategy");
+                        setOrderType("DCA");
+                      }}
+                      variant={
+                        orderCategory === "Strategy" ? "default" : "ghost"
+                      }
+                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-300 ${
+                        orderCategory === "Strategy"
+                          ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-400/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
+                          : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
+                      }`}
+                    >
+                      Strategies
+                    </Button>
+                  </div>
+
+                  {/* Type Selection using shadcn Select */}
+                  <div className="relative">
+                    <Select value={orderType} onValueChange={setOrderType}>
+                      <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80">
+                        <SelectValue placeholder="Select order type" />
+                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-900 border-slate-700">
+                        {orderTypes[orderCategory].map((type) => {
+                          const IconComponent = type.icon;
+                          return (
+                            <SelectItem
+                              key={type.id}
+                              value={type.id}
+                              className="text-white hover:bg-slate-800 focus:bg-slate-800"
+                            >
+                              <div className="flex items-center gap-2">
+                                <IconComponent className="w-4 h-4" />
+                                <span>
+                                  {type.name} - {type.description}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Size in USD */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+                    Size (USD)
+                    <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+                  </label>
+                  <Controller
+                    name="amount"
+                    control={control}
+                    rules={{ required: "Size is required" }}
+                    render={({ field }) => (
+                      <div className="relative">
+                        <input
+                          {...field}
+                          type="number"
+                          step="0.01"
+                          className="w-full px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white placeholder-slate-400 text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80"
+                          placeholder="Enter amount in USD"
+                        />
+                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+                      </div>
+                    )}
+                  />
+                  {errors.amount && (
+                    <span className="text-xs text-red-400 flex items-center gap-1">
+                      <div className="w-1 h-1 rounded-full bg-red-400"></div>
+                      {errors.amount.message}
+                    </span>
+                  )}
+                </div>
+
+                {/* Dynamic Form Fields Based on Order Type */}
+                <div className="space-y-3">
+                  <div className="border-t border-teal-500/20 pt-3 relative">
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-teal-100 flex items-center gap-2">
+                        {
+                          orderTypes[orderCategory].find(
+                            (t) => t.id === orderType,
+                          )?.name
+                        }{" "}
+                        Parameters
+                        <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
+                      </span>
+                    </div>
+
+                    {renderForm()}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+
+              {/* Footer with Submit Button */}
+              <div className="border-t border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md p-4 flex-shrink-0 relative">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+
+                <Button
+                  type="submit"
+                  className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-xl shadow-teal-500/25 border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                  <span className="relative z-10">
+                    Create{" "}
+                    {
+                      orderTypes[orderCategory].find((t) => t.id === orderType)
+                        ?.name
+                    }{" "}
+                    {orderCategory}
+                  </span>
+                </Button>
+
+                {/* Info Footer */}
+                <div className="mt-3 p-3 rounded-lg bg-black/40 backdrop-blur-sm border border-slate-600/30 shadow-inner relative">
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
+                  <div className="flex items-center gap-2 relative z-10">
+                    <Info className="w-3 h-3 text-teal-400 flex-shrink-0" />
+                    <div className="text-xs text-slate-300">
+                      {orderCategory === "Order"
+                        ? "Executed based on market conditions and parameters"
+                        : "Runs continuously with automated strategy execution"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

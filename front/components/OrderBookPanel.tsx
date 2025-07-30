@@ -61,6 +61,52 @@ const parseFeedSymbol = (feedSymbol: string | null): { base: string; quote: stri
   return null;
 };
 
+// Enhanced number formatting with ellipses for large numbers
+const formatNumberWithEllipses = (value: string | number, maxLength: number = 10): string => {
+  try {
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    if (num === 0) return '0';
+    
+    // Handle very small numbers
+    if (Math.abs(num) < 0.0001) {
+      return num.toExponential(2);
+    }
+    
+    // Format the number with appropriate precision
+    let formatted: string;
+    if (Math.abs(num) >= 1000000) {
+      formatted = (num / 1000000).toFixed(2) + 'M';
+    } else if (Math.abs(num) >= 1000) {
+      formatted = (num / 1000).toFixed(2) + 'K';
+    } else {
+      formatted = roundSig(num, 4).toString();
+    }
+    
+    // Add ellipses if too long
+    if (formatted.length > maxLength) {
+      return formatted.substring(0, maxLength - 1) + '…';
+    }
+    
+    return formatted;
+  } catch {
+    return '0';
+  }
+};
+
+const formatAmount = (amount: string) => formatNumberWithEllipses(amount, 8);
+
+const formatPrice = (price: string) => {
+  try {
+    const num = parseFloat(price);
+    if (num < 0.001) {
+      return num.toExponential(3);
+    }
+    return formatNumberWithEllipses(roundSig(num, 6), 10);
+  } catch {
+    return '0';
+  }
+};
+
 export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string | null }) {
   const [selectedChain, setSelectedChain] = useState(1);
   const [stepSize, setStepSize] = useState(0.5);
@@ -125,42 +171,17 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     }
   );
 
-  const formatAmount = (amount: string) => {
-    try {
-      const num = parseFloat(amount);
-      if (num === 0) return '0';
-      if (num < 0.0001) {
-        return num.toExponential(2);
-      }
-      return roundSig(num, 4);
-    } catch {
-      return '0';
-    }
-  };
-
-  const formatPrice = (price: string) => {
-    try {
-      const num = parseFloat(price);
-      if (num < 0.001) {
-        return num.toExponential(3);
-      }
-      return roundSig(num, 6);
-    } catch {
-      return '0';
-    }
-  };
-
   const renderLevel = (level: AggregatedLevel, isBid: boolean, maxTotal: number) => {
     const depthPercentage = (level.total / maxTotal) * 100;
-    const opacity = 0.08 + (depthPercentage / 100) * 0.12; // 8% to 20% opacity based on depth
+    const opacity = 0.05 + (depthPercentage / 100) * 0.15; // Enhanced opacity range
 
     return (
       <div
         key={level.price}
         className={cn(
-          "grid grid-cols-4 gap-2 py-2 px-3 hover:bg-gray-800/30 transition-all duration-200 border-l-2 relative group cursor-pointer",
+          "grid grid-cols-4 gap-2 py-2.5 px-4 hover:bg-black/40 transition-all duration-300 border-l-2 relative group cursor-pointer backdrop-blur-sm",
           isBid
-            ? "border-l-green-500/80 hover:border-l-green-400"
+            ? "border-l-emerald-500/80 hover:border-l-emerald-400"
             : "border-l-red-500/80 hover:border-l-red-400"
         )}
         style={{
@@ -169,29 +190,32 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             : `rgba(239, 68, 68, ${opacity})`
         }}
       >
+        {/* Subtle gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+
         {/* Price column with enhanced styling */}
         <div className="flex items-center gap-2 relative z-10">
           {isBid ? (
-            <TrendingUp className="w-3 h-3 text-green-400 flex-shrink-0" />
+            <TrendingUp className="w-3 h-3 text-emerald-400 flex-shrink-0" />
           ) : (
             <TrendingDown className="w-3 h-3 text-red-400 flex-shrink-0" />
           )}
           <span className={cn(
             "font-mono text-sm font-semibold tabular-nums",
-            isBid ? "text-green-200" : "text-red-200"
+            isBid ? "text-emerald-200" : "text-red-200"
           )}>
             {level.isRemainder ? `${formatPrice(level.price.toString())}+` : formatPrice(level.price.toString())}
           </span>
         </div>
 
         {/* Amount column */}
-        <span className="font-mono text-sm text-gray-200 tabular-nums relative z-10 font-medium">
+        <span className="font-mono text-sm text-teal-100 tabular-nums relative z-10 font-medium">
           {formatAmount(level.amount.toString())}
         </span>
 
         {/* Total column with enhanced styling */}
         <div className="flex items-center relative z-10">
-          <span className="font-mono text-sm text-gray-300 tabular-nums font-medium">
+          <span className="font-mono text-sm text-slate-200 tabular-nums font-medium">
             {formatAmount(level.total.toString())}
           </span>
         </div>
@@ -199,67 +223,79 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         {/* Orders count with enhanced styling */}
         <div className="flex justify-end relative z-10">
           <span className={cn(
-            "text-xs px-2 py-1 rounded-md font-mono tabular-nums min-w-[32px] text-center font-medium",
+            "text-xs px-2 py-1 rounded-md font-mono tabular-nums min-w-[32px] text-center font-medium backdrop-blur-sm",
             isBid
-              ? "bg-green-900/50 text-green-200 border border-green-700/40"
+              ? "bg-emerald-900/50 text-emerald-200 border border-emerald-700/40"
               : "bg-red-900/50 text-red-200 border border-red-700/40"
           )}>
-            {level.count}
+            {level.count > 999 ? formatNumberWithEllipses(level.count, 4) : level.count}
           </span>
         </div>
       </div>
     );
-  };  // Loading state
+  };
+
+  // Loading state with themed styling
   if (!orderbookResponse && !error) {
     return (
-      <Card className="h-full bg-gray-950 border-gray-800">
-        <CardHeader className="pb-3">
-          <h2 className="text-lg font-semibold text-gray-100">Order Book</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-12">
-            <div className="flex items-center gap-3 text-gray-400">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Loading orderbook...</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+          <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
+            <CardHeader className="pb-3">
+              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
+            </CardHeader>
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-3 text-teal-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Loading orderbook...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
-  // Error state
+  // Error state with themed styling
   if (error) {
     return (
-      <Card className="h-full bg-gray-950 border-gray-800">
-        <CardHeader className="pb-3">
-          <h2 className="text-lg font-semibold text-gray-100">Order Book</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 rounded bg-red-950/20 border border-red-800/30">
-            <div className="text-red-300 font-medium mb-2">Error loading orderbook: {error.message}</div>
-            <div className="text-gray-400 text-sm">
-              Make sure the API server is running and the 1inch API key is configured.
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+          <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
+            <CardHeader className="pb-3">
+              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 rounded bg-red-950/20 border border-red-800/30">
+                <div className="text-red-300 font-medium mb-2">Error loading orderbook: {error.message}</div>
+                <div className="text-slate-400 text-sm">
+                  Make sure the API server is running and the 1inch API key is configured.
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
   // API error state
   if (orderbookResponse && !orderbookResponse.success) {
     return (
-      <Card className="h-full bg-gray-950 border-gray-800">
-        <CardHeader className="pb-3">
-          <h2 className="text-lg font-semibold text-gray-100">Order Book</h2>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 rounded bg-red-950/20 border border-red-800/30">
-            <div className="text-red-300 font-medium">Error: {orderbookResponse.error}</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+          <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
+            <CardHeader className="pb-3">
+              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 rounded bg-red-950/20 border border-red-800/30">
+                <div className="text-red-300 font-medium">Error: {orderbookResponse.error}</div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
@@ -414,132 +450,151 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const maxTotal = Math.max(maxBidTotal, maxAskTotal);
 
   return (
-    <Card className="h-full bg-gray-950 border-gray-800 overflow-hidden flex flex-col p-0 gap-0">
-      {/* Header */}
-      <CardHeader className="border-b border-gray-800 bg-gray-900/50 flex-shrink-0">
-        <div className="flex items-center justify-between mt-5 pb-0">
-          <h2 className="text-lg font-semibold text-gray-100">Order Book</h2>
-          <div className="flex items-center gap-1 p-1 rounded bg-gray-800/60 border border-gray-700/50">
-            {STEP_OPTIONS.map(option => (
-              <Button
-                key={option.value}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "text-xs px-2 py-1 h-6 rounded font-medium transition-colors",
-                  stepSize === option.value
-                    ? "bg-green-600 hover:bg-green-500 text-white"
-                    : "text-gray-300 hover:text-gray-100 hover:bg-gray-700"
-                )}
-                onClick={() => setStepSize(option.value)}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
-        {/* Summary Header - Compact */}
-        <div className="px-3 py-2 border-b border-gray-800 bg-gray-900/30 flex-shrink-0">
-          <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
-            <span className="font-mono">Chain {orderbook.chain} • {lastUpdated}</span>
-            {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-green-400" />}
-          </div>
-
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Bids:</span>
-              <Badge className="bg-green-500/20 text-green-300 border-green-400/30 text-xs px-1.5 py-0 h-5">
-                {orderbook.summary.totalBidOrders}
-              </Badge>
-              <span className="text-gray-500 ml-2">Max Depth:</span>
-              <span className="font-mono text-green-300 text-xs">{formatAmount(maxBidTotal.toString())}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Asks:</span>
-              <Badge className="bg-red-500/20 text-red-300 border-red-400/30 text-xs px-1.5 py-0 h-5">
-                {orderbook.summary.totalAskOrders}
-              </Badge>
-              <span className="text-gray-500 ml-2">Max Depth:</span>
-              <span className="font-mono text-red-300 text-xs">{formatAmount(maxAskTotal.toString())}</span>
-            </div>
-            {orderbook.summary.spread && (
-              <div className="flex items-center gap-2">
-                <span className="text-gray-500">Spread:</span>
-                <span className="font-mono text-gray-300 font-medium">
-                  {orderbook.summary.spread}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Table Header - Compact */}
-        <div className="grid grid-cols-4 gap-2 px-3 py-2 border-b border-gray-800 bg-gray-900/40 flex-shrink-0">
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Price • Depth</div>
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Amount</div>
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide">Total</div>
-          <div className="text-xs font-medium text-gray-400 uppercase tracking-wide text-right">Orders</div>
-        </div>
-
-        {/* Orderbook Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto bg-gray-950">
-          {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-gray-500 mb-2">No orders available</p>
-              <p className="text-xs text-gray-600">
-                {selectedFeed ? `No data for ${selectedFeed}` : 'Select a feed to view orderbook'}
-              </p>
-            </div>
-          ) : (
-            <div>
-              {/* Asks (sells) in reverse order */}
-              <div className="border-b border-gray-800/50">
-                {aggregatedAsks.slice().reverse().map(level => renderLevel(level, false, maxTotal))}
-              </div>
-
-              {/* Spot price and spread indicator - Compact */}
-              {spotPrice && (
-                <div className="px-3 py-2 bg-gray-900/60 border-b border-gray-800/50 flex-shrink-0">
-                  <div className="flex items-center justify-center gap-6 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-500 font-medium">Spot:</span>
-                      <span className="font-mono font-semibold text-yellow-300">
-                        {formatPrice(spotPrice.toString())}
-                      </span>
-                    </div>
-                    {orderbook.summary.bestBid && orderbook.summary.bestAsk && orderbook.summary.spread && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-500 font-medium">Spread:</span>
-                        <span className="font-mono text-gray-300 font-medium">
-                          {orderbook.summary.spread}
-                        </span>
-                      </div>
+    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+        <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
+          {/* Header */}
+          <CardHeader className="border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl flex-shrink-0 px-4 py-4">
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
+              <div className="flex items-center gap-1 p-1 rounded-lg bg-black/60 backdrop-blur-sm border border-slate-700/50 shadow-inner">
+                {STEP_OPTIONS.map(option => (
+                  <Button
+                    key={option.value}
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "text-xs px-2 py-1 h-6 rounded-md font-medium transition-all duration-300",
+                      stepSize === option.value
+                        ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-teal-500/25 border border-teal-300/30"
+                        : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
                     )}
+                    onClick={() => setStepSize(option.value)}
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
+            {/* Summary Header - Compact */}
+            <div className="px-4 py-3 border-b border-teal-500/20 bg-black/40 backdrop-blur-sm flex-shrink-0 relative">
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+              <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
+                <span className="font-mono flex items-center gap-2">
+                  Chain {orderbook.chain} • {lastUpdated}
+                  <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+                </span>
+                {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />}
+              </div>
+
+              <div className="flex items-center gap-4 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">Bids:</span>
+                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-xs px-1.5 py-0 h-5 backdrop-blur-sm">
+                    {formatNumberWithEllipses(orderbook.summary.totalBidOrders, 5)}
+                  </Badge>
+                  <span className="text-slate-500 ml-2">Max Depth:</span>
+                  <span className="font-mono text-emerald-300 text-xs">{formatAmount(maxBidTotal.toString())}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">Asks:</span>
+                  <Badge className="bg-red-500/20 text-red-300 border-red-400/30 text-xs px-1.5 py-0 h-5 backdrop-blur-sm">
+                    {formatNumberWithEllipses(orderbook.summary.totalAskOrders, 5)}
+                  </Badge>
+                  <span className="text-slate-500 ml-2">Max Depth:</span>
+                  <span className="font-mono text-red-300 text-xs">{formatAmount(maxAskTotal.toString())}</span>
+                </div>
+                {orderbook.summary.spread && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-500">Spread:</span>
+                    <span className="font-mono text-teal-300 font-medium">
+                      {orderbook.summary.spread}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Table Header - Compact */}
+            <div className="grid grid-cols-4 gap-2 px-4 py-3 border-b border-teal-500/20 bg-black/40 backdrop-blur-sm flex-shrink-0 relative">
+              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide flex items-center gap-2">
+                Price • Depth
+                <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
+              </div>
+              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide">Amount</div>
+              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide">Total</div>
+              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right">Orders</div>
+            </div>
+
+            {/* Orderbook Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
+              {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-slate-500 mb-2">No orders available</p>
+                  <p className="text-xs text-slate-600">
+                    {selectedFeed ? `No data for ${selectedFeed}` : 'Select a feed to view orderbook'}
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  {/* Asks (sells) in reverse order */}
+                  <div className="border-b border-teal-500/20">
+                    {aggregatedAsks.slice().reverse().map(level => renderLevel(level, false, maxTotal))}
+                  </div>
+
+                  {/* Spot price and spread indicator - Compact */}
+                  {spotPrice && (
+                    <div className="px-4 py-3 bg-gradient-to-r from-black/60 via-slate-900/60 to-black/60 backdrop-blur-sm border-b border-teal-500/20 flex-shrink-0 relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
+                      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+                      <div className="flex items-center justify-center gap-6 text-sm relative z-10">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-500 font-medium">Spot:</span>
+                          <span className="font-mono font-semibold text-yellow-300">
+                            {formatPrice(spotPrice.toString())}
+                          </span>
+                        </div>
+                        {orderbook.summary.bestBid && orderbook.summary.bestAsk && orderbook.summary.spread && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500 font-medium">Spread:</span>
+                            <span className="font-mono text-teal-300 font-medium">
+                              {orderbook.summary.spread}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bids (buys) */}
+                  <div>
+                    {aggregatedBids.map(level => renderLevel(level, true, maxTotal))}
                   </div>
                 </div>
               )}
+            </div>
 
-              {/* Bids (buys) */}
-              <div>
-                {aggregatedBids.map(level => renderLevel(level, true, maxTotal))}
+            {/* Footer - Compact */}
+            <div className="px-4 py-3 border-t border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md flex-shrink-0 relative">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+              <div className="flex items-center justify-between text-xs text-slate-500">
+                <span className="font-mono flex items-center gap-2">
+                  Top 15 levels per side • Depth visualization
+                  <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
+                </span>
+                <span className="font-mono">
+                  60s refresh • RT filter: {realtimeSpotPrice ? 'ON' : 'OFF'}
+                </span>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Footer - Compact */}
-        <div className="px-3 py-2 border-t border-gray-800 bg-gray-900/40 flex-shrink-0">
-          <div className="flex items-center justify-between text-xs text-gray-500">
-            <span className="font-mono">Top 15 levels per side • Depth visualization</span>
-            <span className="font-mono">
-              60s refresh • RT filter: {realtimeSpotPrice ? 'ON' : 'OFF'}
-            </span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

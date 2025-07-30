@@ -1,92 +1,39 @@
 import { Controller } from "react-hook-form";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { DollarSign, TrendingUp, TrendingDown, Calendar, Eye, EyeOff, Hash } from "lucide-react";
+import { AlertTriangle, TrendingDown, Calendar, DollarSign } from "lucide-react";
 
-const IcebergForm = ({ control, errors }: any) => {
-  const spotPrice = 3750; 
+const StopLimitForm = ({ control, errors }: any) => {
+  // Mock spot price - in real app this would come from an API
+  const spotPrice = 3750; // Current ETH price
   
+  // Calculate default prices based on spot
   const calculatePriceFromSpot = (percentage: number) => {
     return (spotPrice * (1 + percentage / 100)).toFixed(2);
   };
 
-  
+  // Calculate default expiry (10 days from now)
   const getDefaultExpiry = () => {
     const date = new Date();
-    date.setDate(date.getDate() + 30);
+    date.setDate(date.getDate() + 10);
     return date.toISOString().slice(0, 16);
   };
-
-  const stepOptions = [
-    { value: '5', label: '5 steps', description: 'Large chunks' },
-    { value: '10', label: '10 steps', description: 'Standard' },
-    { value: '20', label: '20 steps', description: 'Small chunks' },
-    { value: '50', label: '50 steps', description: 'Micro chunks' },
-    { value: '100', label: '100 steps', description: 'Ultra stealth' },
-  ];
 
   return (
     <div className="space-y-6">
       
-      {/* Start Price */}
+      {/* Stop Price */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
-          <TrendingDown className="w-4 h-4" />
-          Start Price
+          <AlertTriangle className="w-4 h-4" />
+          Stop Price (Trigger)
           <div className="w-1 h-1 rounded-full bg-teal-400"></div>
         </Label>
         <Controller
-          name="startPrice"
+          name="stopPrice"
           control={control}
           rules={{ 
-            required: 'Start price is required',
-            min: { value: 0.01, message: 'Must be greater than $0' }
-          }}
-          defaultValue={calculatePriceFromSpot(0)} // Current spot price
-          render={({ field }) => (
-            <div className="relative">
-              <Input
-                {...field}
-                type="number"
-                step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
-                placeholder={calculatePriceFromSpot(0)}
-              />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-400">
-                USD
-              </div>
-            </div>
-          )}
-        />
-        {errors.startPrice && (
-          <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
-            {errors.startPrice.message}
-          </span>
-        )}
-      </div>
-
-      {/* End Price */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
-          <TrendingUp className="w-4 h-4" />
-          End Price
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
-        </Label>
-        <Controller
-          name="endPrice"
-          control={control}
-          rules={{ 
-            required: 'End price is required',
+            required: 'Stop price is required',
             min: { value: 0.01, message: 'Must be greater than $0' }
           }}
           defaultValue={calculatePriceFromSpot(-0.5)} // spot - 0.5%
@@ -106,55 +53,59 @@ const IcebergForm = ({ control, errors }: any) => {
             </div>
           )}
         />
-        {errors.endPrice && (
+        {errors.stopPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
             <div className="w-1 h-1 rounded-full bg-red-400"></div>
-            {errors.endPrice.message}
+            {errors.stopPrice.message}
           </span>
         )}
+        <div className="text-xs text-slate-400 flex items-center gap-1">
+          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          Order triggers when market price reaches this level
+        </div>
       </div>
 
-      {/* Steps */}
+      {/* Limit Price */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
-          <Hash className="w-4 h-4" />
-          Execution Steps
+          <TrendingDown className="w-4 h-4" />
+          Limit Price (Execution)
           <div className="w-1 h-1 rounded-full bg-teal-400"></div>
         </Label>
         <Controller
-          name="steps"
+          name="limitPrice"
           control={control}
-          rules={{ required: 'Steps are required' }}
-          defaultValue="10"
+          rules={{ 
+            required: 'Limit price is required',
+            min: { value: 0.01, message: 'Must be greater than $0' }
+          }}
+          defaultValue={calculatePriceFromSpot(-0.5)} // spot - 0.5%
           render={({ field }) => (
-            <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
-                <SelectValue placeholder="Select number of steps" />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-              </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
-                {stepOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
-                    value={option.value}
-                    className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
-                  >
-                    <div className="flex justify-between items-center w-full">
-                      <span>{option.label}</span>
-                      <span className="text-xs text-teal-400 ml-2">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Input
+                {...field}
+                type="number"
+                step="0.01"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                placeholder={calculatePriceFromSpot(-0.5)}
+              />
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-400">
+                USD
+              </div>
+            </div>
           )}
         />
-        {errors.steps && (
+        {errors.limitPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
             <div className="w-1 h-1 rounded-full bg-red-400"></div>
-            {errors.steps.message}
+            {errors.limitPrice.message}
           </span>
         )}
+        <div className="text-xs text-slate-400 flex items-center gap-1">
+          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          Maximum price you're willing to pay when triggered
+        </div>
       </div>
 
       {/* Expiry Date */}
@@ -186,35 +137,39 @@ const IcebergForm = ({ control, errors }: any) => {
             {errors.expiry.message}
           </span>
         )}
+        <div className="text-xs text-slate-400 flex items-center gap-1">
+          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          Order automatically cancels after this date
+        </div>
       </div>
       
-      {/* Iceberg Summary */}
+      {/* Stop Limit Summary */}
       <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 border border-teal-500/20 shadow-inner relative">
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
-              <EyeOff className="w-3 h-3" />
-              Iceberg Execution Summary
+              <AlertTriangle className="w-3 h-3" />
+              Stop Limit Order Summary
             </div>
           </div>
           <div className="text-sm text-slate-300 space-y-1">
             <div className="flex justify-between">
-              <span>Strategy:</span>
-              <span className="text-teal-400">Hidden Order Execution</span>
+              <span>Order Type:</span>
+              <span className="text-teal-400">Stop Limit Order</span>
             </div>
             <div className="flex justify-between">
               <span>Execution:</span>
-              <span className="text-emerald-400">Stealth progressive fills</span>
+              <span className="text-emerald-400">Triggered at stop price</span>
             </div>
             <div className="flex justify-between">
-              <span>Visibility:</span>
-              <span className="text-cyan-400">Only small portions shown</span>
+              <span>Price Control:</span>
+              <span className="text-cyan-400">Limited by limit price</span>
             </div>
             <div className="flex justify-between">
-              <span>Market Impact:</span>
-              <span className="text-purple-400">Minimized slippage</span>
+              <span>Use Case:</span>
+              <span className="text-purple-400">Risk management & entries</span>
             </div>
           </div>
         </div>
@@ -223,4 +178,4 @@ const IcebergForm = ({ control, errors }: any) => {
   );
 };
 
-export default IcebergForm;
+export default StopLimitForm;
