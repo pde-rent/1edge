@@ -6,7 +6,7 @@ import { OrderType, OrderStatus } from "@common/types";
 import type { Order, TwapParams } from "@common/types";
 import { getConfig } from "@back/services/config";
 import { initStorage, getOrder } from "@back/services/storage";
-import { orderRegistry } from "@back/services/orderRegistry";
+import { createOrderRegistry } from "@back/services/orderRegistry";
 
 // Test configuration - simplified
 const INTERVAL_SECONDS = 10; // 10 seconds between executions
@@ -15,6 +15,7 @@ const ETH_PRICE = 4000;
 
 describe("TWAP Order Lifecycle Test", () => {
   let testWallet: ethers.Wallet;
+  let orderRegistry: any;
 
   beforeAll(async () => {
     initStorage(getConfig().storage);
@@ -29,6 +30,8 @@ describe("TWAP Order Lifecycle Test", () => {
       }
     }));
     
+    // Create order registry in mock mode
+    orderRegistry = createOrderRegistry(true);
     await orderRegistry.start();
   });
 
