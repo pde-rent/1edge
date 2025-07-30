@@ -141,9 +141,9 @@ export interface OneInchOrder {
  * Reconstructed orderbook structure
  */
 export interface OrderbookLevel {
-  price: string;
-  amount: string;
-  total: string;
+  price: number;
+  amount: number;
+  total: number;
   count: number;
   orders: OneInchOrder[];
 }
@@ -158,8 +158,8 @@ export interface ReconstructedOrderbook {
   summary: {
     totalBidOrders: number;
     totalAskOrders: number;
-    bestBid: string | null;
-    bestAsk: string | null;
+    bestBid: number | null;
+    bestAsk: number | null;
     spread: string | null;
     spotPrice?: number | null;
   };
