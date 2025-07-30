@@ -9,8 +9,32 @@ import { API_URL, THEME } from '@common/constants';
 import type { TickerFeed, ApiResponse } from '@common/types';
 import { roundSig } from '@common/utils';
 import { Badge } from '@/components/ui/badge';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { TrendingUp, BarChart3, Activity, ChevronDown, Wifi } from 'lucide-react';
+import { PanelWrapper } from './common/Panel';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { TrendingUp, BarChart3, Activity, ChevronDown } from 'lucide-react';
+import StatusIndicator from './StatusIndicator';
+
+// Chart type options
+const CHART_TYPE_OPTIONS = [
+  { value: 'candles', label: 'Candles', icon: Activity },
+  { value: 'bars', label: 'Bars', icon: BarChart3 },
+  { value: 'line', label: 'Line', icon: TrendingUp }
+];
+
+// Timeframe options
+const TIMEFRAME_OPTIONS = [
+  { value: '5', label: '5s' },
+  { value: '20', label: '20s' },
+  { value: '60', label: '1m' },
+  { value: '300', label: '5m' },
+  { value: '1800', label: '30m' }
+];
 
 interface ActiveFeedPanelProps {
   feedId: string | null;
@@ -49,7 +73,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
   return (
     <Badge
       variant="outline"
-      className="ml-2 text-xs font-medium uppercase h-5 px-2 bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300"
+      className="text-xs font-medium uppercase h-5 px-2 bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300"
     >
       {children}
     </Badge>
@@ -307,13 +331,11 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
 
   if (!feedId && !chartRef.current) {
     return (
-      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-          <div className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 rounded-2xl shadow-2xl flex flex-col">
+      <PanelWrapper>
             <div className="flex-1 flex justify-center items-center">
               <div className="text-center">
                 <div className="relative mb-4">
-                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 rounded-full blur-xl"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 blur-xl"></div>
                   <Activity className="w-12 h-12 text-teal-400 mx-auto relative z-10" />
                 </div>
                 <p className="text-slate-200 font-medium">No feed selected</p>
@@ -322,9 +344,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                 </p>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+      </PanelWrapper>
     );
   }
 
@@ -345,13 +365,11 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
   } : null;
 
   return (
-    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-        <div className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <PanelWrapper>
           {/* Enhanced Header with Logo and Feed Selector */}
           <div className="px-4 py-3 flex-shrink-0 border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md relative">
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-            
+
             <div className="flex items-center justify-between mb-3">
               {/* Left: Logo and Feed Selector */}
               <div className="flex items-center gap-4">
@@ -366,7 +384,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                   <select
                     value={feedId || ''}
                     onChange={(e) => onFeedSelect(e.target.value)}
-                    className="px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 appearance-none cursor-pointer pr-10 min-w-[180px] shadow-inner transition-all duration-300 hover:bg-black/80"
+                    className="px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 appearance-none cursor-pointer pr-10 min-w-[180px] transition-all duration-300 hover:bg-black/80"
                   >
                     <option value="" disabled>Select a feed</option>
                     {feedsResponse?.success && feedsResponse.data?.map((feed: any) => (
@@ -376,96 +394,75 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                     ))}
                   </select>
                   <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
                 </div>
               </div>
 
-              {/* Right: Connection Status and Controls */}
+              {/* Right: Controls */}
               <div className="flex items-center gap-3">
-                {/* Connection indicator */}
-                <div className="flex items-center gap-2">
-                  <Wifi className={`w-4 h-4 ${isConnected ? 'text-teal-400' : 'text-slate-500'}`} />
-                  <span className={`text-xs font-medium ${isConnected ? 'text-teal-400' : 'text-slate-500'}`}>
-                    {isConnected ? 'Connected' : 'Disconnected'}
-                  </span>
-                  {isConnected && <div className="w-1 h-1 rounded-full bg-teal-400 shadow-lg shadow-teal-400/50"></div>}
-                </div>
 
                 {/* Chart Type Selector */}
-                <ToggleGroup
-                  type="single"
-                  value={chartType}
-                  onValueChange={(value) => {
-                    if (value) setChartType(value as 'candles' | 'bars' | 'line');
-                  }}
-                  className="bg-black/60 backdrop-blur-sm border border-slate-700/50 rounded-lg p-1 shadow-inner"
-                >
-                  <ToggleGroupItem
-                    value="candles"
-                    aria-label="candlestick chart"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-2 py-1 border-0 transition-all duration-300"
-                  >
-                    <Activity className="h-4 w-4" />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="bars"
-                    aria-label="bar chart"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-2 py-1 border-0 transition-all duration-300"
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="line"
-                    aria-label="line chart"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-2 py-1 border-0 transition-all duration-300"
-                  >
-                    <TrendingUp className="h-4 w-4" />
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                <Select value={chartType} onValueChange={(value) => setChartType(value as 'candles' | 'bars' | 'line')}>
+                  <SelectTrigger className="w-[100px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
+                    <SelectValue>
+                      <div className="flex items-center gap-2">
+                        {(() => {
+                          const option = CHART_TYPE_OPTIONS.find(opt => opt.value === chartType);
+                          const IconComponent = option?.icon;
+                          return (
+                            <>
+                              {IconComponent && <IconComponent className="w-4 h-4" />}
+                              <span className="hidden sm:inline">{option?.label}</span>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+                    {CHART_TYPE_OPTIONS.map((option) => {
+                      const IconComponent = option.icon;
+                      return (
+                        <SelectItem 
+                          key={option.value} 
+                          value={option.value}
+                          className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-4 h-4" />
+                            {option.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
 
                 {/* Timeframe Selector */}
-                <ToggleGroup
-                  type="single"
-                  value={timeframe}
+                <Select 
+                  value={timeframe} 
                   onValueChange={(value) => {
-                    if (value) {
-                      setTimeframe(value);
-                      tickBufferRef.current = {}; // Clear buffer on timeframe change
-                    }
+                    setTimeframe(value);
+                    tickBufferRef.current = {}; // Clear buffer on timeframe change
                   }}
-                  className="bg-black/60 backdrop-blur-sm border border-slate-700/50 rounded-lg p-1 shadow-inner"
                 >
-                  <ToggleGroupItem
-                    value="5"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
-                  >
-                    5s
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="20"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
-                  >
-                    20s
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="60"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
-                  >
-                    1m
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="300"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
-                  >
-                    5m
-                  </ToggleGroupItem>
-                  <ToggleGroupItem
-                    value="1800"
-                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
-                  >
-                    30m
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                  <SelectTrigger className="w-[70px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
+                    <SelectValue>
+                      {TIMEFRAME_OPTIONS.find(opt => opt.value === timeframe)?.label}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+                    {TIMEFRAME_OPTIONS.map((option) => (
+                      <SelectItem 
+                        key={option.value} 
+                        value={option.value}
+                        className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -475,7 +472,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                 <div className="flex items-center flex-wrap gap-3">
                   <h2 className="font-semibold text-lg text-white font-mono flex items-center gap-2">
                     {parsedSymbol.main}
-                    <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+                    <div className="w-1 h-1 bg-teal-400"></div>
                   </h2>
                   {parsedSymbol.tags.map(tag => (
                     <FeedTag key={tag}>{tag}</FeedTag>
@@ -494,7 +491,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-slate-400">Spread:</span>
-                      <span className="text-orange-400 font-semibold">{indexMetrics.dispersion}</span>
+                      <span className="text-yellow-400 font-semibold">{indexMetrics.dispersion}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <span className="text-slate-400">Vol:</span>
@@ -513,18 +510,21 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
             >
               {feedId && error && (
                 <div className="p-4">
-                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/50 backdrop-blur-sm">
+                  <div className="p-3 bg-red-500/10 border border-red-500/50 backdrop-blur-sm">
                     <p className="text-red-400 text-sm flex items-center gap-2">
-                      <div className="w-1 h-1 rounded-full bg-red-400"></div>
+                      <div className="w-1 h-1 bg-red-400"></div>
                       Error loading chart: {error.message}
                     </p>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Status indicator positioned at bottom right */}
+            <div className="absolute bottom-4 right-4 z-10">
+              <StatusIndicator />
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
+    </PanelWrapper>
   );
 }

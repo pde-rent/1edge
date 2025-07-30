@@ -5,19 +5,26 @@ import { fetcher } from '../utils/fetcher';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { roundSig } from '@common/utils';
 import type { ReconstructedOrderbook, OrderbookLevel } from '@common/types';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { PanelWrapper } from './common/Panel';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from '@/lib/utils';
-import { TrendingUp, TrendingDown, Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 // Step size options for order aggregation
 const STEP_OPTIONS = [
-  { value: 0.01, label: '0.01%' },
-  { value: 0.25, label: '0.25%' },
-  { value: 0.5, label: '0.5%' },
-  { value: 1.0, label: '1%' }
+  { value: '0.01', label: '0.01%' },
+  { value: '0.25', label: '0.25%' },
+  { value: '0.5', label: '0.5%' },
+  { value: '1.0', label: '1%' }
 ];
+
 
 interface AggregatedLevel {
   price: number;
@@ -66,12 +73,12 @@ const formatNumberWithEllipses = (value: string | number, maxLength: number = 10
   try {
     const num = typeof value === 'string' ? parseFloat(value) : value;
     if (num === 0) return '0';
-    
+
     // Handle very small numbers
     if (Math.abs(num) < 0.0001) {
       return num.toExponential(2);
     }
-    
+
     // Format the number with appropriate precision
     let formatted: string;
     if (Math.abs(num) >= 1000000) {
@@ -81,23 +88,23 @@ const formatNumberWithEllipses = (value: string | number, maxLength: number = 10
     } else {
       formatted = roundSig(num, 4).toString();
     }
-    
+
     // Add ellipses if too long
     if (formatted.length > maxLength) {
       return formatted.substring(0, maxLength - 1) + '…';
     }
-    
+
     return formatted;
   } catch {
     return '0';
   }
 };
 
-const formatAmount = (amount: string) => formatNumberWithEllipses(amount, 8);
+const formatAmount = (amount: string | number) => formatNumberWithEllipses(amount, 8);
 
-const formatPrice = (price: string) => {
+const formatPrice = (price: string | number) => {
   try {
-    const num = parseFloat(price);
+    const num = typeof price === 'number' ? price : parseFloat(price);
     if (num < 0.001) {
       return num.toExponential(3);
     }
@@ -109,7 +116,7 @@ const formatPrice = (price: string) => {
 
 export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string | null }) {
   const [selectedChain, setSelectedChain] = useState(1);
-  const [stepSize, setStepSize] = useState(0.5);
+  const [stepSize, setStepSize] = useState('0.5');
   const [realtimeSpotPrice, setRealtimeSpotPrice] = useState<number | null>(null);
 
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
@@ -172,130 +179,108 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   );
 
   const renderLevel = (level: AggregatedLevel, isBid: boolean, maxTotal: number) => {
-    const depthPercentage = (level.total / maxTotal) * 100;
-    const opacity = 0.05 + (depthPercentage / 100) * 0.15; // Enhanced opacity range
+    // Calculate depth percentage for backdrop visualization
+    const depthPercentage = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
 
     return (
       <div
         key={level.price}
         className={cn(
-          "grid grid-cols-4 gap-2 py-2.5 px-4 hover:bg-black/40 transition-all duration-300 border-l-2 relative group cursor-pointer backdrop-blur-sm",
+          "grid grid-cols-3 gap-2 py-1 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden",
           isBid
-            ? "border-l-emerald-500/80 hover:border-l-emerald-400"
-            : "border-l-red-500/80 hover:border-l-red-400"
+            ? "border-l-emerald-500/70 hover:border-l-emerald-400 hover:bg-emerald-900/20"
+            : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20"
         )}
-        style={{
-          backgroundColor: isBid
-            ? `rgba(16, 185, 129, ${opacity})`
-            : `rgba(239, 68, 68, ${opacity})`
-        }}
       >
-        {/* Subtle gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-
-        {/* Price column with enhanced styling */}
-        <div className="flex items-center gap-2 relative z-10">
-          {isBid ? (
-            <TrendingUp className="w-3 h-3 text-emerald-400 flex-shrink-0" />
-          ) : (
-            <TrendingDown className="w-3 h-3 text-red-400 flex-shrink-0" />
+        {/* Enhanced depth visualization backdrop with gradient fading */}
+        <div
+          className={cn(
+            "absolute inset-0 transition-all duration-300",
+            isBid 
+              ? "bg-gradient-to-l from-emerald-500/20 via-emerald-500/15 to-emerald-500/5" 
+              : "bg-gradient-to-l from-red-500/20 via-red-500/15 to-red-500/5"
           )}
-          <span className={cn(
-            "font-mono text-sm font-semibold tabular-nums",
-            isBid ? "text-emerald-200" : "text-red-200"
-          )}>
-            {level.isRemainder ? `${formatPrice(level.price.toString())}+` : formatPrice(level.price.toString())}
-          </span>
-        </div>
+          style={{
+            width: `${depthPercentage}%`,
+            right: 0,
+            left: 'auto'
+          }}
+        />
+        
+        {/* Additional subtle background layer for depth emphasis */}
+        <div
+          className={cn(
+            "absolute inset-0 opacity-60 transition-all duration-300",
+            isBid ? "bg-emerald-500/8" : "bg-red-500/8"
+          )}
+          style={{
+            width: `${Math.min(depthPercentage * 1.3, 100)}%`,
+            right: 0,
+            left: 'auto',
+            background: isBid 
+              ? `linear-gradient(to left, rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)}), rgba(16, 185, 129, 0.01))`
+              : `linear-gradient(to left, rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)}), rgba(239, 68, 68, 0.01))`
+          }}
+        />
 
-        {/* Amount column */}
-        <span className="font-mono text-sm text-teal-100 tabular-nums relative z-10 font-medium">
-          {formatAmount(level.amount.toString())}
+        {/* Price column */}
+        <span className={cn(
+          "font-mono text-sm tabular-nums text-left relative z-10",
+          isBid ? "text-emerald-200" : "text-red-200"
+        )}>
+          {level.isRemainder ? `${formatPrice(level.price)}+` : formatPrice(level.price)}
         </span>
 
-        {/* Total column with enhanced styling */}
-        <div className="flex items-center relative z-10">
-          <span className="font-mono text-sm text-slate-200 tabular-nums font-medium">
-            {formatAmount(level.total.toString())}
-          </span>
-        </div>
+        {/* Amount column with darker background to indicate order count */}
+        <span className={cn(
+          "font-mono text-sm tabular-nums text-right px-2 py-0.5 relative z-10",
+          level.count > 1 ? "bg-slate-800/60 rounded-sm" : "",
+          isBid ? "text-slate-200" : "text-slate-200"
+        )}>
+          {formatAmount(level.amount)}
+        </span>
 
-        {/* Orders count with enhanced styling */}
-        <div className="flex justify-end relative z-10">
-          <span className={cn(
-            "text-xs px-2 py-1 rounded-md font-mono tabular-nums min-w-[32px] text-center font-medium backdrop-blur-sm",
-            isBid
-              ? "bg-emerald-900/50 text-emerald-200 border border-emerald-700/40"
-              : "bg-red-900/50 text-red-200 border border-red-700/40"
-          )}>
-            {level.count > 999 ? formatNumberWithEllipses(level.count, 4) : level.count}
-          </span>
-        </div>
+        {/* Total column */}
+        <span className="font-mono text-sm text-slate-300 tabular-nums text-right relative z-10">
+          {formatAmount(level.total)}
+        </span>
       </div>
     );
   };
 
-  // Loading state with themed styling
+  // Loading state
   if (!orderbookResponse && !error) {
     return (
-      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-          <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
-            <CardHeader className="pb-3">
-              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
-            </CardHeader>
+      <PanelWrapper>
             <CardContent className="flex items-center justify-center py-12">
               <div className="flex items-center gap-3 text-teal-400">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Loading orderbook...</span>
               </div>
             </CardContent>
-          </Card>
-        </div>
-      </div>
+      </PanelWrapper>
     );
   }
 
-  // Error state with themed styling
+  // Error state
   if (error) {
     return (
-      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-          <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
-            <CardHeader className="pb-3">
-              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 rounded bg-red-950/20 border border-red-800/30">
-                <div className="text-red-300 font-medium mb-2">Error loading orderbook: {error.message}</div>
-                <div className="text-slate-400 text-sm">
-                  Make sure the API server is running and the 1inch API key is configured.
-                </div>
-              </div>
+      <PanelWrapper>
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-red-300 font-medium">Error: {error.message}</div>
             </CardContent>
-          </Card>
-        </div>
-      </div>
+      </PanelWrapper>
     );
   }
 
   // API error state
   if (orderbookResponse && !orderbookResponse.success) {
     return (
-      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-          <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
-            <CardHeader className="pb-3">
-              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
-            </CardHeader>
-            <CardContent>
-              <div className="p-4 rounded bg-red-950/20 border border-red-800/30">
-                <div className="text-red-300 font-medium">Error: {orderbookResponse.error}</div>
-              </div>
+      <PanelWrapper>
+            <CardContent className="flex items-center justify-center py-12">
+              <div className="text-red-300 font-medium">Error: {orderbookResponse.error}</div>
             </CardContent>
-          </Card>
-        </div>
-      </div>
+      </PanelWrapper>
     );
   }
 
@@ -303,18 +288,30 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const lastUpdated = new Date(orderbook.timestamp).toLocaleTimeString();
   const spotPrice = realtimeSpotPrice || orderbook.summary.spotPrice || null;
 
-  // Filter invalid orders and aggregate functions (keeping original logic)
-  const filterInvalidOrders = (levels: OrderbookLevel[], isBid: boolean, spotPrice: number | null) => {
-    if (!spotPrice) return levels;
+  // Filter invalid orders based on current market price
+  const filterInvalidOrders = (
+    bids: OrderbookLevel[],
+    asks: OrderbookLevel[],
+    currentMidPrice: number | null
+  ): { validBids: OrderbookLevel[]; validAsks: OrderbookLevel[] } => {
+    if (bids.length === 0 || asks.length === 0 || !currentMidPrice) {
+      return { validBids: bids, validAsks: asks };
+    }
 
-    return levels.filter(level => {
-      const price = parseFloat(level.price);
-      if (isBid) {
-        return price < spotPrice;
-      } else {
-        return price > spotPrice;
-      }
+    // Filter out invalid orders using current market price:
+    // - Bids above current mid price (unrealistic)
+    // - Asks below current mid price (unrealistic)
+    const validBids = bids.filter(bid => {
+      const price = typeof bid.price === 'number' ? bid.price : parseFloat(bid.price);
+      return price <= currentMidPrice; // Bids must be at or below current market price
     });
+
+    const validAsks = asks.filter(ask => {
+      const price = typeof ask.price === 'number' ? ask.price : parseFloat(ask.price);
+      return price >= currentMidPrice; // Asks must be at or above current market price
+    });
+
+    return { validBids, validAsks };
   };
 
   const aggregateOrders = (levels: OrderbookLevel[], isBid: boolean, stepPercent: number, referencePrice: number | null = null): AggregatedLevel[] => {
@@ -324,9 +321,9 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       const aggregated = new Map<string, AggregatedLevel>();
 
       levels.forEach(level => {
-        const priceKey = level.price;
-        const price = parseFloat(level.price);
-        const amount = parseFloat(level.amount);
+        const priceKey = level.price.toString();
+        const price = typeof level.price === 'number' ? level.price : parseFloat(level.price);
+        const amount = typeof level.amount === 'number' ? level.amount : parseFloat(level.amount);
         const count = parseInt(level.count.toString());
 
         if (!aggregated.has(priceKey)) {
@@ -380,8 +377,8 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     const aggregated = new Map<number, AggregatedLevel>();
 
     levels.forEach(level => {
-      const price = parseFloat(level.price);
-      const amount = parseFloat(level.amount);
+      const price = typeof level.price === 'number' ? level.price : parseFloat(level.price);
+      const amount = typeof level.amount === 'number' ? level.amount : parseFloat(level.amount);
       const count = parseInt(level.count.toString());
 
       let bucketPrice: number;
@@ -439,10 +436,10 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     return sortedLevels;
   };
 
-  const validBids = filterInvalidOrders(orderbook.bids, true, spotPrice);
-  const validAsks = filterInvalidOrders(orderbook.asks, false, spotPrice);
-  const aggregatedBids = aggregateOrders(validBids, true, stepSize, spotPrice);
-  const aggregatedAsks = aggregateOrders(validAsks, false, stepSize, spotPrice);
+  // Filter invalid orders from the orderbook using current market price
+  const { validBids, validAsks } = filterInvalidOrders(orderbook.bids, orderbook.asks, spotPrice);
+  const aggregatedBids = aggregateOrders(validBids, true, parseFloat(stepSize), spotPrice);
+  const aggregatedAsks = aggregateOrders(validAsks, false, parseFloat(stepSize), spotPrice);
 
   // Calculate max totals for depth visualization
   const maxBidTotal = Math.max(...aggregatedBids.map(b => b.total), 0);
@@ -450,89 +447,42 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const maxTotal = Math.max(maxBidTotal, maxAskTotal);
 
   return (
-    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-        <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
-          {/* Header */}
-          <CardHeader className="border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl flex-shrink-0 px-4 py-4">
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
-              <div className="flex items-center gap-1 p-1 rounded-lg bg-black/60 backdrop-blur-sm border border-slate-700/50 shadow-inner">
-                {STEP_OPTIONS.map(option => (
-                  <Button
-                    key={option.value}
-                    variant="ghost"
-                    size="sm"
-                    className={cn(
-                      "text-xs px-2 py-1 h-6 rounded-md font-medium transition-all duration-300",
-                      stepSize === option.value
-                        ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white shadow-lg shadow-teal-500/25 border border-teal-300/30"
-                        : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
-                    )}
-                    onClick={() => setStepSize(option.value)}
-                  >
-                    {option.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </CardHeader>
+    <PanelWrapper>
+      {/* Header */}
+      <CardHeader className="border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl flex-shrink-0 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
+          <Select value={stepSize} onValueChange={setStepSize}>
+            <SelectTrigger className="w-[80px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
+              <SelectValue>
+                {STEP_OPTIONS.find(opt => opt.value === stepSize)?.label}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              {STEP_OPTIONS.map((option) => (
+                <SelectItem 
+                  key={option.value} 
+                  value={option.value}
+                  className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                >
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </CardHeader>
 
-          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
-            {/* Summary Header - Compact */}
-            <div className="px-4 py-3 border-b border-teal-500/20 bg-black/40 backdrop-blur-sm flex-shrink-0 relative">
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-              <div className="flex items-center justify-between text-xs text-slate-400 mb-2">
-                <span className="font-mono flex items-center gap-2">
-                  Chain {orderbook.chain} • {lastUpdated}
-                  <div className="w-1 h-1 rounded-full bg-teal-400"></div>
-                </span>
-                {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />}
-              </div>
-
-              <div className="flex items-center gap-4 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500">Bids:</span>
-                  <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-400/30 text-xs px-1.5 py-0 h-5 backdrop-blur-sm">
-                    {formatNumberWithEllipses(orderbook.summary.totalBidOrders, 5)}
-                  </Badge>
-                  <span className="text-slate-500 ml-2">Max Depth:</span>
-                  <span className="font-mono text-emerald-300 text-xs">{formatAmount(maxBidTotal.toString())}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-500">Asks:</span>
-                  <Badge className="bg-red-500/20 text-red-300 border-red-400/30 text-xs px-1.5 py-0 h-5 backdrop-blur-sm">
-                    {formatNumberWithEllipses(orderbook.summary.totalAskOrders, 5)}
-                  </Badge>
-                  <span className="text-slate-500 ml-2">Max Depth:</span>
-                  <span className="font-mono text-red-300 text-xs">{formatAmount(maxAskTotal.toString())}</span>
-                </div>
-                {orderbook.summary.spread && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-500">Spread:</span>
-                    <span className="font-mono text-teal-300 font-medium">
-                      {orderbook.summary.spread}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Table Header - Compact */}
-            <div className="grid grid-cols-4 gap-2 px-4 py-3 border-b border-teal-500/20 bg-black/40 backdrop-blur-sm flex-shrink-0 relative">
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide flex items-center gap-2">
-                Price • Depth
-                <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
-              </div>
-              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide">Amount</div>
-              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide">Total</div>
-              <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right">Orders</div>
-            </div>
+      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+        {/* Simple Table Header */}
+        <div className="grid grid-cols-3 gap-2 px-3 py-2 border-b border-teal-500/20 bg-black/40 flex-shrink-0">
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide">Price</div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right">Size ({parsedFeed?.quote || 'USDT'})</div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right">Total</div>
+        </div>
 
             {/* Orderbook Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
+            <div className="flex-1 overflow-y-auto">
               {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <p className="text-slate-500 mb-2">No orders available</p>
@@ -543,32 +493,51 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
               ) : (
                 <div>
                   {/* Asks (sells) in reverse order */}
-                  <div className="border-b border-teal-500/20">
+                  <div>
                     {aggregatedAsks.slice().reverse().map(level => renderLevel(level, false, maxTotal))}
                   </div>
 
-                  {/* Spot price and spread indicator - Compact */}
-                  {spotPrice && (
-                    <div className="px-4 py-3 bg-gradient-to-r from-black/60 via-slate-900/60 to-black/60 backdrop-blur-sm border-b border-teal-500/20 flex-shrink-0 relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
-                      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-                      <div className="flex items-center justify-center gap-6 text-sm relative z-10">
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-500 font-medium">Spot:</span>
-                          <span className="font-mono font-semibold text-yellow-300">
-                            {formatPrice(spotPrice.toString())}
-                          </span>
-                        </div>
-                        {orderbook.summary.bestBid && orderbook.summary.bestAsk && orderbook.summary.spread && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500 font-medium">Spread:</span>
-                            <span className="font-mono text-teal-300 font-medium">
-                              {orderbook.summary.spread}
+                  {/* Spread row - emphasized */}
+                  {aggregatedAsks.length > 0 && aggregatedBids.length > 0 && (
+                    (() => {
+                      // Get the best ask (lowest ask price) and best bid (highest bid price)
+                      const bestAsk = aggregatedAsks[0].price;  // First ask (lowest)
+                      const bestBid = aggregatedBids[0].price;  // First bid (highest)
+
+                      // Calculate spread - should be positive now with filtered data
+                      const absoluteSpread = bestAsk - bestBid;
+                      const midPrice = (bestAsk + bestBid) / 2;
+                      const relativeSpread = midPrice > 0 ? (absoluteSpread / midPrice) * 100 : 0;
+
+                      // Show warning if spread is negative (shouldn't happen with filtered data)
+                      if (absoluteSpread < 0) {
+                        return (
+                          <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-red-900/80 via-red-800/60 to-red-900/80 border-y border-red-500/40 relative overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/10 to-red-500/5"></div>
+                            <span className="text-sm text-red-300 font-mono font-semibold relative z-10">Spread</span>
+                            <span className="text-sm text-red-200 font-mono text-right relative z-10">Invalid</span>
+                            <span className="text-sm text-red-100 font-mono text-right font-semibold relative z-10">
+                              {relativeSpread.toFixed(2)}%
                             </span>
                           </div>
-                        )}
-                      </div>
-                    </div>
+                        );
+                      }
+
+                      return (
+                        <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-y border-teal-500/40 relative overflow-hidden">
+                          {/* Subtle glow effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-yellow-500/10 to-teal-500/5"></div>
+
+                          <span className="text-sm text-yellow-300 font-mono font-semibold relative z-10">Spread</span>
+                          <span className="text-sm text-yellow-200 font-mono text-right relative z-10">
+                            {formatPrice(absoluteSpread)}
+                          </span>
+                          <span className="text-sm text-yellow-100 font-mono text-right font-semibold relative z-10">
+                            {relativeSpread.toFixed(2)}%
+                          </span>
+                        </div>
+                      );
+                    })()
                   )}
 
                   {/* Bids (buys) */}
@@ -579,22 +548,21 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
               )}
             </div>
 
-            {/* Footer - Compact */}
-            <div className="px-4 py-3 border-t border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md flex-shrink-0 relative">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-              <div className="flex items-center justify-between text-xs text-slate-500">
-                <span className="font-mono flex items-center gap-2">
-                  Top 15 levels per side • Depth visualization
-                  <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
-                </span>
-                <span className="font-mono">
-                  60s refresh • RT filter: {realtimeSpotPrice ? 'ON' : 'OFF'}
-                </span>
-              </div>
+        {/* Footer Status Bar */}
+        <div className="px-3 py-2 border-t border-teal-500/20 bg-black/40 flex-shrink-0">
+          <div className="flex items-center justify-between text-xs text-slate-500">
+            <span className="font-mono">
+              Chain {orderbook.chain} • Updated {lastUpdated}
+            </span>
+            <div className="flex items-center gap-2">
+              {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />}
+              <span className="font-mono">
+                60s refresh • Step: {stepSize}%
+              </span>
             </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          </div>
+        </div>
+      </CardContent>
+    </PanelWrapper>
   );
 }
