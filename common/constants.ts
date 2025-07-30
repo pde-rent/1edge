@@ -171,9 +171,9 @@ export const GRID_CONFIG = {
   columns: { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 },
 
   /** Grid margins */
-  margin: [15, 15] as [number, number],
+  margin: [0, 0] as [number, number],
   /** Container padding */
-  containerPadding: [10, 10] as [number, number],
+  containerPadding: [0, 0] as [number, number],
   /** Resize handle positions */
   resizeHandles: ["se", "sw", "ne", "nw"] as Array<"se" | "sw" | "ne" | "nw">,
   /** Total rows per breakpoint */
@@ -186,26 +186,26 @@ export const GRID_CONFIG = {
   },
   initialLayouts: {
     lg: [
-      // Left side: Price chart on top, positions below
-      { i: "activeFeed", x: 0, y: 0, w: 6, h: 20, static: true, minW: 6, minH: 12 },
-      { i: "positions", x: 0, y: 20, w: 6, h: 12, static: true, minW: 6, minH: 8 },
-
-      // Right side: Order book and create order spanning full height (switched positions)
-      { i: "services", x: 6, y: 0, w: 3, h: 32, static: true, minW: 3, minH: 20 },
+      // Top row: Expanded chart and narrower order book
+      { i: "activeFeed", x: 0, y: 0, w: 7, h: 20, static: true, minW: 6, minH: 12 },
+      { i: "services", x: 7, y: 0, w: 2, h: 20, static: true, minW: 2, minH: 20 },
       { i: "config", x: 9, y: 0, w: 3, h: 32, static: true, minW: 3, minH: 20 },
+      // Bottom row: Positions panel spans under both chart and orderbook
+      { i: "positions", x: 0, y: 20, w: 9, h: 12, static: true, minW: 9, minH: 8 },
     ], md: [
-      // Responsive medium layout
-      { i: "activeFeed", x: 0, y: 0, w: 5, h: 16, static: true, minW: 5, minH: 10 },
-      { i: "positions", x: 0, y: 16, w: 5, h: 12, static: true, minW: 5, minH: 8 },
-      { i: "services", x: 5, y: 0, w: 2.5, h: 28, static: true, minW: 2, minH: 20 },
-      { i: "config", x: 7.5, y: 0, w: 2.5, h: 28, static: true, minW: 2, minH: 20 },
+      // Top row: Expanded chart and narrower order book
+      { i: "activeFeed", x: 0, y: 0, w: 6, h: 16, static: true, minW: 5, minH: 10 },
+      { i: "services", x: 6, y: 0, w: 2, h: 16, static: true, minW: 2, minH: 16 },
+      { i: "config", x: 8, y: 0, w: 2, h: 28, static: true, minW: 2, minH: 20 },
+      // Bottom row: Positions panel spans under both chart and orderbook
+      { i: "positions", x: 0, y: 16, w: 8, h: 12, static: true, minW: 8, minH: 8 },
     ],
 
     sm: [
       // Mobile/small screen - vertical stack
       { i: "activeFeed", x: 0, y: 0, w: 6, h: 16, static: true, minW: 6, minH: 12 },
-      { i: "positions", x: 0, y: 16, w: 6, h: 12, static: true, minW: 6, minH: 8 },
-      { i: "services", x: 0, y: 28, w: 6, h: 16, static: true, minW: 6, minH: 12 },
+      { i: "services", x: 0, y: 16, w: 6, h: 16, static: true, minW: 6, minH: 12 },
+      { i: "positions", x: 0, y: 32, w: 6, h: 12, static: true, minW: 6, minH: 8 },
       { i: "config", x: 0, y: 44, w: 6, h: 16, static: true, minW: 6, minH: 12 },
     ],
   } as Record<string, any[]>,
