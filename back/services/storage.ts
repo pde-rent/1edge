@@ -139,9 +139,27 @@ class StorageService {
       )
     `);
 
-    // Create indexes
+    // Create performance-critical indexes for maximum retrieval speed
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`,
+    );
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_maker ON orders(maker)`,
+    );
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_hash ON orders(order_hash)`,
+    );
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)`,
+    );
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_status_created ON orders(status, created_at DESC)`,
+    );
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_maker_created ON orders(maker, created_at DESC)`,
+    );
+    this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_maker_status ON orders(maker, status)`,
     );
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_strategy ON orders(strategy_id)`,
@@ -198,6 +216,12 @@ class StorageService {
       ORDER BY created_at DESC
     `));
 
+    this.preparedStatements.set('getPendingOrders', this.db.prepare(`
+      SELECT raw_data FROM orders 
+      WHERE status = 'PENDING'
+      ORDER BY created_at ASC
+    `));
+
     this.preparedStatements.set('insertOrderEvent', this.db.prepare(`
       INSERT INTO order_events (
         order_id, order_hash, type, timestamp,
@@ -248,7 +272,7 @@ class StorageService {
   }
 
   async getOrder(id: string): Promise<Order | null> {
-    const stmt = this.db.prepare(`SELECT raw_data FROM orders WHERE id = ?`);
+    const stmt = this.preparedStatements.get('getOrder');
     const result = stmt.get(id) as { raw_data: string } | null;
     return result ? JSON.parse(result.raw_data) : null;
   }
@@ -272,22 +296,20 @@ class StorageService {
   }
 
   async getActiveOrders(): Promise<Order[]> {
-    const stmt = this.db.prepare(`
-      SELECT raw_data FROM orders 
-      WHERE status IN ('PENDING', 'SUBMITTED', 'ACTIVE', 'PARTIALLY_FILLED')
-      ORDER BY created_at DESC
-    `);
+    const stmt = this.preparedStatements.get('getActiveOrders');
     const results = stmt.all() as { raw_data: string }[];
     return results.map((r) => JSON.parse(r.raw_data));
   }
 
   async getOrdersByMaker(makerAddress: string): Promise<Order[]> {
-    const stmt = this.db.prepare(`
-      SELECT raw_data FROM orders 
-      WHERE maker = ? 
-      ORDER BY created_at DESC
-    `);
+    const stmt = this.preparedStatements.get('getOrdersByMaker');
     const results = stmt.all(makerAddress.toLowerCase()) as { raw_data: string }[];
+    return results.map((r) => JSON.parse(r.raw_data));
+  }
+
+  async getPendingOrders(): Promise<Order[]> {
+    const stmt = this.preparedStatements.get('getPendingOrders');
+    const results = stmt.all() as { raw_data: string }[];
     return results.map((r) => JSON.parse(r.raw_data));
   }
 
@@ -523,6 +545,7 @@ export const getOrdersByStrategy = (strategyId: string) =>
 export const getActiveOrders = () => getStorage().getActiveOrders();
 export const getOrdersByMaker = (makerAddress: string) => 
   getStorage().getOrdersByMaker(makerAddress);
+export const getPendingOrders = () => getStorage().getPendingOrders();
 export const saveOrderEvent = (event: OrderEvent) =>
   getStorage().saveOrderEvent(event);
 export const getOrderEvents = (orderId: string) =>
