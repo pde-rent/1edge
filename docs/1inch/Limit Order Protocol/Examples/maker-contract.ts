@@ -48,7 +48,7 @@ interface MakerContractFixture {
   testAccount: HardhatEthersSigner;
 }
 
-interface RFQOrderConfig {
+interface RFQOrderParams {
   maker: string;
   makerAsset: string;
   takerAsset: string;
@@ -167,7 +167,7 @@ describe("🏢 Smart Contract Maker Implementation", function () {
     );
 
     // 📝 Create first RFQ order: USDC → USDT
-    const firstOrderConfig: RFQOrderConfig = {
+    const firstOrderParams: RFQOrderParams = {
       maker: await makerContract.getAddress(),
       makerAsset: await usdc.getAddress(),
       takerAsset: await usdt.getAddress(),
@@ -176,10 +176,10 @@ describe("🏢 Smart Contract Maker Implementation", function () {
       makerTraits: buildMakerTraitsRFQ({ nonce: 1 }),
     };
 
-    const firstOrder = buildOrderRFQ(firstOrderConfig);
+    const firstOrder = buildOrderRFQ(firstOrderParams);
 
     // 📝 Create second RFQ order with different nonce
-    const secondOrderConfig: RFQOrderConfig = {
+    const secondOrderParams: RFQOrderParams = {
       maker: await makerContract.getAddress(),
       makerAsset: await usdc.getAddress(),
       takerAsset: await usdt.getAddress(),
@@ -188,7 +188,7 @@ describe("🏢 Smart Contract Maker Implementation", function () {
       makerTraits: buildMakerTraitsRFQ({ nonce: 2 }),
     };
 
-    const secondOrder = buildOrderRFQ(secondOrderConfig);
+    const secondOrder = buildOrderRFQ(secondOrderParams);
 
     // 💼 Generate contract signatures (EIP-1271 style)
     const firstSignature = abiCoder.encode([ABIOrder], [firstOrder]);

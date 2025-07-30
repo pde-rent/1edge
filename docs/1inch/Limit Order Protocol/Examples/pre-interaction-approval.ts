@@ -50,7 +50,7 @@ interface PreInteractionTestFixture {
   };
 }
 
-interface OrderConfiguration {
+interface OrderParamsuration {
   maker: string;
   makerAsset: string;
   takerAsset: string;
@@ -161,7 +161,7 @@ describe("🔄 Pre-Interaction Approval Workflow", function () {
     const { maker, taker, contractOwner } = accounts;
 
     // 📝 Create order configuration with contract as maker
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       maker: await approvalPreInteraction.getAddress(),
       makerAsset: await weth.getAddress(),
       takerAsset: await dai.getAddress(),

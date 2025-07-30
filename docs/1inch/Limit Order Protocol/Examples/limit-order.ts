@@ -50,7 +50,7 @@ interface LimitOrderTestFixture {
   };
 }
 
-interface OrderConfiguration {
+interface OrderParamsuration {
   makerAsset: string;
   takerAsset: string;
   makingAmount: bigint;
@@ -142,7 +142,7 @@ describe("📝 Limit Order Protocol Integration", function () {
     const { swap } = contracts;
 
     // 📝 Define order parameters
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
       makingAmount: ether("100"), // Maker offers 100 DAI
@@ -214,7 +214,7 @@ describe("📝 Limit Order Protocol Integration", function () {
     const { swap } = contracts;
 
     // 📝 Create larger order for partial filling
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
       makingAmount: ether("200"), // Total: 200 DAI
@@ -286,7 +286,7 @@ describe("📝 Limit Order Protocol Integration", function () {
     const { swap } = contracts;
 
     // 📝 Create order with multiple fills enabled
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
       makingAmount: ether("300"),
@@ -399,7 +399,7 @@ describe("📝 Limit Order Protocol Integration", function () {
     const currentTime = Math.floor(Date.now() / 1000);
     const expirationTime = currentTime + 3600; // 1 hour
 
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
       makingAmount: ether("100"),
@@ -467,7 +467,7 @@ describe("📝 Limit Order Protocol Integration", function () {
     // 🎯 Create order restricted to specific taker
     const authorizedTaker = resolver.address; // Use resolver as authorized taker
 
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
       makingAmount: ether("100"),
@@ -549,7 +549,7 @@ describe("📝 Limit Order Protocol Integration", function () {
     const { swap } = contracts;
 
     // 📝 Create order with partial fills disabled
-    const orderConfig: OrderConfiguration = {
+    const orderConfig: OrderParamsuration = {
       makerAsset: await dai.getAddress(),
       takerAsset: await weth.getAddress(),
       makingAmount: ether("100"),
