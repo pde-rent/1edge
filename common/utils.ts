@@ -99,6 +99,20 @@ export function generateId(): string {
 }
 
 /**
+ * Generate an order ID based on user address and timestamp
+ * Returns a 32-character hash using Bun's built-in crypto
+ */
+export function generateOrderId(userAddress: string): string {
+  const timestamp = Date.now().toString();
+  const input = timestamp + userAddress.toLowerCase();
+  
+  // Use Bun's built-in crypto to create MD5 hash
+  const hasher = new Bun.CryptoHasher("md5");
+  hasher.update(input);
+  return hasher.digest("hex");
+}
+
+/**
  * Deep clone an object
  */
 export function deepClone<T>(obj: T): T {

@@ -102,7 +102,6 @@ export interface Order extends LimitOrderParams {
   signature?: string; // User's EVM signature for authentication
 
   // UI Table columns
-  pair: string; // Trading pair (e.g., "WETH/USDT")
   type: OrderType;
   status: OrderStatus;
   size: string; // Total order size
@@ -110,7 +109,6 @@ export interface Order extends LimitOrderParams {
   createdAt: number; // Created at timestamp
 
   // Trigger information
-  triggerType: TriggerType;
   triggerCount: number; // Number of times triggered
   nextTriggerValue?: number | string; // Next trigger value/condition
 
@@ -212,19 +210,12 @@ export enum OrderStatus {
   ACTIVE = "ACTIVE", // Active in orderbook
   PARTIALLY_FILLED = "PARTIALLY_FILLED",
   FILLED = "FILLED",
+  COMPLETED = "COMPLETED", // Fully completed (used for multi-part orders like TWAP)
   CANCELLED = "CANCELLED",
   EXPIRED = "EXPIRED",
   FAILED = "FAILED",
 }
 
-export enum TriggerType {
-  PRICE = "PRICE", // Price-based trigger
-  TIME = "TIME", // Time-based trigger
-  VOLUME = "VOLUME", // Volume-based trigger
-  INDICATOR = "INDICATOR", // Technical indicator trigger
-  EXECUTION = "EXECUTION", // Triggered after order execution
-  NONE = "NONE", // No trigger (immediate execution)
-}
 
 /**
  * TWAP order configuration
@@ -234,7 +225,7 @@ export interface TwapParams {
   amount: string;
   startDate: number; // Timestamp
   endDate: number; // Timestamp
-  interval: number; // Interval in days
+  interval: number; // Interval in ms
   maxPrice?: number;
 }
 

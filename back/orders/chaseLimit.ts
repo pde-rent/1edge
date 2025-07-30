@@ -2,9 +2,9 @@ import type { Order } from "@common/types";
 import { OrderType } from "@common/types";
 import { priceCache } from "@back/services/priceCache";
 import { logger } from "@back/utils/logger";
-import { registerOrderHandler, type OrderHandler } from "./base";
+import { registerOrderWatcher, type OrderWatcher } from "./base";
 
-class ChaseLimitHandler implements OrderHandler {
+class ChaseLimitHandler implements OrderWatcher {
   async shouldTrigger(order: Order): Promise<boolean> {
     if (!order.params || !('distancePct' in order.params)) {
       return false;
@@ -18,7 +18,7 @@ class ChaseLimitHandler implements OrderHandler {
     const currentPrice = priceData.last.mid;
     const targetPrice = order.triggerPrice || currentPrice;
     const drift = Math.abs(currentPrice - targetPrice) / targetPrice;
-    
+
     return drift >= (order.params.distancePct / 100);
   }
 
@@ -34,14 +34,14 @@ class ChaseLimitHandler implements OrderHandler {
 
     const currentPrice = priceData.last.mid;
     const limitPrice = currentPrice * (1 - order.params.distancePct / 100);
-    
+
     logger.info(`Executing chase-limit order ${order.id} at price ${limitPrice}`);
-    
+
     // Cancel previous order if exists
     if (order.oneInchOrderHashes?.length) {
       // TODO: Cancel previous 1inch order
     }
-    
+
     // Create new limit order at adjusted price
     order.triggerPrice = currentPrice;
   }
@@ -53,4 +53,4 @@ class ChaseLimitHandler implements OrderHandler {
 }
 
 // Register handler
-registerOrderHandler(OrderType.CHASE_LIMIT, new ChaseLimitHandler());
+registerOrderWatcher(OrderType.CHASE_LIMIT, new ChaseLimitHandler());

@@ -1,12 +1,12 @@
 // Export base handler functionality
-export { getOrderHandler, registerOrderHandler, type OrderHandler } from "./base";
+export { getOrderWatcher, registerOrderWatcher, type OrderWatcher } from "./base";
 
-// Import all order handlers to register them
+// Import all order watchers to register them
 import "./stopLimit";
 import "./chaseLimit";
 import "./twap";
 import "./dca";
-// TODO: Add more handlers as needed:
+// TODO: Add more watchers as needed:
 // import "./range";
 // import "./iceberg";
 // import "./gridTrading";

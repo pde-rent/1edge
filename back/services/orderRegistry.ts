@@ -10,10 +10,10 @@ import {
   saveOrderEvent,
 } from "./storage";
 import { logger } from "@back/utils/logger";
-import type { Order, KeeperConfig, TriggerType } from "@common/types";
-import { OrderStatus } from "@common/types";
+import type { Order, KeeperConfig } from "@common/types";
+import { OrderStatus, OrderType } from "@common/types";
 import { sleep, generateId } from "@common/utils";
-import { getOrderHandler } from "@back/orders";
+import { getOrderWatcher } from "@back/orders";
 import { ethers } from "ethers";
 
 class OrderRegistryService {
@@ -34,7 +34,7 @@ class OrderRegistryService {
     // This ensures watchers are restored after server shutdown/restart
     const pendingOrders = await getPendingOrders();
     logger.info(`Restoring ${pendingOrders.length} pending orders from database`);
-    
+
     for (const order of pendingOrders) {
       this.startWatcher(order);
       logger.debug(`Restored watcher for order ${order.id}`);
@@ -74,7 +74,7 @@ class OrderRegistryService {
 
     // Start a watcher for the new order
     this.startWatcher(order);
-    
+
     logger.info(`Order ${order.id} registered successfully`);
   }
 
@@ -124,7 +124,7 @@ class OrderRegistryService {
     };
 
     await this.createOrder(newOrder);
-    
+
     logger.info(`Order ${orderId} modified successfully, new order: ${newOrder.id}`);
     return newOrder.id;
   }
@@ -142,7 +142,7 @@ class OrderRegistryService {
     while (this.isRunning && this.watchers.has(order.id)) {
       try {
         const currentOrder = await getOrder(order.id);
-        if (!currentOrder || currentOrder.status !== OrderStatus.PENDING) {
+        if (!currentOrder || (currentOrder.status !== OrderStatus.PENDING && currentOrder.status !== OrderStatus.ACTIVE)) {
           this.watchers.delete(order.id);
           break;
         }
@@ -151,8 +151,20 @@ class OrderRegistryService {
         const triggered = await this.checkTriggers(currentOrder);
         if (triggered) {
           await this.executeOrder(currentOrder);
-          this.watchers.delete(order.id);
-          break;
+
+          // For recurring orders, check if they should continue based on completion criteria
+          const updatedOrder = await getOrder(currentOrder.id);
+          if (updatedOrder) {
+            const shouldComplete = this.shouldCompleteOrder(updatedOrder);
+            if (shouldComplete) {
+              // Mark order as completed and stop watcher
+              logger.info(`Order ${updatedOrder.id} completed, marking as finished`);
+              updatedOrder.status = OrderStatus.COMPLETED;
+              await saveOrder(updatedOrder);
+              this.watchers.delete(order.id);
+              break;
+            }
+          }
         }
       } catch (error) {
         logger.error(`Error watching order ${order.id}:`, error);
@@ -163,31 +175,31 @@ class OrderRegistryService {
   }
 
   private async checkTriggers(order: Order): Promise<boolean> {
-    const handler = getOrderHandler(order.type);
-    if (!handler) {
-      logger.warn(`No handler found for order type: ${order.type}`);
+    const watcher = getOrderWatcher(order.type);
+    if (!watcher) {
+      logger.warn(`No watcher found for order type: ${order.type}`);
       return false;
     }
-    
-    return handler.shouldTrigger(order);
+
+    return watcher.shouldTrigger(order);
   }
 
   private async executeOrder(order: Order) {
     try {
-      const handler = getOrderHandler(order.type);
-      if (!handler) {
-        throw new Error(`No handler found for order type: ${order.type}`);
+      const watcher = getOrderWatcher(order.type);
+      if (!watcher) {
+        throw new Error(`No watcher found for order type: ${order.type}`);
       }
 
       logger.info(`Executing order ${order.id}`);
-      
+
       // Increment trigger count
       order.triggerCount = (order.triggerCount || 0) + 1;
-      
-      // Execute using handler
-      await handler.execute(order);
-      
-      // Create 1inch order hash (placeholder - will be set by handler)
+
+      // Execute using watcher
+      await watcher.execute(order);
+
+      // Create 1inch order hash (placeholder - will be set by watcher)
       const mockOrderHash = `0x${generateId()}`;
       if (!order.oneInchOrderHashes) {
         order.oneInchOrderHashes = [];
@@ -196,12 +208,12 @@ class OrderRegistryService {
 
       // Update order status
       order.status = OrderStatus.ACTIVE;
-      
+
       // Update next trigger for recurring orders
-      if (handler.updateNextTrigger) {
-        handler.updateNextTrigger(order);
+      if (watcher.updateNextTrigger) {
+        watcher.updateNextTrigger(order);
       }
-      
+
       await saveOrder(order);
 
       // Create order event
@@ -228,6 +240,31 @@ class OrderRegistryService {
     }
   }
 
+  private shouldCompleteOrder(order: Order): boolean {
+    const now = Date.now();
+
+    // For TWAP orders, check if we've completed all intervals or reached end date
+    if (order.type === OrderType.TWAP && order.params) {
+      const params = order.params as any;
+      if (params.endDate && now >= params.endDate) {
+        return true; // Past end date
+      }
+
+      if (params.interval && params.endDate && params.startDate) {
+        const totalDuration = params.endDate - params.startDate;
+        const intervalMs = params.interval;
+        const totalIntervals = Math.ceil(totalDuration / intervalMs);
+
+        if ((order.triggerCount || 0) >= totalIntervals) {
+          return true; // Completed all intervals
+        }
+      }
+    }
+
+    // For other order types, implement similar logic as needed
+    return false; // Continue watching by default
+  }
+
   private validateOrderSignature(order: Order): boolean {
     if (!order.userSignedPayload || !order.signature) {
       logger.warn("Order missing signature or payload");
@@ -238,7 +275,6 @@ class OrderRegistryService {
       // Reconstruct the message that was signed
       const message = JSON.stringify({
         type: order.type,
-        pair: order.pair,
         size: order.size,
         params: order.params,
         maker: order.maker,
@@ -247,16 +283,15 @@ class OrderRegistryService {
       });
 
       // Recover signer address from signature
-      const messageHash = ethers.utils.hashMessage(message);
-      const signerAddress = ethers.utils.recoverAddress(messageHash, order.signature);
+      const signerAddress = ethers.verifyMessage(message, order.signature);
 
       // Verify signer matches order maker
       const isValid = signerAddress.toLowerCase() === order.maker.toLowerCase();
-      
+
       if (!isValid) {
         logger.warn(`Invalid signature: expected ${order.maker}, got ${signerAddress}`);
       }
-      
+
       return isValid;
     } catch (error) {
       logger.error("Error validating signature:", error);
