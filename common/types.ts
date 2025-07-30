@@ -93,21 +93,43 @@ export interface LimitOrderParams {
 
 /**
  * Extended order information with metadata
+ * Includes all fields needed for UI table display
  */
 export interface Order extends LimitOrderParams {
+  // Core identification
   id: string; // Internal order ID
-  orderHash?: string; // On-chain order hash
-  signature?: string; // Order signature
+  orderHash?: string; // On-chain order hash (may have multiple for complex orders)
+  signature?: string; // User's EVM signature for authentication
+
+  // UI Table columns
+  pair: string; // Trading pair (e.g., "WETH/USDT")
   type: OrderType;
   status: OrderStatus;
-  strategyId?: string; // Associated strategy
+  size: string; // Total order size
+  remainingSize: string; // Remaining unfilled size
+  createdAt: number; // Created at timestamp
+
+  // Trigger information
+  triggerType: TriggerType;
+  triggerCount: number; // Number of times triggered
+  nextTriggerValue?: number | string; // Next trigger value/condition
+
+  // Order execution tracking
+  strategyId?: string; // Associated strategy if any
   triggerPrice?: number; // Price trigger for execution
-  createdAt: number;
   executedAt?: number;
   cancelledAt?: number;
   filledAmount?: string;
-  remainingAmount?: string;
   txHash?: string; // Transaction hash if executed
+
+  // Order configuration params (union type based on order type)
+  params?: OrderParams;
+
+  // 1inch order hashes (for complex orders that spawn multiple 1inch orders)
+  oneInchOrderHashes?: string[]; // Array of 1inch order hashes
+
+  // Raw user-signed payload for verification
+  userSignedPayload?: string;
 }
 
 /**
@@ -148,7 +170,7 @@ export interface OrderbookLevel {
   orders: OneInchOrder[];
 }
 
-export interface ReconstructedOrderbook {
+export interface OneInchOrderBook {
   chain: number;
   makerAsset: string;
   takerAsset: string;
@@ -166,17 +188,19 @@ export interface ReconstructedOrderbook {
 }
 
 export enum OrderType {
+  // One-off Orders
+  STOP_LIMIT = "STOP_LIMIT",
+  CHASE_LIMIT = "CHASE_LIMIT",
+  TWAP = "TWAP",
+  RANGE = "RANGE",
+  ICEBERG = "ICEBERG",
+  // Recurring Orders
+  DCA = "DCA", // Dollar-Cost Averaging
+  GRID_TRADING = "GRID_TRADING",
+  MOMENTUM_REVERSAL = "MOMENTUM_REVERSAL",
+  RANGE_BREAKOUT = "RANGE_BREAKOUT",
   // Basic limit orders
   LIMIT = "LIMIT",
-  // Advanced order types
-  TWAP = "TWAP", // Time-weighted average price
-  RANGE = "RANGE", // Range orders (grid)
-  ICEBERG = "ICEBERG", // Hidden size orders
-  // Strategy-based orders
-  NAIVE_REVERSION = "NAIVE_REVERSION",
-  MOMENTUM_REVERSION = "MOMENTUM_REVERSION",
-  RANGE_BREAKOUT = "RANGE_BREAKOUT",
-  TREND_FOLLOWING = "TREND_FOLLOWING",
   // Control orders
   CANCEL = "CANCEL",
   CANCEL_ALL = "CANCEL_ALL",
@@ -191,6 +215,15 @@ export enum OrderStatus {
   CANCELLED = "CANCELLED",
   EXPIRED = "EXPIRED",
   FAILED = "FAILED",
+}
+
+export enum TriggerType {
+  PRICE = "PRICE", // Price-based trigger
+  TIME = "TIME", // Time-based trigger
+  VOLUME = "VOLUME", // Volume-based trigger
+  INDICATOR = "INDICATOR", // Technical indicator trigger
+  EXECUTION = "EXECUTION", // Triggered after order execution
+  NONE = "NONE", // No trigger (immediate execution)
 }
 
 /**
@@ -248,44 +281,65 @@ export interface RangeBreakoutConfig {
 }
 
 /**
- * Market making strategy configuration
+ * Stop-Limit Order configuration
  */
-export interface MarketMakingConfig {
-  spread: number; // Percentage spread from mid price
-  depth: number; // Number of orders on each side
-  skew?: number; // Bias towards one side
-  rebalanceThreshold?: number; // When to rebalance
+export interface StopLimitConfig {
+  amount: string;
+  stopPrice: number;
+  limitPrice: number;
+  expiry: number; // Days
 }
 
 /**
- * Technical indicator configuration
+ * Chase-Limit Order configuration
  */
-export interface TechnicalIndicatorConfig {
-  type: "RSI" | "MA" | "EMA" | "MACD" | "BB"; // Bollinger Bands
-  period: number;
-  params?: Record<string, any>;
+export interface ChaseLimitConfig {
+  amount: string;
+  distancePct: number;
+  expiry: number; // Days
+  maxPrice?: number;
 }
 
 /**
- * Strategy trigger conditions
+ * Dollar-Cost Averaging configuration
  */
-export interface TriggerCondition {
-  type: "PRICE" | "TIME" | "VOLUME" | "INDICATOR";
-  operator: "GT" | "LT" | "EQ" | "GTE" | "LTE";
-  value: number | string;
-  indicator?: TechnicalIndicatorConfig;
+export interface DCAConfig {
+  amount: string;
+  startDate: number; // Timestamp
+  interval: number; // Days converted to seconds
+  maxPrice?: number;
 }
 
 /**
- * Risk management configuration
+ * Grid Trading configuration
  */
-export interface RiskConfig {
-  maxPositionSize: string; // Max size per position
-  maxTotalExposure: string; // Max total exposure
-  stopLoss?: number; // Stop loss percentage
-  takeProfit?: number; // Take profit percentage
-  maxDrawdown?: number; // Maximum drawdown allowed
+export interface GridTradingConfig {
+  amount: string;
+  startPrice: number;
+  endPrice: number;
+  stepPct: number;
+  stepMultiplier?: number;
+  singleSide: boolean;
+  tpPct?: number; // Take profit percentage
 }
+
+
+
+
+
+/**
+ * Order parameters union type
+ */
+export type OrderParams = 
+  | StopLimitConfig
+  | ChaseLimitConfig
+  | TwapConfig
+  | RangeOrderConfig
+  | IcebergConfig
+  | DCAConfig
+  | GridTradingConfig
+  | MomentumReversalConfig
+  | RangeBreakoutConfig;
 
 /**
  * Strategy configuration
@@ -297,19 +351,8 @@ export interface StrategyConfig {
   symbols: Symbol[]; // Price feeds to monitor
   network: number; // Chain ID
   enabled: boolean;
-  // Order specific configs
-  twapConfig?: TwapConfig;
-  rangeConfig?: RangeOrderConfig;
-  icebergConfig?: IcebergConfig;
-  marketMakingConfig?: MarketMakingConfig;
-  momentumReversalConfig?: MomentumReversalConfig;
-  rangeBreakoutConfig?: RangeBreakoutConfig;
-  // Triggers and conditions
-  triggers?: TriggerCondition[];
-  // Risk management
-  riskConfig?: RiskConfig;
-  // Additional parameters
-  params?: Record<string, any>;
+  // Single params attribute with union type
+  params: OrderParams;
 }
 
 /** Status of a feed */
@@ -531,22 +574,11 @@ export interface Position {
   closedAt?: number;
 }
 
-/** Event types for order lifecycle */
-export enum OrderEventType {
-  CREATED = "CREATED",
-  SUBMITTED = "SUBMITTED",
-  FILLED = "FILLED",
-  PARTIALLY_FILLED = "PARTIALLY_FILLED",
-  CANCELLED = "CANCELLED",
-  EXPIRED = "EXPIRED",
-  FAILED = "FAILED",
-}
-
 /** Order event for tracking */
 export interface OrderEvent {
   orderId: string;
   orderHash?: string;
-  type: OrderEventType;
+  status: OrderStatus; // Using OrderStatus instead of separate OrderEventType
   timestamp: number;
   txHash?: string;
   filledAmount?: string;
@@ -555,19 +587,3 @@ export interface OrderEvent {
   error?: string;
 }
 
-/** Session key for keeper delegation */
-export interface SessionKey {
-  address: string;
-  privateKey: string;
-  permissions: string[]; // Allowed actions
-  expiry: number; // Expiration timestamp
-  gasLimit?: string; // Max gas per tx
-}
-
-/** Smart account configuration */
-export interface SmartAccountConfig {
-  address: string;
-  owner: string;
-  sessionKeys: SessionKey[];
-  nonce: number;
-}
