@@ -15,12 +15,15 @@ import { logger } from "@back/utils/logger";
 class StorageService {
   private db: Database;
   private ttlMap: Map<string, number> = new Map();
+  private preparedStatements: Map<string, any> = new Map();
 
   constructor(private config: Config["storage"]) {
     const dbPath = config.dbPath || "./data/1edge.db";
     this.initDatabase(dbPath);
     this.db = new Database(dbPath);
     this.setupTables();
+    this.setupOptimizations();
+    this.prepareCriticalStatements();
   }
 
   private async initDatabase(dbPath: string) {
