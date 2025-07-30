@@ -21,7 +21,7 @@ export default async function handler(
         res.status(response.status).json({ success: false, message: 'Failed to save strategy.' });
       }
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Failed to save strategy.', error: error.message });
+      res.status(500).json({ success: false, message: 'Failed to save strategy.', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   } else if (req.method === 'GET') {
     try {
@@ -33,7 +33,7 @@ export default async function handler(
         res.status(response.status).json({ success: false, message: 'Failed to fetch strategies.' });
       }
     } catch (error) {
-      res.status(500).json({ success: false, message: 'Failed to fetch strategies.', error: error.message });
+      res.status(500).json({ success: false, message: 'Failed to fetch strategies.', error: error instanceof Error ? error.message : 'Unknown error' });
     }
   } else {
     res.setHeader('Allow', ['GET', 'POST']);
