@@ -53,7 +53,7 @@ graph TD
 ### 4. Order Monitoring (Watcher System)
 - Each order has a dedicated watcher running in `watchOrder()` loop
 - Watcher checks trigger conditions every 5 seconds using modular handlers
-- Handlers implement `OrderHandler` interface with `shouldTrigger()` method
+- Handlers implement `OrderWatcher` interface with `shouldTrigger()` method
 - Supports all order types: stop-limit, chase-limit, TWAP, DCA, etc.
 
 ### 5. Trigger Evaluation (Order Handlers)
@@ -180,7 +180,7 @@ Orders are stored with the following key columns:
 - **`front/`**: User interface for order creation and management
 - **`back/services/apiServer.ts`**: REST API endpoints for order operations
 - **`back/services/orderRegistry.ts`**: Core order lifecycle management service
-- **`back/orders/`**: Modular order handler implementations
+- **`back/orders/`**: Modular order watchers implementations
 - **`back/services/storage.ts`**: Database access layer for order persistence
 - **`common/types.ts`**: Shared TypeScript interfaces and types
 - **`contracts/DelegateSafe.sol`**: Smart contract for fund management and order signing

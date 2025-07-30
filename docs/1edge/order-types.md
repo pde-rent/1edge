@@ -1,6 +1,6 @@
 # Supported Order Types
 
-Periods are in days.
+Periods are in ms.
 
 ## One-off Orders
 
