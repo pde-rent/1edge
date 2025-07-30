@@ -46,7 +46,7 @@ tsconfig.tsbuildinfo
 !.env.example
 
 # Database files
-data/*.db
+data/
 
 # Next.js build output
 front/.next
