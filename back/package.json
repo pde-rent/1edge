@@ -1,0 +1,10 @@
+{
+  "name": "@1edge/back",
+  "version": "0.1.0",
+  "description": "Backend services for 1edge",
+  "private": true,
+  "type": "module",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}
