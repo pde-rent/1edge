@@ -110,6 +110,9 @@ Creates a new order with EVM signature verification.
 ### `GET /orders`
 Returns all active orders for monitoring.
 
+### `GET /orders?maker=0x123...`
+Returns all orders for a specific user address (transparent, no authentication required).
+
 ### `GET /orders/{orderId}`
 Returns specific order details and status.
 
@@ -143,6 +146,26 @@ Orders are stored with the following key columns:
 - **CANCELLED**: Order cancelled by user or system
 - **EXPIRED**: Order expired without execution
 - **FAILED**: Order execution failed due to error
+
+## Performance & Reliability
+
+### Database Optimizations
+- **WAL Mode**: Write-Ahead Logging for non-blocking concurrent access
+- **Memory Optimization**: 256MB memory-mapped I/O + 10MB cache
+- **Prepared Statements**: Pre-compiled SQL eliminates parsing overhead
+- **Strategic Indexes**: Optimized for order hash, maker address, and status queries
+- **Composite Indexes**: Multi-column queries for user order history and filtering
+
+### Watcher Recovery System
+- **Automatic Restoration**: Pending orders automatically restored from database on service restart
+- **Zero Downtime**: Watchers resume monitoring exactly where they left off
+- **State Persistence**: All order state maintained in SQLite with ACID guarantees
+- **Reliability Logging**: Clear visibility into restoration process and active watcher count
+
+### Order Transparency
+- **Public Access**: All order data accessible without authentication for full transparency
+- **User Filtering**: Query orders by maker address using `?maker=0x123...` parameter
+- **Open Intent**: Users cannot hide their trading intentions, promoting market transparency
 
 ## Security Model
 
