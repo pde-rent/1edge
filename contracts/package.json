@@ -1,0 +1,13 @@
+{
+  "name": "@1edge/contracts",
+  "version": "0.1.0",
+  "description": "Smart contracts for 1edge",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
