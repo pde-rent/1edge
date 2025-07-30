@@ -5,9 +5,9 @@ export { getOrderWatcher, registerOrderWatcher, type OrderWatcher } from "./base
 import "./stopLimit";
 import "./chaseLimit";
 import "./twap";
+import "./range";
 import "./dca";
 // TODO: Add more watchers as needed:
-// import "./range";
 // import "./iceberg";
 // import "./gridTrading";
 // import "./momentumReversal";

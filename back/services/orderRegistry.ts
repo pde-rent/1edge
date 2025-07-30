@@ -15,6 +15,7 @@ import { OrderStatus, OrderType } from "@common/types";
 import { sleep, generateId } from "@common/utils";
 import { getOrderWatcher } from "@back/orders";
 import { ethers } from "ethers";
+import type { TwapParams, RangeOrderParams } from "@common/types";
 
 class OrderRegistryService {
   private config: KeeperConfig;
@@ -198,15 +199,11 @@ class OrderRegistryService {
       // Increment trigger count
       order.triggerCount = (order.triggerCount || 0) + 1;
 
-      // Submit using watcher
-      await watcher.submit(order);
+      // Calculate amounts based on order type
+      const amounts = this.calculateOrderAmounts(order);
 
-      // Create 1inch order hash (placeholder - will be set by watcher)
-      const mockOrderHash = `0x${generateId()}`;
-      if (!order.oneInchOrderHashes) {
-        order.oneInchOrderHashes = [];
-      }
-      order.oneInchOrderHashes.push(mockOrderHash);
+      // Trigger using watcher with calculated amounts
+      await watcher.trigger(order, amounts.makerAmount, amounts.takerAmount);
 
       // Update order status
       order.status = OrderStatus.ACTIVE;
@@ -218,10 +215,9 @@ class OrderRegistryService {
 
       await saveOrder(order);
 
-      // Create order event
+      // Create order event (order hash will be set by watcher in oneInchOrderHashes)
       await saveOrderEvent({
         orderId: order.id,
-        orderHash: mockOrderHash,
         status: OrderStatus.SUBMITTED,
         timestamp: Date.now(),
       });
@@ -263,8 +259,89 @@ class OrderRegistryService {
       }
     }
 
+    // For Range orders, check if we've completed all steps or reached expiry
+    if (order.type === OrderType.RANGE && order.params) {
+      const params = order.params as RangeOrderParams;
+      
+      // Check expiry
+      if (params.expiry) {
+        const expiryTime = order.createdAt + (params.expiry * 24 * 60 * 60 * 1000);
+        if (now >= expiryTime) {
+          return true; // Past expiry
+        }
+      }
+      
+      // Check if all steps completed
+      const priceRange = Math.abs(params.endPrice - params.startPrice);
+      const stepSize = priceRange * (params.stepPct / 100);
+      const totalSteps = Math.ceil(priceRange / stepSize);
+      
+      if ((order.triggerCount || 0) >= totalSteps) {
+        return true; // Completed all steps
+      }
+    }
+
     // For other order types, implement similar logic as needed
     return false; // Continue watching by default
+  }
+
+  private calculateOrderAmounts(order: Order): { makerAmount: string; takerAmount: string } {
+    // Calculate amounts based on order type
+    switch (order.type) {
+      case OrderType.TWAP: {
+        const params = order.params as TwapParams;
+        if (!params) {
+          throw new Error("Invalid TWAP order params");
+        }
+
+        // Calculate total intervals and amount per interval
+        const totalDuration = params.endDate - params.startDate;
+        const intervalMs = params.interval;
+        const totalIntervals = Math.ceil(totalDuration / intervalMs);
+        const amountPerInterval = parseFloat(params.amount) / totalIntervals;
+
+        // Calculate taking amount based on making amount ratio
+        const originalMaking = parseFloat(order.makingAmount);
+        const ratio = amountPerInterval / parseFloat(params.amount);
+        const takerAmountForInterval = (parseFloat(order.takingAmount) * ratio).toString();
+
+        return {
+          makerAmount: amountPerInterval.toString(),
+          takerAmount: takerAmountForInterval
+        };
+      }
+
+      case OrderType.RANGE: {
+        const params = order.params as RangeOrderParams;
+        if (!params) {
+          throw new Error("Invalid Range order params");
+        }
+
+        // Calculate total steps and amount per step
+        const priceRange = Math.abs(params.endPrice - params.startPrice);
+        const stepSize = priceRange * (params.stepPct / 100);
+        const totalSteps = Math.ceil(priceRange / stepSize);
+        const amountPerStep = parseFloat(params.amount) / totalSteps;
+
+        // Calculate taking amount based on making amount ratio
+        const ratio = amountPerStep / parseFloat(params.amount);
+        const takerAmountForStep = (parseFloat(order.takingAmount) * ratio).toString();
+
+        return {
+          makerAmount: amountPerStep.toString(),
+          takerAmount: takerAmountForStep
+        };
+      }
+
+      case OrderType.STOP_LIMIT:
+      default: {
+        // For stop-limit and other orders, use the full amounts
+        return {
+          makerAmount: order.size,
+          takerAmount: order.takingAmount
+        };
+      }
+    }
   }
 
   private validateOrderSignature(order: Order): boolean {

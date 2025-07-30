@@ -22,20 +22,15 @@ class StopLimitWatcher extends BaseOrderWatcher {
     return currentPrice >= order.params.stopPrice;
   }
 
-  calculateSubmissionAmount(order: Order): string {
-    // For stop-limit orders, submit the full amount
-    return order.size;
-  }
-
-  async submit(order: Order): Promise<void> {
+  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
     if (!order.params || !('limitPrice' in order.params)) {
       throw new Error("Invalid stop-limit order params");
     }
 
-    logger.info(`Submitting stop-limit order ${order.id} at limit price ${order.params.limitPrice}`);
+    logger.info(`Triggering stop-limit order ${order.id} with ${makerAmount} tokens at limit price ${order.params.limitPrice}`);
     
-    // Call parent submit method to handle 1inch integration
-    await super.submit(order);
+    // Call parent trigger method to handle 1inch integration
+    await super.trigger(order, makerAmount, takerAmount);
   }
 
 }

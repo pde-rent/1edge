@@ -42,22 +42,7 @@ class TWAPWatcher extends BaseOrderWatcher {
     return shouldTriggerNow;
   }
 
-  calculateSubmissionAmount(order: Order): string {
-    const params = order.params as TwapParams;
-    if (!params) {
-      throw new Error("Invalid TWAP order params");
-    }
-
-    // Calculate total intervals and amount per interval
-    const totalDuration = params.endDate - params.startDate;
-    const intervalMs = params.interval;
-    const totalIntervals = Math.ceil(totalDuration / intervalMs);
-    const amountPerInterval = parseFloat(params.amount) / totalIntervals;
-
-    return amountPerInterval.toString();
-  }
-
-  async submit(order: Order): Promise<void> {
+  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
     const params = order.params as TwapParams;
     if (!params) {
       throw new Error("Invalid TWAP order params");
@@ -84,14 +69,13 @@ class TWAPWatcher extends BaseOrderWatcher {
     const intervalMs = params.interval;
     const totalIntervals = Math.ceil(totalDuration / intervalMs);
     const currentInterval = order.triggerCount + 1;
-    const amountPerInterval = this.calculateSubmissionAmount(order);
 
     // Get asset symbol for logging
     const assetSymbol = getAssetSymbol(order.makerAsset);
-    logger.info(`Submitting TWAP slice ${currentInterval}/${totalIntervals} for ${amountPerInterval} ${assetSymbol}`);
+    logger.info(`Triggering TWAP slice ${currentInterval}/${totalIntervals} for ${makerAmount} ${assetSymbol}`);
 
-    // Call parent submit method to handle 1inch integration
-    await super.submit(order);
+    // Call parent trigger method to handle 1inch integration
+    await super.trigger(order, makerAmount, takerAmount);
   }
 
   updateNextTrigger(order: Order): void {
