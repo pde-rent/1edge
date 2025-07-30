@@ -21,6 +21,7 @@ class StorageService {
     const dbPath = config.dbPath || "./data/1edge.db";
     this.initDatabase(dbPath);
     this.db = new Database(dbPath);
+    this.migrateDatabase();
     this.setupTables();
     this.setupOptimizations();
     this.prepareCriticalStatements();
@@ -29,6 +30,26 @@ class StorageService {
   private async initDatabase(dbPath: string) {
     const dir = join(process.cwd(), "data");
     await mkdir(dir, { recursive: true });
+  }
+
+  private migrateDatabase() {
+    // Check if we need to migrate from old schema
+    try {
+      const result = this.db.prepare("PRAGMA table_info(orders)").all() as Array<{name: string}>;
+      const hasRawData = result.some(col => col.name === 'raw_data');
+      const hasTriggerType = result.some(col => col.name === 'trigger_type');
+      
+      if (!hasRawData || !hasTriggerType) {
+        logger.info("Migrating database schema to support complete Order serialization...");
+        // Drop and recreate tables for clean migration
+        this.db.run("DROP TABLE IF EXISTS orders");
+        this.db.run("DROP TABLE IF EXISTS order_events");
+        logger.info("Database migration completed");
+      }
+    } catch (error) {
+      // Table doesn't exist yet, no migration needed
+      logger.debug("No migration needed - fresh database");
+    }
   }
 
   private setupTables() {
@@ -48,16 +69,21 @@ class StorageService {
         receiver TEXT,
         salt TEXT,
         signature TEXT,
+        size TEXT NOT NULL,
+        remaining_size TEXT NOT NULL,
+        trigger_count INTEGER DEFAULT 0,
+        next_trigger_value TEXT,
         trigger_price REAL,
         filled_amount TEXT DEFAULT '0',
-        remaining_amount TEXT,
         created_at INTEGER NOT NULL,
         executed_at INTEGER,
         cancelled_at INTEGER,
         tx_hash TEXT,
         network INTEGER NOT NULL,
         expiry INTEGER,
-        raw_data TEXT
+        user_signed_payload TEXT,
+        one_inch_order_hashes TEXT, -- JSON array of order hashes
+        raw_data TEXT NOT NULL -- Complete JSON serialized Order object
       )
     `);
 
@@ -165,6 +191,9 @@ class StorageService {
       `CREATE INDEX IF NOT EXISTS idx_orders_strategy ON orders(strategy_id)`,
     );
     this.db.run(
+      `CREATE INDEX IF NOT EXISTS idx_orders_type ON orders(type)`,
+    );
+    this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id)`,
     );
     this.db.run(
@@ -190,15 +219,7 @@ class StorageService {
 
   private prepareCriticalStatements() {
     // Pre-compile frequently used statements for better performance
-    this.preparedStatements.set('insertOrder', this.db.prepare(`
-      INSERT OR REPLACE INTO orders (
-        id, order_hash, strategy_id, type, status,
-        maker_asset, taker_asset, making_amount, taking_amount,
-        maker, receiver, salt, signature, trigger_price,
-        filled_amount, remaining_amount, created_at, executed_at,
-        cancelled_at, tx_hash, network, expiry, raw_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `));
+    // Note: Prepared statements are built dynamically, not used for complex inserts
 
     this.preparedStatements.set('getOrder', this.db.prepare(`
       SELECT raw_data FROM orders WHERE id = ?
@@ -236,10 +257,11 @@ class StorageService {
       INSERT OR REPLACE INTO orders (
         id, order_hash, strategy_id, type, status,
         maker_asset, taker_asset, making_amount, taking_amount,
-        maker, receiver, salt, signature, trigger_price,
-        filled_amount, remaining_amount, created_at, executed_at,
-        cancelled_at, tx_hash, network, expiry, raw_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        maker, receiver, salt, signature, size, remaining_size,
+        trigger_count, next_trigger_value, trigger_price,
+        filled_amount, created_at, executed_at, cancelled_at, tx_hash,
+        network, expiry, user_signed_payload, one_inch_order_hashes, raw_data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -256,16 +278,21 @@ class StorageService {
       order.receiver || null,
       order.salt || null,
       order.signature || null,
+      order.size,
+      order.remainingSize || order.size,
+      order.triggerCount || 0,
+      order.nextTriggerValue ? String(order.nextTriggerValue) : null,
       order.triggerPrice || null,
       order.filledAmount || "0",
-      order.remainingAmount || order.makingAmount,
       order.createdAt,
       order.executedAt || null,
       order.cancelledAt || null,
       order.txHash || null,
       1, // Default to Ethereum mainnet
       order.expiry || null,
-      JSON.stringify(order),
+      order.userSignedPayload || null,
+      order.oneInchOrderHashes ? JSON.stringify(order.oneInchOrderHashes) : null,
+      JSON.stringify(order), // Complete order object for reliable reconstruction
     );
 
     logger.debug(`Saved order ${order.id}`);
@@ -326,7 +353,7 @@ class StorageService {
     stmt.run(
       event.orderId,
       event.orderHash || null,
-      event.type,
+      event.status, // Use status instead of type
       event.timestamp,
       event.txHash || null,
       event.filledAmount || null,
@@ -340,7 +367,17 @@ class StorageService {
 
   async getOrderEvents(orderId: string): Promise<OrderEvent[]> {
     const stmt = this.db.prepare(`
-      SELECT * FROM order_events 
+      SELECT 
+        order_id as orderId,
+        order_hash as orderHash,
+        type as status,
+        timestamp,
+        tx_hash as txHash,
+        filled_amount as filledAmount,
+        remaining_amount as remainingAmount,
+        gas_used as gasUsed,
+        error
+      FROM order_events 
       WHERE order_id = ? 
       ORDER BY timestamp DESC
     `);
