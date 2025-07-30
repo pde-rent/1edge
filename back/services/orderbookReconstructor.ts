@@ -49,40 +49,28 @@ export class OrderbookReconstructor {
     const startTime = Date.now();
 
     try {
-      // Fetch token decimals for proper scaling first
-      let baseDecimals = 18;
-      let quoteDecimals = 18;
+      // Fetch token decimals for proper scaling - no hardcoded defaults
+      let makerAssetDecimals: number;
+      let takerAssetDecimals: number;
       
       if (makerAsset && takerAsset) {
-        // Hardcode known decimals for testing
-        if (makerAsset.toLowerCase() === "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599") {
-          baseDecimals = 8; // WBTC
-        } else if (makerAsset.toLowerCase() === "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2") {
-          baseDecimals = 18; // WETH
+        try {
+          [makerAssetDecimals, takerAssetDecimals] = await Promise.all([
+            this.fetchTokenDecimals(chain, makerAsset),
+            this.fetchTokenDecimals(chain, takerAsset),
+          ]);
+          logger.info(`Token decimals: maker(${makerAsset.slice(0,6)})=${makerAssetDecimals}, taker(${takerAsset.slice(0,6)})=${takerAssetDecimals}`);
+        } catch (error) {
+          logger.error(`Failed to fetch token decimals: ${error}`);
+          throw new Error(`Cannot proceed without token decimals for ${makerAsset}/${takerAsset}`);
         }
-        
-        if (takerAsset.toLowerCase() === "0xdac17f958d2ee523a2206206994597c13d831ec7") {
-          quoteDecimals = 6; // USDT
-        }
-        
-        logger.info(`Token decimals: ${makerAsset.slice(0,6)}=${baseDecimals}, ${takerAsset.slice(0,6)}=${quoteDecimals}`);
-        
-        // TODO: Later fetch from RPC
-        // try {
-        //   [baseDecimals, quoteDecimals] = await Promise.all([
-        //     this.fetchTokenDecimals(chain, makerAsset),
-        //     this.fetchTokenDecimals(chain, takerAsset),
-        //   ]);
-        // } catch (error) {
-        //   logger.error(`Failed to fetch token decimals: ${error}`);
-        // }
       }
       
-      // Fetch spot price for filtering (if available) - must happen after we know decimals
+      // Fetch spot price for filtering (if available)
       let spotPrice: number | null = null;
       if (makerAsset && takerAsset) {
         try {
-          spotPrice = await this.fetchSpotPriceFromCollector(chain, makerAsset, takerAsset, baseDecimals, quoteDecimals);
+          spotPrice = await this.fetchSpotPriceFromCollector(chain, makerAsset, takerAsset, makerAssetDecimals, takerAssetDecimals);
           if (spotPrice !== null) {
             logger.info(`Using collector spot price for filtering: ${spotPrice}`);
           }
@@ -98,41 +86,29 @@ export class OrderbookReconstructor {
         logger.warn(`No orders found for ${makerAsset}/${takerAsset} on chain ${chain}`);
       }
       
-      // Separate orders into bids and asks with spot price filtering
-      let bidOrders: OneInchOrder[] = [];
-      let askOrders: OneInchOrder[] = [];
-      
-      // Use enhanced method with spot price filtering
+      // Separate orders into bids and asks (no scaling needed here)
       const result = this.separateBidsAndAsksWithSpotPrice(allOrders, makerAsset, takerAsset, spotPrice);
-      bidOrders = result.bidOrders;
-      askOrders = result.askOrders;
+      const bidOrders = result.bidOrders;
+      const askOrders = result.askOrders;
       
-      // Apply decimal scaling to the rates only - we'll handle amounts during processing
-      if (baseDecimals !== 18 || quoteDecimals !== 18) {
-        const scaleFactor = Math.pow(10, baseDecimals - quoteDecimals);
-        logger.info(`Applying scale factor: ${scaleFactor} (${baseDecimals}-${quoteDecimals} decimals)`);
-        
-        // Scale rates only - don't modify amounts yet
-        askOrders.forEach(order => {
-          const originalRate = parseFloat(order.makerRate);
-          const scaledRate = originalRate * scaleFactor;
-          order.makerRate = scaledRate.toString();
-          logger.debug(`ASK rate scaled: ${originalRate} -> ${scaledRate}`);
-        });
-        
-        bidOrders.forEach(order => {
-          const originalRate = parseFloat(order.makerRate);
-          const scaledRate = originalRate * scaleFactor;
-          order.makerRate = scaledRate.toString();
-          logger.debug(`BID rate scaled: ${originalRate} -> ${scaledRate}`);
-        });
+      // Debug: Log first few raw rates to understand the data
+      if (bidOrders.length > 0) {
+        logger.info(`First 3 raw bid rates: ${bidOrders.slice(0, 3).map(o => o.makerRate).join(', ')}`);
+        logger.info(`First bid order details: maker=${bidOrders[0].data.makerAsset}, taker=${bidOrders[0].data.takerAsset}, makingAmount=${bidOrders[0].remainingMakerAmount}`);
+      }
+      if (askOrders.length > 0) {
+        logger.info(`First 3 raw ask rates: ${askOrders.slice(0, 3).map(o => o.makerRate).join(', ')}`);
+        logger.info(`First ask order details: maker=${askOrders[0].data.makerAsset}, taker=${askOrders[0].data.takerAsset}, makingAmount=${askOrders[0].remainingMakerAmount}`);
       }
       
-      // Process orders into orderbook levels
+      // Process orders into orderbook levels with proper decimal scaling
       logger.info(`Processing orders: ${bidOrders.length} bids, ${askOrders.length} asks`);
       
-      const bids = this.processOrdersToLevels(bidOrders, "makerRate", true, quoteDecimals); // Descending for bids
-      const asks = this.processOrdersToLevels(askOrders, "makerRate", false, baseDecimals); // Ascending for asks
+      // Process orders into levels with proper decimals
+      // For bids: makerAsset=USDT, takerAsset=ETH  
+      // For asks: makerAsset=ETH, takerAsset=USDT
+      const bids = this.processOrdersToLevels(bidOrders, "makerRate", true, makerAssetDecimals, takerAssetDecimals, true); // Descending for bids
+      const asks = this.processOrdersToLevels(askOrders, "makerRate", false, makerAssetDecimals, takerAssetDecimals, false); // Ascending for asks
 
       const orderbook: ReconstructedOrderbook = {
         chain,
@@ -153,8 +129,8 @@ export class OrderbookReconstructor {
 
       // Calculate spread if we have both bid and ask
       if (orderbook.summary.bestBid && orderbook.summary.bestAsk) {
-        const bidPrice = parseFloat(orderbook.summary.bestBid);
-        const askPrice = parseFloat(orderbook.summary.bestAsk);
+        const bidPrice = orderbook.summary.bestBid;
+        const askPrice = orderbook.summary.bestAsk;
         const spread = askPrice - bidPrice;
         const spreadPercent = (spread / bidPrice) * 100;
         orderbook.summary.spread = `${spread.toFixed(8)} (${spreadPercent.toFixed(4)}%)`;
@@ -436,13 +412,15 @@ export class OrderbookReconstructor {
 
 
   /**
-   * Processes raw orders into aggregated price levels
+   * Processes raw orders into aggregated price levels with proper decimal scaling
    */
   private processOrdersToLevels(
     orders: OneInchOrder[],
     rateField: "makerRate" | "takerRate",
     descending: boolean,
-    decimals: number = 18,
+    makerAssetDecimals: number,
+    takerAssetDecimals: number,
+    isBid: boolean,
   ): OrderbookLevel[] {
     if (orders.length === 0) return [];
 
@@ -460,29 +438,46 @@ export class OrderbookReconstructor {
     // Convert to levels and sort
     const levels: OrderbookLevel[] = [];
     
-    for (const [price, ordersAtLevel] of priceMap) {
-      const priceFloat = parseFloat(price);
-      const isBid = descending;
+    for (const [rawPrice, ordersAtLevel] of priceMap) {
+      const rawPriceFloat = parseFloat(rawPrice);
+      
+      // Convert raw rate to proper price based on bid/ask and decimals
+      let actualPrice: number;
+      
+      if (isBid) {
+        // Bid: makerAsset is quote (USDT), takerAsset is base (WETH)
+        // makerRate represents scaled WETH per USDT, so we need to invert it
+        // Price should be USDT per WETH
+        const wethPerUsdt = rawPriceFloat / (Math.pow(10, makerAssetDecimals) / Math.pow(10, takerAssetDecimals));
+        actualPrice = 1 / wethPerUsdt;
+      } else {
+        // Ask: makerAsset is base (WETH), takerAsset is quote (USDT)
+        // makerRate needs scaling: multiply by 10^(makerDecimals - takerDecimals)
+        actualPrice = rawPriceFloat * Math.pow(10, makerAssetDecimals - takerAssetDecimals);
+      }
 
-      // Calculate total amount at this level
-      // Scale the raw amounts by decimals
-      const totalAmountInMakerAsset = ordersAtLevel.reduce((sum, order) => {
-        const rawAmount = parseFloat(order.remainingMakerAmount || "0");
-        const scaledAmount = rawAmount / Math.pow(10, decimals);
-        return sum + scaledAmount;
+      // Calculate total amount at this level in quote asset (USDT) denomination
+      const totalAmountScaled = ordersAtLevel.reduce((sum, order) => {
+        if (isBid) {
+          // Bid: makerAsset is quote (USDT), takerAsset is base (WETH)
+          // Use makerAmount (USDT) directly - but makerAssetDecimals here refers to USDT decimals = 6
+          const rawMakingAmount = parseFloat(order.remainingMakerAmount || "0");
+          const scaledMakingAmount = rawMakingAmount / Math.pow(10, takerAssetDecimals); // Use takerAssetDecimals (USDT = 6)
+          return sum + scaledMakingAmount;
+        } else {
+          // Ask: makerAsset is base (WETH), takerAsset is quote (USDT)
+          // Convert ETH to USDT using actualPrice (since remainingTakerAmount might not be available)
+          const rawMakingAmount = parseFloat(order.remainingMakerAmount || "0");
+          const scaledMakingAmount = rawMakingAmount / Math.pow(10, makerAssetDecimals); // Use makerAssetDecimals (ETH = 18)
+          const usdtEquivalent = scaledMakingAmount * actualPrice;
+          return sum + usdtEquivalent;
+        }
       }, 0);
 
-      // For display, we want amounts in quote asset (USD value)
-      // For asks: amount is in base asset, multiply by price to get quote value
-      // For bids: amount is already in quote asset
-      const totalAmountInQuoteAsset = isBid
-        ? totalAmountInMakerAsset
-        : totalAmountInMakerAsset * priceFloat;
-
       levels.push({
-        price,
-        amount: totalAmountInQuoteAsset.toString(),
-        total: "0", // Will be calculated later
+        price: actualPrice,
+        amount: totalAmountScaled,
+        total: 0, // Will be calculated later
         count: ordersAtLevel.length,
         orders: ordersAtLevel,
       });
@@ -498,8 +493,8 @@ export class OrderbookReconstructor {
     // Recalculate running totals after sorting
     let cumulativeTotal = 0;
     for (const level of levels) {
-      cumulativeTotal += parseFloat(level.amount);
-      level.total = cumulativeTotal.toString();
+      cumulativeTotal += level.amount;
+      level.total = cumulativeTotal;
     }
 
     return levels;
@@ -559,8 +554,8 @@ export class OrderbookReconstructor {
     // Recalculate running totals after sorting
     let cumulativeTotal = 0;
     for (const level of levels) {
-      cumulativeTotal += parseFloat(level.amount);
-      level.total = cumulativeTotal.toString();
+      cumulativeTotal += level.amount;
+      level.total = cumulativeTotal;
     }
 
     return levels;
@@ -763,12 +758,8 @@ export class OrderbookReconstructor {
     } catch (error) {
       logger.error(`Failed to fetch decimals for ${tokenAddress}: ${error}`);
       
-      // Fallback to common values
-      const fallbackDecimals = tokenAddress.toLowerCase() === "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599" ? 8 : 18;
-      logger.warn(`Using fallback decimals for ${tokenAddress}: ${fallbackDecimals}`);
-      
-      await cacheTokenDecimals(chainId, tokenAddress, fallbackDecimals, 3600); // Cache for 1 hour
-      return fallbackDecimals;
+      // No fallback values - must fetch from blockchain or cache
+      throw new Error(`Unable to fetch decimals for token ${tokenAddress} on chain ${chainId}: ${error}`);
     }
   }
 
