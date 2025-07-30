@@ -286,3 +286,11 @@ export function formatDuration(ms: number): string {
   if (ms < TIME.DAY) return `${Math.round(ms / TIME.HOUR)}h`;
   return `${Math.round(ms / TIME.DAY)}d`;
 }
+
+/**
+ * Truncate an address for display
+ */
+export function truncateAddress(address: string, chars = 4): string {
+  if (!address) return '';
+  return `${address.substring(0, chars + 2)}...${address.substring(address.length - chars)}`;
+}
