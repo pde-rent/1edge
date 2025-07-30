@@ -4,7 +4,7 @@ import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { roundSig } from '@common/utils';
-import type { ReconstructedOrderbook, OrderbookLevel } from '@common/types';
+import type { OneInchOrderBook, OrderbookLevel } from '@common/types';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { PanelWrapper } from './common/Panel';
 import {
@@ -196,8 +196,8 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         <div
           className={cn(
             "absolute inset-0 transition-all duration-300",
-            isBid 
-              ? "bg-gradient-to-l from-emerald-500/20 via-emerald-500/15 to-emerald-500/5" 
+            isBid
+              ? "bg-gradient-to-l from-emerald-500/20 via-emerald-500/15 to-emerald-500/5"
               : "bg-gradient-to-l from-red-500/20 via-red-500/15 to-red-500/5"
           )}
           style={{
@@ -206,7 +206,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             left: 'auto'
           }}
         />
-        
+
         {/* Additional subtle background layer for depth emphasis */}
         <div
           className={cn(
@@ -217,7 +217,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             width: `${Math.min(depthPercentage * 1.3, 100)}%`,
             right: 0,
             left: 'auto',
-            background: isBid 
+            background: isBid
               ? `linear-gradient(to left, rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)}), rgba(16, 185, 129, 0.01))`
               : `linear-gradient(to left, rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)}), rgba(239, 68, 68, 0.01))`
           }}
@@ -284,7 +284,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     );
   }
 
-  const orderbook: ReconstructedOrderbook = orderbookResponse.data;
+  const orderbook: OneInchOrderBook = orderbookResponse.data;
   const lastUpdated = new Date(orderbook.timestamp).toLocaleTimeString();
   const spotPrice = realtimeSpotPrice || orderbook.summary.spotPrice || null;
 
@@ -460,8 +460,8 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             </SelectTrigger>
             <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
               {STEP_OPTIONS.map((option) => (
-                <SelectItem 
-                  key={option.value} 
+                <SelectItem
+                  key={option.value}
                   value={option.value}
                   className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
                 >
