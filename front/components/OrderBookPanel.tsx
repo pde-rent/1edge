@@ -198,7 +198,7 @@ export default function OrderBookPanel({
     isValidating,
     mutate,
   } = useSWR(getApiEndpoint(), fetcher, {
-    refreshInterval: 60000,
+    refreshInterval: 10000,
     revalidateOnFocus: false,
     revalidateOnReconnect: true,
   });
@@ -297,7 +297,7 @@ export default function OrderBookPanel({
             {hoveredBetween?.upper === levels[index - 1]?.price &&
               hoveredBetween?.lower === level.price && (
                 <div className="absolute inset-0 bg-yellow-500/20 border-y border-yellow-500/40 flex items-center justify-center">
-                  <div className="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                  <div className="bg-yellow-500 text-black text-xs px-2 flex items-center gap-1 font-medium">
                     <Plus className="w-3 h-3" />
                     {formatPrice((levels[index - 1].price + level.price) / 2)}
                   </div>
@@ -309,7 +309,7 @@ export default function OrderBookPanel({
         {/* Main level row */}
         <div
           className={cn(
-            "grid grid-cols-3 gap-2 py-1 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden group",
+            "grid grid-cols-3 gap-2 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden group",
             isBid
               ? "border-l-emerald-500/70 hover:border-l-emerald-400 hover:bg-emerald-900/20"
               : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20",
@@ -791,7 +791,7 @@ export default function OrderBookPanel({
               {isValidating && (
                 <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />
               )}
-              <span className="font-mono">60s refresh • Step: {stepSize}%</span>
+              <span className="font-mono">10s refresh</span>
             </div>
           </div>
         </div>
