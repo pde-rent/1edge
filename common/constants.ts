@@ -1,4 +1,3 @@
-import type { NetworkConfig } from "./types";
 
 /** API server port number */
 export const API_PORT = Number(process.env.API_PORT) || 40005;
@@ -211,75 +210,6 @@ export const GRID_CONFIG = {
   } as Record<string, any[]>,
 };
 
-/**
- * Supported networks for 1edge
- */
-export const NETWORKS: Record<number, NetworkConfig> = {
-  1: {
-    chainId: 1,
-    name: "Ethereum",
-    rpcUrl: process.env.ETH_RPC_URL || "https://eth.llamarpc.com",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828", // 1inch v4
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "ETH",
-    blockExplorer: "https://etherscan.io",
-  },
-  137: {
-    chainId: 137,
-    name: "Polygon",
-    rpcUrl: process.env.POLYGON_RPC_URL || "https://polygon-rpc.com",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "MATIC",
-    blockExplorer: "https://polygonscan.com",
-  },
-  56: {
-    chainId: 56,
-    name: "BSC",
-    rpcUrl: process.env.BSC_RPC_URL || "https://bsc-dataseed.binance.org",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "BNB",
-    blockExplorer: "https://bscscan.com",
-  },
-  42161: {
-    chainId: 42161,
-    name: "Arbitrum",
-    rpcUrl: process.env.ARBITRUM_RPC_URL || "https://arb1.arbitrum.io/rpc",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "ETH",
-    blockExplorer: "https://arbiscan.io",
-  },
-  10: {
-    chainId: 10,
-    name: "Optimism",
-    rpcUrl: process.env.OPTIMISM_RPC_URL || "https://mainnet.optimism.io",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "ETH",
-    blockExplorer: "https://optimistic.etherscan.io",
-  },
-  43114: {
-    chainId: 43114,
-    name: "Avalanche",
-    rpcUrl:
-      process.env.AVALANCHE_RPC_URL || "https://api.avax.network/ext/bc/C/rpc",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "AVAX",
-    blockExplorer: "https://snowtrace.io",
-  },
-  8453: {
-    chainId: 8453,
-    name: "Base",
-    rpcUrl: process.env.BASE_RPC_URL || "https://mainnet.base.org",
-    limitOrderContract: "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-    settlementContract: "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-    nativeSymbol: "ETH",
-    blockExplorer: "https://basescan.org",
-  },
-};
 
 /**
  * 1inch API configuration

@@ -126,6 +126,60 @@
           "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
           "nativeSymbol": "ETH",
           "blockExplorer": "https://etherscan.io"
+        },
+        "137": {
+          "chainId": 137,
+          "name": "Polygon",
+          "rpcUrl": "https://polygon-rpc.com",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "MATIC",
+          "blockExplorer": "https://polygonscan.com"
+        },
+        "56": {
+          "chainId": 56,
+          "name": "BSC",
+          "rpcUrl": "https://bsc-dataseed.binance.org",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "BNB",
+          "blockExplorer": "https://bscscan.com"
+        },
+        "42161": {
+          "chainId": 42161,
+          "name": "Arbitrum",
+          "rpcUrl": "https://arb1.arbitrum.io/rpc",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "ETH",
+          "blockExplorer": "https://arbiscan.io"
+        },
+        "10": {
+          "chainId": 10,
+          "name": "Optimism",
+          "rpcUrl": "https://mainnet.optimism.io",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "ETH",
+          "blockExplorer": "https://optimistic.etherscan.io"
+        },
+        "43114": {
+          "chainId": 43114,
+          "name": "Avalanche",
+          "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "AVAX",
+          "blockExplorer": "https://snowtrace.io"
+        },
+        "8453": {
+          "chainId": 8453,
+          "name": "Base",
+          "rpcUrl": "https://mainnet.base.org",
+          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
+          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
+          "nativeSymbol": "ETH",
+          "blockExplorer": "https://basescan.org"
         }
       },
       "maxGasPrice": "100"
