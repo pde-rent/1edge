@@ -94,7 +94,7 @@ export default function Home() {
         style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
       >
         <div key="activeFeed" className="h-full w-full overflow-hidden">
-          <div className="h-full w-full overflow-hidden flex flex-col rounderd-2xl">
+          <div className="h-full w-full overflow-hidden flex flex-col">
             <ActiveFeedPanel feedId={selectedFeed} onFeedSelect={setSelectedFeed} />
           </div>
         </div>

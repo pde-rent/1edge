@@ -41,7 +41,7 @@ const IcebergForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <TrendingDown className="w-4 h-4" />
           Start Price
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="startPrice"
@@ -69,7 +69,7 @@ const IcebergForm = ({ control, errors }: any) => {
         />
         {errors.startPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.startPrice.message}
           </span>
         )}
@@ -80,7 +80,7 @@ const IcebergForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           End Price
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="endPrice"
@@ -108,7 +108,7 @@ const IcebergForm = ({ control, errors }: any) => {
         />
         {errors.endPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.endPrice.message}
           </span>
         )}
@@ -119,7 +119,7 @@ const IcebergForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Hash className="w-4 h-4" />
           Execution Steps
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="steps"
@@ -151,7 +151,7 @@ const IcebergForm = ({ control, errors }: any) => {
         />
         {errors.steps && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.steps.message}
           </span>
         )}
@@ -162,7 +162,7 @@ const IcebergForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Expiry Date
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="expiry"
@@ -182,7 +182,7 @@ const IcebergForm = ({ control, errors }: any) => {
         />
         {errors.expiry && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.expiry.message}
           </span>
         )}
@@ -193,7 +193,7 @@ const IcebergForm = ({ control, errors }: any) => {
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+            <div className="w-2 h-2 bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
               <EyeOff className="w-3 h-3" />
               Iceberg Execution Summary

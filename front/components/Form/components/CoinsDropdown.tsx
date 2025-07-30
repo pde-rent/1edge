@@ -26,7 +26,7 @@ const CoinDropdown = ({
         <div className="flex items-center gap-1">
           {selectedCoinData ? (
             <>
-              <div className="w-8 h-8 rounded-full overflow-hidden bg-white/10 flex items-center justify-center border border-emerald-400/40 backdrop-blur-sm shadow-lg">
+              <div className="w-8 h-8 square overflow-hidden bg-white/10 flex items-center justify-center border border-emerald-400/40 backdrop-blur-sm shadow-lg">
                 <img 
                   src={selectedCoinData.image} 
                   alt={selectedCoinData.name}
@@ -43,7 +43,7 @@ const CoinDropdown = ({
             </>
           ) : (
             <div className="flex items-center gap-1">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500/20 via-green-400/15 to-emerald-600/20 rounded-full flex items-center justify-center border border-emerald-400/40 backdrop-blur-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-500/20 via-green-400/15 to-emerald-600/20 square flex items-center justify-center border border-emerald-400/40 backdrop-blur-sm">
                 <span className="text-sm font-bold text-emerald-300">#</span>
               </div>
               <span className="text-emerald-300 text-sm">{placeholder}</span>
@@ -71,7 +71,7 @@ const CoinDropdown = ({
                 }}
                 className="w-full flex items-center gap-3 p-3 text-left hover:bg-gradient-to-r hover:from-emerald-800/40 hover:to-emerald-700/30 transition-all duration-200 first:rounded-t-xl last:rounded-b-xl border-b border-gray-700/50 last:border-b-0 hover:border-emerald-600/30"
               >
-                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-800/60 flex items-center justify-center border border-emerald-500/40 backdrop-blur-sm shadow-lg shadow-emerald-900/30">
+                <div className="w-8 h-8 square overflow-hidden bg-gray-800/60 flex items-center justify-center border border-emerald-500/40 backdrop-blur-sm shadow-lg shadow-emerald-900/30">
                   <img 
                     src={coin.image} 
                     alt={coin.name}

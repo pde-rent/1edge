@@ -27,7 +27,7 @@ const GlassButton: React.FC<GlassButtonProps> = ({ active, onClick, children, va
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-3 rounded-xl backdrop-blur-xl transition-all transform hover:scale-[1.02] ${variants[variant]}`}
+      className={`px-4 py-3 backdrop-blur-xl transition-all transform hover:scale-[1.02] ${variants[variant]}`}
       {...props}
     >
       {children}

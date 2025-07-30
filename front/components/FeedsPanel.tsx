@@ -4,6 +4,7 @@ import { fetcher } from '../utils/fetcher';
 import { useWebSocketContext } from '../contexts/WebSocketContext';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { PanelWrapper } from './common/Panel';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { roundSig, formatPrice } from '../lib/utils';
@@ -108,52 +109,52 @@ export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (fe
 
   if (error && feedsToDisplay.length === 0)
     return (
-      <Card className="h-full bg-gray-950 border-gray-800">
+      <PanelWrapper>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-red-400 font-medium">
             Error loading feeds: {error.message}
           </div>
         </CardContent>
-      </Card>
+      </PanelWrapper>
     );
 
   if (feedsToDisplay.length === 0 && isValidating)
     return (
-      <Card className="h-full bg-gray-950 border-gray-800">
+      <PanelWrapper>
         <CardContent className="flex items-center justify-center py-8">
           <div className="flex items-center gap-3 text-gray-400">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading feeds...</span>
           </div>
         </CardContent>
-      </Card>
+      </PanelWrapper>
     );
 
   if (feedsToDisplay.length === 0 && !isValidating && !error)
     return (
-      <Card className="h-full bg-gray-950 border-gray-800 ">
+      <PanelWrapper>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-gray-500 font-medium">
             No feeds available.
           </div>
         </CardContent>
-      </Card>
+      </PanelWrapper>
     );
 
   if (apiResponse && !apiResponse.success && feedsToDisplay.length === 0) {
     return (
-      <Card className="h-full bg-gray-950 border-gray-800">
+      <PanelWrapper>
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-red-400 font-medium">
             Error: {apiResponse.error || 'Failed to fetch feeds'}
           </div>
         </CardContent>
-      </Card>
+      </PanelWrapper>
     );
   }
 
   return (
-    <Card className="h-full bg-gray-950 border-gray-800 overflow-hidden flex flex-col p-0 gap-0">
+    <PanelWrapper>
       {/* Header */}
       <CardHeader className="pb-3 border-b border-gray-800 bg-gray-900/50 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -165,7 +166,7 @@ export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (fe
           {/* Live indicator */}
           {isValidating && feedsToDisplay.length > 0 && (
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+              <div className="w-2 h-2 bg-green-400 animate-pulse" />
               <span className="text-xs font-semibold text-green-400 uppercase tracking-wide">
                 Live
               </span>
@@ -286,6 +287,6 @@ export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (fe
           </div>
         </div>
       </CardContent>
-    </Card>
+    </PanelWrapper>
   );
 }

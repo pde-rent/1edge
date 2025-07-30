@@ -1,6 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { PanelWrapper } from "./common/Panel";
 import { Badge } from "@/components/ui/badge";
 import { roundSig } from "@common/utils";
 import { TrendingUp, BarChart3 } from "lucide-react";
@@ -133,9 +134,7 @@ export default function PositionsPanel() {
   };
 
   return (
-    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-        <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl">
+    <PanelWrapper>
           {/* Header */}
           <CardHeader className="pb-0 border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md flex-shrink-0 relative">
             <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
@@ -148,7 +147,7 @@ export default function PositionsPanel() {
 
               {/* Status indicator */}
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-teal-400 shadow-lg shadow-teal-400/50" />
+                <div className="w-2 h-2 bg-teal-400" />
                 <span className="text-xs font-medium text-teal-200 uppercase tracking-wide">
                   {strategies.length > 0
                     ? `${strategies.length} Active`
@@ -172,7 +171,7 @@ export default function PositionsPanel() {
 
               <div className="col-span-3 relative z-10 flex items-center gap-2">
                 Name
-                <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+                <div className="w-1 h-1 bg-teal-400"></div>
               </div>
               <div className="col-span-2 relative z-10">Type</div>
               <div className="col-span-2 relative z-10">Status</div>
@@ -240,7 +239,7 @@ export default function PositionsPanel() {
                 <div className="flex-1 flex items-center justify-center py-12">
                   <div className="text-center">
                     <div className="relative mb-4">
-                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 rounded-full blur-xl"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 blur-xl"></div>
                       <BarChart3 className="w-12 h-12 text-teal-400 mx-auto relative z-10" />
                     </div>
                     <p className="text-slate-200 font-medium">
@@ -262,23 +261,21 @@ export default function PositionsPanel() {
                 <span className="font-mono flex items-center gap-2">
                   {strategies.length} position
                   {strategies.length !== 1 ? "s" : ""} shown
-                  <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
+                  <div className="w-1 h-1 bg-emerald-400"></div>
                 </span>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500/80 shadow-lg shadow-emerald-500/50"></div>
+                    <div className="w-2 h-2 bg-emerald-500/80"></div>
                     <span className="font-mono text-emerald-300">Long</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded-full bg-red-500/80 shadow-lg shadow-red-500/50"></div>
+                    <div className="w-2 h-2 bg-red-500/80"></div>
                     <span className="font-mono text-red-300">Short</span>
                   </div>
                 </div>
               </div>
             </div>
           </CardContent>
-        </Card>
-      </div>
-    </div>
+    </PanelWrapper>
   );
 }

@@ -50,7 +50,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Activity className="w-4 h-4" />
           RSI Period
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="rsiPeriod"
@@ -82,7 +82,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         />
         {errors.rsiPeriod && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.rsiPeriod.message}
           </span>
         )}
@@ -93,7 +93,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           RSI MA Period
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="rsimaPeriod"
@@ -125,7 +125,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         />
         {errors.rsimaPeriod && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.rsimaPeriod.message}
           </span>
         )}
@@ -136,7 +136,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Target className="w-4 h-4" />
           Take Profit Percentage
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="tpPct"
@@ -171,7 +171,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         />
         {errors.tpPct && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.tpPct.message}
           </span>
         )}
@@ -182,7 +182,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Shield className="w-4 h-4" />
           Stop Loss Percentage
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="slPct"
@@ -217,7 +217,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         />
         {errors.slPct && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.slPct.message}
           </span>
         )}
@@ -228,7 +228,7 @@ const MomentumReversalForm = ({ control, errors }: any) => {
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+            <div className="w-2 h-2 bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
               <Activity className="w-3 h-3" />
               Momentum Reversal Summary

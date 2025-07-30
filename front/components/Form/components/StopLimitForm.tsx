@@ -27,7 +27,7 @@ const StopLimitForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4" />
           Stop Price (Trigger)
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="stopPrice"
@@ -55,12 +55,12 @@ const StopLimitForm = ({ control, errors }: any) => {
         />
         {errors.stopPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.stopPrice.message}
           </span>
         )}
         <div className="text-xs text-slate-400 flex items-center gap-1">
-          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          <div className="w-1 h-1 bg-slate-500"></div>
           Order triggers when market price reaches this level
         </div>
       </div>
@@ -70,7 +70,7 @@ const StopLimitForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <TrendingDown className="w-4 h-4" />
           Limit Price (Execution)
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="limitPrice"
@@ -98,12 +98,12 @@ const StopLimitForm = ({ control, errors }: any) => {
         />
         {errors.limitPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.limitPrice.message}
           </span>
         )}
         <div className="text-xs text-slate-400 flex items-center gap-1">
-          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          <div className="w-1 h-1 bg-slate-500"></div>
           Maximum price you're willing to pay when triggered
         </div>
       </div>
@@ -113,7 +113,7 @@ const StopLimitForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Expiry Date
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="expiry"
@@ -133,12 +133,12 @@ const StopLimitForm = ({ control, errors }: any) => {
         />
         {errors.expiry && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.expiry.message}
           </span>
         )}
         <div className="text-xs text-slate-400 flex items-center gap-1">
-          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          <div className="w-1 h-1 bg-slate-500"></div>
           Order automatically cancels after this date
         </div>
       </div>
@@ -148,7 +148,7 @@ const StopLimitForm = ({ control, errors }: any) => {
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+            <div className="w-2 h-2 bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               Stop Limit Order Summary

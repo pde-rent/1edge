@@ -46,7 +46,7 @@ const DCAForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Start Date
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="startDate"
@@ -66,7 +66,7 @@ const DCAForm = ({ control, errors }: any) => {
         />
         {errors.startDate && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.startDate.message}
           </span>
         )}
@@ -77,7 +77,7 @@ const DCAForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Clock className="w-4 h-4" />
           Investment Interval
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="interval"
@@ -113,7 +113,7 @@ const DCAForm = ({ control, errors }: any) => {
         />
         {errors.interval && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.interval.message}
           </span>
         )}
@@ -124,7 +124,7 @@ const DCAForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           Max Price (USD)
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="maxPrice"
@@ -150,12 +150,12 @@ const DCAForm = ({ control, errors }: any) => {
         />
         {errors.maxPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.maxPrice.message}
           </span>
         )}
         <div className="text-xs text-slate-400 flex items-center gap-1">
-          <div className="w-1 h-1 rounded-full bg-slate-500"></div>
+          <div className="w-1 h-1 bg-slate-500"></div>
           Leave empty to buy at any price
         </div>
       </div>
@@ -165,7 +165,7 @@ const DCAForm = ({ control, errors }: any) => {
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+            <div className="w-2 h-2 bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
               <Repeat className="w-3 h-3" />
               DCA Strategy Summary

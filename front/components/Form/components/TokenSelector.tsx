@@ -22,7 +22,7 @@ const TokenSelector = ({ selectedToken, onTokenSelect, tokens = ['ETH', 'USDC'] 
                 : 'bg-gradient-to-r from-gray-800/40 to-gray-900/40 hover:from-gray-700/50 hover:to-gray-800/50 text-gray-300 border border-gray-600/30 hover:border-gray-500/50'
             }`}
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+            <div className={`w-8 h-8 square flex items-center justify-center ${
               selectedToken === token ? config.bg : 'bg-gray-700/50'
             }`}>
               <span className="text-sm font-bold">{config.symbol}</span>

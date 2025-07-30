@@ -142,7 +142,7 @@ const fetchCoins = async (useMockData = true) => {
     return (
       <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
+          <div className="animate-spin square h-8 w-8 border-b-2 border-emerald-500"></div>
           <span className="ml-3 text-emerald-200">Loading coins...</span>
         </div>
       </div>
@@ -179,7 +179,7 @@ const fetchCoins = async (useMockData = true) => {
     <button
       type="button"
       onClick={swapCoins}
-      className="p-2 bg-gradient-to-br from-emerald-500/30 via-green-400/25 to-emerald-600/30 rounded-full border border-emerald-400/40 backdrop-blur-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30 transition-all transform hover:scale-110 text-emerald-50"
+      className="p-2 bg-gradient-to-br from-emerald-500/30 via-green-400/25 to-emerald-600/30 square border border-emerald-400/40 backdrop-blur-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30 transition-all transform hover:scale-110 text-emerald-50"
       title="Swap coins"
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

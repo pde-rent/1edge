@@ -57,7 +57,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <TrendingDown className="w-4 h-4" />
           Start Price (Lower Bound)
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="startPrice"
@@ -85,7 +85,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         />
         {errors.startPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.startPrice.message}
           </span>
         )}
@@ -96,7 +96,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           End Price (Upper Bound)
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="endPrice"
@@ -124,7 +124,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         />
         {errors.endPrice && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.endPrice.message}
           </span>
         )}
@@ -135,7 +135,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Percent className="w-4 h-4" />
           Step Percentage
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="stepPct"
@@ -173,7 +173,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         />
         {errors.stepPct && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.stepPct.message}
           </span>
         )}
@@ -184,7 +184,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <ArrowUpDown className="w-4 h-4" />
           Step Multiplier
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="stepMultiplier"
@@ -220,7 +220,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         />
         {errors.stepMultiplier && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.stepMultiplier.message}
           </span>
         )}
@@ -231,7 +231,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Grid3X3 className="w-4 h-4" />
           Single Side Mode
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="singleSide"
@@ -259,14 +259,14 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
 
               {/* Custom Toggle Switch */}
               <div
-                className={`relative w-12 h-6 rounded-full transition-all duration-300 ${
+                className={`relative w-12 h-6 square transition-all duration-300 ${
                   field.value
                     ? "bg-gradient-to-r from-teal-600 to-emerald-600"
                     : "bg-slate-600"
                 }`}
               >
                 <div
-                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-lg transition-transform duration-300 ${
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white square shadow-lg transition-transform duration-300 ${
                     field.value ? "translate-x-6" : "translate-x-0"
                   }`}
                 ></div>
@@ -281,7 +281,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
           <Target className="w-4 h-4" />
           Take Profit Percentage
-          <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+          <div className="w-1 h-1 bg-teal-400"></div>
         </Label>
         <Controller
           name="tpPct"
@@ -318,7 +318,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         />
         {errors.tpPct && (
           <span className="text-xs text-red-400 flex items-center gap-1">
-            <div className="w-1 h-1 rounded-full bg-red-400"></div>
+            <div className="w-1 h-1 bg-red-400"></div>
             {errors.tpPct.message}
           </span>
         )}
@@ -329,7 +329,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 rounded-full bg-teal-400"></div>
+            <div className="w-2 h-2 bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
               <Grid3X3 className="w-3 h-3" />
               Grid Market Making Summary
