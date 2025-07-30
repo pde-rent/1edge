@@ -38,7 +38,7 @@
     "test:ohlc": "bun run scripts/test-ohlc.ts"
   },
   "dependencies": {
-    "@1inch/limit-order-sdk": "^4.13.0",
+    "@1inch/limit-order-sdk": "^4.9.5-rc.0",
     "@types/glob": "^8.1.0",
     "@types/ws": "^8.18.1",
     "ccxt": "^4.4.96",
