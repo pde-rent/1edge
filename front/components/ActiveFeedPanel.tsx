@@ -49,7 +49,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
   return (
     <Badge
       variant="outline"
-      className="ml-2 text-xs font-medium uppercase h-5 px-2 bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20"
+      className="ml-2 text-xs font-medium uppercase h-5 px-2 bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300"
     >
       {children}
     </Badge>
@@ -170,17 +170,17 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
       height: container.clientHeight,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#e5e7eb', // gray-200
+        textColor: '#e2e8f0', // slate-200
         fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
         fontSize: 12,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: '#374151' }, // gray-700
-        horzLines: { color: '#374151' } // gray-700
+        vertLines: { color: '#334155' }, // slate-700
+        horzLines: { color: '#334155' } // slate-700
       },
       timeScale: {
-        borderColor: '#6b7280', // gray-500
+        borderColor: '#64748b', // slate-500
         timeVisible: true,
         secondsVisible: true,
         rightOffset: 5
@@ -191,15 +191,15 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
       },
       crosshair: {
         vertLine: {
-          labelBackgroundColor: '#1f2937', // gray-800
+          labelBackgroundColor: '#1e293b', // slate-800
         },
         horzLine: {
-          labelBackgroundColor: '#1f2937', // gray-800
+          labelBackgroundColor: '#1e293b', // slate-800
         },
       },
       watermark: {
         visible: true,
-        color: 'rgba(55, 65, 81, 0.3)', // gray-700 with opacity
+        color: 'rgba(51, 65, 85, 0.3)', // slate-700 with opacity
         text: '1edge',
         fontSize: 18,
         horzAlign: 'right',
@@ -231,22 +231,22 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
     let newSeries;
     if (chartType === 'candles') {
       newSeries = chart.addSeries(CandlestickSeries, {
-        upColor: '#22c55e', // green-500
+        upColor: '#10b981', // emerald-500
         downColor: '#ef4444', // red-500
         borderDownColor: '#ef4444',
-        borderUpColor: '#22c55e',
+        borderUpColor: '#10b981',
         wickDownColor: '#ef4444',
-        wickUpColor: '#22c55e',
+        wickUpColor: '#10b981',
       });
     } else if (chartType === 'bars') {
       newSeries = chart.addSeries(BarSeries, {
-        upColor: '#22c55e',
+        upColor: '#10b981',
         downColor: '#ef4444',
         thinBars: false,
       });
     } else {
       newSeries = chart.addSeries(LineSeries, {
-        color: '#3b82f6', // blue-500
+        color: '#14b8a6', // teal-500
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 4,
@@ -307,11 +307,22 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
 
   if (!feedId && !chartRef.current) {
     return (
-      <div className="h-full w-full flex flex-col bg-gray-950">
-        <div className="flex-1 flex justify-center items-center">
-          <p className="text-gray-400 text-sm">
-            Select a feed to view chart.
-          </p>
+      <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+        <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+          <div className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 rounded-2xl shadow-2xl flex flex-col">
+            <div className="flex-1 flex justify-center items-center">
+              <div className="text-center">
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 rounded-full blur-xl"></div>
+                  <Activity className="w-12 h-12 text-teal-400 mx-auto relative z-10" />
+                </div>
+                <p className="text-slate-200 font-medium">No feed selected</p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Select a feed to view chart data
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -334,170 +345,184 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
   } : null;
 
   return (
-    <div className="h-full w-full flex flex-col rounded-xl bg-gray-900 border-5 border-gray-800 shadow-lg shadow-black/20 overflow-hidden">
-      {/* Enhanced Header with Logo and Feed Selector */}
-      <div className="px-4 py-3 flex-shrink-0 border-b border-gray-800 bg-gray-900/50">
-        <div className="flex items-center justify-between mb-3">
-          {/* Left: Logo and Feed Selector */}
-          <div className="flex items-center gap-4">
-            <img
-              src="/logo.svg"
-              alt="1edge"
-              className="h-[32px] w-[80px] object-contain brightness-110 contrast-125"
-            />
+    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
+      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
+        <div className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+          {/* Enhanced Header with Logo and Feed Selector */}
+          <div className="px-4 py-3 flex-shrink-0 border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md relative">
+            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+            
+            <div className="flex items-center justify-between mb-3">
+              {/* Left: Logo and Feed Selector */}
+              <div className="flex items-center gap-4">
+                <img
+                  src="/logo.svg"
+                  alt="1edge"
+                  className="h-[32px] w-[80px] object-contain brightness-110 contrast-125"
+                />
 
-            {/* Feed Selector Dropdown */}
-            <div className="relative">
-              <select
-                value={feedId || ''}
-                onChange={(e) => onFeedSelect(e.target.value)}
-                className="px-3 py-2 bg-gray-800/60 border border-gray-700/50 rounded text-gray-100 text-sm focus:ring-1 focus:ring-green-500/50 focus:border-green-500/50 appearance-none cursor-pointer pr-10 min-w-[180px]"
-              >
-                <option value="" disabled>Select a feed</option>
-                {feedsResponse?.success && feedsResponse.data?.map((feed: any) => (
-                  <option key={feed.symbol} value={feed.symbol} className="bg-gray-900">
-                    {parseFeedSymbol(feed.symbol).main}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
+                {/* Feed Selector Dropdown */}
+                <div className="relative">
+                  <select
+                    value={feedId || ''}
+                    onChange={(e) => onFeedSelect(e.target.value)}
+                    className="px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 appearance-none cursor-pointer pr-10 min-w-[180px] shadow-inner transition-all duration-300 hover:bg-black/80"
+                  >
+                    <option value="" disabled>Select a feed</option>
+                    {feedsResponse?.success && feedsResponse.data?.map((feed: any) => (
+                      <option key={feed.symbol} value={feed.symbol} className="bg-slate-900">
+                        {parseFeedSymbol(feed.symbol).main}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+                </div>
+              </div>
 
-          {/* Right: Connection Status and Controls */}
-          <div className="flex items-center gap-3">
-            {/* Connection indicator */}
-            <div className="flex items-center gap-2">
-              <Wifi className={`w-4 h-4 ${isConnected ? 'text-green-400' : 'text-gray-500'}`} />
-              <span className={`text-xs ${isConnected ? 'text-green-400' : 'text-gray-500'}`}>
-                {isConnected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
+              {/* Right: Connection Status and Controls */}
+              <div className="flex items-center gap-3">
+                {/* Connection indicator */}
+                <div className="flex items-center gap-2">
+                  <Wifi className={`w-4 h-4 ${isConnected ? 'text-teal-400' : 'text-slate-500'}`} />
+                  <span className={`text-xs font-medium ${isConnected ? 'text-teal-400' : 'text-slate-500'}`}>
+                    {isConnected ? 'Connected' : 'Disconnected'}
+                  </span>
+                  {isConnected && <div className="w-1 h-1 rounded-full bg-teal-400 shadow-lg shadow-teal-400/50"></div>}
+                </div>
 
-            {/* Chart Type Selector */}
-            <ToggleGroup
-              type="single"
-              value={chartType}
-              onValueChange={(value) => {
-                if (value) setChartType(value as 'candles' | 'bars' | 'line');
-              }}
-              className="bg-gray-900 border border-gray-800 rounded-md p-1"
-            >
-              <ToggleGroupItem
-                value="candles"
-                aria-label="candlestick chart"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
-              >
-                <Activity className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="bars"
-                aria-label="bar chart"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
-              >
-                <BarChart3 className="h-4 w-4" />
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="line"
-                aria-label="line chart"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-2 py-1 border-0"
-              >
-                <TrendingUp className="h-4 w-4" />
-              </ToggleGroupItem>
-            </ToggleGroup>
+                {/* Chart Type Selector */}
+                <ToggleGroup
+                  type="single"
+                  value={chartType}
+                  onValueChange={(value) => {
+                    if (value) setChartType(value as 'candles' | 'bars' | 'line');
+                  }}
+                  className="bg-black/60 backdrop-blur-sm border border-slate-700/50 rounded-lg p-1 shadow-inner"
+                >
+                  <ToggleGroupItem
+                    value="candles"
+                    aria-label="candlestick chart"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-2 py-1 border-0 transition-all duration-300"
+                  >
+                    <Activity className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="bars"
+                    aria-label="bar chart"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-2 py-1 border-0 transition-all duration-300"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="line"
+                    aria-label="line chart"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-2 py-1 border-0 transition-all duration-300"
+                  >
+                    <TrendingUp className="h-4 w-4" />
+                  </ToggleGroupItem>
+                </ToggleGroup>
 
-            {/* Timeframe Selector */}
-            <ToggleGroup
-              type="single"
-              value={timeframe}
-              onValueChange={(value) => {
-                if (value) {
-                  setTimeframe(value);
-                  tickBufferRef.current = {}; // Clear buffer on timeframe change
-                }
-              }}
-              className="bg-gray-900 border border-gray-800 rounded-md p-1"
-            >
-              <ToggleGroupItem
-                value="5"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
-              >
-                5s
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="20"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
-              >
-                20s
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="60"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
-              >
-                1m
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="300"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
-              >
-                5m
-              </ToggleGroupItem>
-              <ToggleGroupItem
-                value="1800"
-                className="data-[state=on]:bg-green-500/20 data-[state=on]:text-green-400 hover:bg-gray-800 text-gray-400 px-3 py-1 text-xs font-medium border-0"
-              >
-                30m
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-        </div>
-
-        {/* Feed Info Bar */}
-        {feedId && (
-          <div className="flex items-center justify-between">
-            <div className="flex items-center flex-wrap gap-3">
-              <h2 className="font-semibold text-lg text-white font-mono">
-                {parsedSymbol.main}
-              </h2>
-              {parsedSymbol.tags.map(tag => (
-                <FeedTag key={tag}>{tag}</FeedTag>
-              ))}
-              <span className="ml-2 font-mono text-lg font-semibold text-white">
-                {latestPrice}
-              </span>
+                {/* Timeframe Selector */}
+                <ToggleGroup
+                  type="single"
+                  value={timeframe}
+                  onValueChange={(value) => {
+                    if (value) {
+                      setTimeframe(value);
+                      tickBufferRef.current = {}; // Clear buffer on timeframe change
+                    }
+                  }}
+                  className="bg-black/60 backdrop-blur-sm border border-slate-700/50 rounded-lg p-1 shadow-inner"
+                >
+                  <ToggleGroupItem
+                    value="5"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
+                  >
+                    5s
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="20"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
+                  >
+                    20s
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="60"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
+                  >
+                    1m
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="300"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
+                  >
+                    5m
+                  </ToggleGroupItem>
+                  <ToggleGroupItem
+                    value="1800"
+                    className="data-[state=on]:bg-gradient-to-r data-[state=on]:from-teal-600/20 data-[state=on]:to-emerald-600/20 data-[state=on]:border-teal-400/50 data-[state=on]:text-teal-200 hover:bg-slate-800/60 text-slate-400 px-3 py-1 text-xs font-medium border-0 transition-all duration-300"
+                  >
+                    30m
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
             </div>
 
-            {/* Feed Metrics */}
-            {indexMetrics && (
-              <div className="flex items-center gap-4 text-xs font-mono">
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400">Velocity:</span>
-                  <span className="text-green-400 font-semibold">{indexMetrics.velocity}</span>
+            {/* Feed Info Bar */}
+            {feedId && (
+              <div className="flex items-center justify-between relative z-10">
+                <div className="flex items-center flex-wrap gap-3">
+                  <h2 className="font-semibold text-lg text-white font-mono flex items-center gap-2">
+                    {parsedSymbol.main}
+                    <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+                  </h2>
+                  {parsedSymbol.tags.map(tag => (
+                    <FeedTag key={tag}>{tag}</FeedTag>
+                  ))}
+                  <span className="ml-2 font-mono text-lg font-semibold text-white">
+                    {latestPrice}
+                  </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400">Spread:</span>
-                  <span className="text-orange-400 font-semibold">{indexMetrics.dispersion}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-gray-400">Vol:</span>
-                  <span className="text-green-400 font-semibold">{indexMetrics.vbid}/{indexMetrics.vask}</span>
-                </div>
+
+                {/* Feed Metrics */}
+                {indexMetrics && (
+                  <div className="flex items-center gap-4 text-xs font-mono">
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-400">Velocity:</span>
+                      <span className="text-emerald-400 font-semibold">{indexMetrics.velocity}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-400">Spread:</span>
+                      <span className="text-orange-400 font-semibold">{indexMetrics.dispersion}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-400">Vol:</span>
+                      <span className="text-emerald-400 font-semibold">{indexMetrics.vbid}/{indexMetrics.vask}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
 
-      <div className={`flex-grow w-full relative ${feedId ? 'h-[calc(100%-64px)]' : 'h-full'} min-h-[150px]`}>
-        <div
-          ref={chartContainerRef}
-          className="w-full min-h-[400px] h-full bg-gray-950"
-        >
-          {feedId && error && (
-            <p className="text-red-400 px-4 py-2 text-sm">
-              Error loading chart: {error.message}
-            </p>
-          )}
+          <div className={`flex-grow w-full relative ${feedId ? 'h-[calc(100%-64px)]' : 'h-full'} min-h-[150px] bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl`}>
+            <div
+              ref={chartContainerRef}
+              className="w-full min-h-[400px] h-full bg-gradient-to-b from-black/60 via-slate-950/40 to-black/60 backdrop-blur-sm"
+            >
+              {feedId && error && (
+                <div className="p-4">
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/50 backdrop-blur-sm">
+                    <p className="text-red-400 text-sm flex items-center gap-2">
+                      <div className="w-1 h-1 rounded-full bg-red-400"></div>
+                      Error loading chart: {error.message}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
