@@ -157,6 +157,52 @@ class StorageService {
     );
   }
 
+  private setupOptimizations() {
+    // SQLite performance optimizations
+    this.db.run('PRAGMA journal_mode = WAL'); // Write-Ahead Logging for better concurrency
+    this.db.run('PRAGMA synchronous = NORMAL'); // Balance between safety and speed
+    this.db.run('PRAGMA cache_size = 10000'); // 10MB cache
+    this.db.run('PRAGMA temp_store = MEMORY'); // Store temp data in memory
+    this.db.run('PRAGMA mmap_size = 268435456'); // 256MB memory-mapped I/O
+    this.db.run('PRAGMA optimize'); // Run query planner optimizations
+  }
+
+  private prepareCriticalStatements() {
+    // Pre-compile frequently used statements for better performance
+    this.preparedStatements.set('insertOrder', this.db.prepare(`
+      INSERT OR REPLACE INTO orders (
+        id, order_hash, strategy_id, type, status,
+        maker_asset, taker_asset, making_amount, taking_amount,
+        maker, receiver, salt, signature, trigger_price,
+        filled_amount, remaining_amount, created_at, executed_at,
+        cancelled_at, tx_hash, network, expiry, raw_data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `));
+
+    this.preparedStatements.set('getOrder', this.db.prepare(`
+      SELECT raw_data FROM orders WHERE id = ?
+    `));
+
+    this.preparedStatements.set('getActiveOrders', this.db.prepare(`
+      SELECT raw_data FROM orders 
+      WHERE status IN ('PENDING', 'SUBMITTED', 'ACTIVE', 'PARTIALLY_FILLED')
+      ORDER BY created_at DESC
+    `));
+
+    this.preparedStatements.set('getOrdersByMaker', this.db.prepare(`
+      SELECT raw_data FROM orders 
+      WHERE maker = ? 
+      ORDER BY created_at DESC
+    `));
+
+    this.preparedStatements.set('insertOrderEvent', this.db.prepare(`
+      INSERT INTO order_events (
+        order_id, order_hash, type, timestamp,
+        tx_hash, filled_amount, remaining_amount, gas_used, error
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `));
+  }
+
   // Order methods
   async saveOrder(order: Order): Promise<void> {
     const stmt = this.db.prepare(`
@@ -229,6 +275,16 @@ class StorageService {
       ORDER BY created_at DESC
     `);
     const results = stmt.all() as { raw_data: string }[];
+    return results.map((r) => JSON.parse(r.raw_data));
+  }
+
+  async getOrdersByMaker(makerAddress: string): Promise<Order[]> {
+    const stmt = this.db.prepare(`
+      SELECT raw_data FROM orders 
+      WHERE maker = ? 
+      ORDER BY created_at DESC
+    `);
+    const results = stmt.all(makerAddress.toLowerCase()) as { raw_data: string }[];
     return results.map((r) => JSON.parse(r.raw_data));
   }
 
@@ -462,6 +518,8 @@ export const getOrderByHash = (hash: string) =>
 export const getOrdersByStrategy = (strategyId: string) =>
   getStorage().getOrdersByStrategy(strategyId);
 export const getActiveOrders = () => getStorage().getActiveOrders();
+export const getOrdersByMaker = (makerAddress: string) => 
+  getStorage().getOrdersByMaker(makerAddress);
 export const saveOrderEvent = (event: OrderEvent) =>
   getStorage().saveOrderEvent(event);
 export const getOrderEvents = (orderId: string) =>
