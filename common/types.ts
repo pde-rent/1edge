@@ -228,40 +228,44 @@ export enum TriggerType {
 
 /**
  * TWAP order configuration
+ * Params: amount, startDate, endDate, interval, maxPrice
  */
-export interface TwapConfig {
-  totalAmount: string;
-  timeWindow: number; // Duration in seconds
-  intervalCount: number;
-  priceLimit?: string;
+export interface TwapParams {
+  amount: string;
+  startDate: number; // Timestamp
+  endDate: number; // Timestamp
+  interval: number; // Interval in days
+  maxPrice?: number;
 }
 
 /**
  * Range order configuration
+ * Params: amount, startPrice, endPrice, stepPct, expiry
  */
-export interface RangeOrderConfig {
-  baseAsset: string;
-  quoteAsset: string;
-  priceRange: [number, number]; // [minPrice, maxPrice]
-  gridLevels: number;
-  amountPerLevel: string;
-  side: "BUY" | "SELL" | "BOTH";
+export interface RangeOrderParams {
+  amount: string;
+  startPrice: number;
+  endPrice: number;
+  stepPct: number;
+  expiry: number; // Days
 }
 
 /**
  * Iceberg order configuration
+ * Params: amount, startPrice, endPrice, steps, expiry
  */
-export interface IcebergConfig {
-  totalAmount: string;
-  visibleAmount: string;
-  priceLimit: string;
-  refreshThreshold: number; // Percentage before refresh
+export interface IcebergParams {
+  amount: string;
+  startPrice: number;
+  endPrice: number;
+  steps: number;
+  expiry: number; // Days
 }
 
 /**
  * Momentum Reversal Trading configuration
  */
-export interface MomentumReversalConfig {
+export interface MomentumReversalParams {
   amount: string;
   rsiPeriod: number;
   rsimaPeriod: number;
@@ -271,8 +275,11 @@ export interface MomentumReversalConfig {
 
 /**
  * Range Breakout Trading configuration
+ * Params: adxPeriod, adxmaPeriod, emaPeriod, tpPct, slPct
+ * Note: Missing amount param in docs - should be added
  */
-export interface RangeBreakoutConfig {
+export interface RangeBreakoutParams {
+  amount: string;
   adxPeriod: number;
   adxmaPeriod: number;
   emaPeriod: number;
@@ -283,7 +290,7 @@ export interface RangeBreakoutConfig {
 /**
  * Stop-Limit Order configuration
  */
-export interface StopLimitConfig {
+export interface StopLimitParams {
   amount: string;
   stopPrice: number;
   limitPrice: number;
@@ -293,7 +300,7 @@ export interface StopLimitConfig {
 /**
  * Chase-Limit Order configuration
  */
-export interface ChaseLimitConfig {
+export interface ChaseLimitParams {
   amount: string;
   distancePct: number;
   expiry: number; // Days
@@ -302,18 +309,20 @@ export interface ChaseLimitConfig {
 
 /**
  * Dollar-Cost Averaging configuration
+ * Params: amount, startDate, interval, maxPrice
  */
-export interface DCAConfig {
+export interface DCAParams {
   amount: string;
   startDate: number; // Timestamp
-  interval: number; // Days converted to seconds
+  interval: number; // Days
   maxPrice?: number;
 }
 
 /**
  * Grid Trading configuration
+ * Params: amount, startPrice, endPrice, stepPct, stepMultiplier, singleSide, tpPct
  */
-export interface GridTradingConfig {
+export interface GridTradingParams {
   amount: string;
   startPrice: number;
   endPrice: number;
@@ -330,16 +339,16 @@ export interface GridTradingConfig {
 /**
  * Order parameters union type
  */
-export type OrderParams = 
-  | StopLimitConfig
-  | ChaseLimitConfig
-  | TwapConfig
-  | RangeOrderConfig
-  | IcebergConfig
-  | DCAConfig
-  | GridTradingConfig
-  | MomentumReversalConfig
-  | RangeBreakoutConfig;
+export type OrderParams =
+  | StopLimitParams
+  | ChaseLimitParams
+  | TwapParams
+  | RangeOrderParams
+  | IcebergParams
+  | DCAParams
+  | GridTradingParams
+  | MomentumReversalParams
+  | RangeBreakoutParams;
 
 /**
  * Strategy configuration
