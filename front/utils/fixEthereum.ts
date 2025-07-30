@@ -10,7 +10,7 @@ export function fixEthereumObject() {
 
     if (descriptor && !descriptor.configurable) {
       // Create a proxy to handle the ethereum object gracefully
-      const originalEthereum = window.ethereum;
+      const originalEthereum = (window as any).ethereum;
 
       // Delete the property if possible
       try {
