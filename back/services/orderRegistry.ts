@@ -6,6 +6,7 @@ import {
   saveOrder,
   getOrder,
   getActiveOrders,
+  getPendingOrders,
   saveOrderEvent,
 } from "./storage";
 import { logger } from "@back/utils/logger";
@@ -29,21 +30,24 @@ class OrderRegistryService {
     logger.info("Starting Order Registry service...");
     this.isRunning = true;
 
-    // Load active orders from the database and start watchers for them
-    const activeOrders = await getActiveOrders();
-    for (const order of activeOrders) {
+    // Reliability: Load pending orders from database to restart watchers
+    // This ensures watchers are restored after server shutdown/restart
+    const pendingOrders = await getPendingOrders();
+    logger.info(`Restoring ${pendingOrders.length} pending orders from database`);
+    
+    for (const order of pendingOrders) {
       this.startWatcher(order);
+      logger.debug(`Restored watcher for order ${order.id}`);
     }
 
-    logger.info("Order Registry service started");
+    logger.info(`Order Registry service started with ${pendingOrders.length} active watchers`);
   }
 
   async stop() {
     logger.info("Stopping Order Registry service...");
     this.isRunning = false;
     this.watchers.clear();
-    logger.info("Order Registry service stopped
-    ");
+    logger.info("Order Registry service stopped");
   }
 
   async createOrder(order: Order) {
