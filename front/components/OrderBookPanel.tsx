@@ -524,15 +524,15 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
                       }
 
                       return (
-                        <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-y border-teal-500/40 relative overflow-hidden">
+                        <div className="grid grid-cols-3 gap-2 py-1 px-3 bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-y border-teal-500/40 relative overflow-hidden">
                           {/* Subtle glow effect */}
                           <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-yellow-500/10 to-teal-500/5"></div>
 
-                          <span className="text-sm text-yellow-300 font-mono font-semibold relative z-10">Spread</span>
-                          <span className="text-sm text-yellow-200 font-mono text-right relative z-10">
+                          <span className="text-xs text-yellow-300 font-mono font-semibold relative z-10 leading-none">Spread</span>
+                          <span className="text-xs text-yellow-200 font-mono text-right relative z-10 leading-none">
                             {formatPrice(absoluteSpread)}
                           </span>
-                          <span className="text-sm text-yellow-100 font-mono text-right font-semibold relative z-10">
+                          <span className="text-xs text-yellow-100 font-mono text-right font-semibold relative z-10 leading-none">
                             {relativeSpread.toFixed(2)}%
                           </span>
                         </div>
