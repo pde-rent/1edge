@@ -17,7 +17,9 @@ import {
   Settings,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { PanelWrapper } from "../common/Panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -379,9 +381,7 @@ const CreateOrderForm = () => {
   };
 
   return (
-    <div className="p-1 rounded-2xl bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 shadow-2xl border border-teal-500 h-full">
-      <div className="p-1 rounded-2xl bg-slate-800/30 backdrop-blur-sm h-full">
-        <Card className="h-full bg-black/80 backdrop-blur-xl border-slate-700/50 overflow-hidden flex flex-col p-0 gap-0 rounded-2xl shadow-2xl ">
+    <PanelWrapper>
           <h2 className="text-lg font-bold pl-4 pt-3 relative z-10 text-teal-600 ">
             Create Order
           </h2>
@@ -403,7 +403,7 @@ const CreateOrderForm = () => {
                   </div>
 
                   {/* Category Toggle */}
-                  <div className="flex rounded-lg bg-black/60 backdrop-blur-sm p-1 border border-slate-700/50 shadow-inner">
+                  <div className="flex bg-black/60 backdrop-blur-sm p-1 border border-slate-700/50">
                     <Button
                       type="button"
                       onClick={() => {
@@ -411,7 +411,7 @@ const CreateOrderForm = () => {
                         setOrderType("TWAP");
                       }}
                       variant={orderCategory === "Order" ? "default" : "ghost"}
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-300 ${
+                      className={`flex-1 py-2 px-3 text-sm font-medium transition-all duration-300 ${
                         orderCategory === "Order"
                           ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-300/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
                           : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
@@ -428,7 +428,7 @@ const CreateOrderForm = () => {
                       variant={
                         orderCategory === "Strategy" ? "default" : "ghost"
                       }
-                      className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all duration-300 ${
+                      className={`flex-1 py-2 px-3 text-sm font-medium transition-all duration-300 ${
                         orderCategory === "Strategy"
                           ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-400/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
                           : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
@@ -443,7 +443,7 @@ const CreateOrderForm = () => {
                     <Select value={orderType} onValueChange={setOrderType}>
                       <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80">
                         <SelectValue placeholder="Select order type" />
-                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
                       </SelectTrigger>
                       <SelectContent className="bg-slate-900 border-slate-700">
                         {orderTypes[orderCategory].map((type) => {
@@ -472,28 +472,25 @@ const CreateOrderForm = () => {
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-teal-200 flex items-center gap-2">
                     Size (USD)
-                    <div className="w-1 h-1 rounded-full bg-teal-400"></div>
+                    <div className="w-1 h-1 bg-teal-400"></div>
                   </label>
                   <Controller
                     name="amount"
                     control={control}
                     rules={{ required: "Size is required" }}
                     render={({ field }) => (
-                      <div className="relative">
-                        <input
-                          {...field}
-                          type="number"
-                          step="0.01"
-                          className="w-full px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white placeholder-slate-400 text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80"
-                          placeholder="Enter amount in USD"
-                        />
-                        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-                      </div>
+                      <Input
+                        {...field}
+                        type="number"
+                        step="0.01"
+                        className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80"
+                        placeholder="Enter amount in USD"
+                      />
                     )}
                   />
                   {errors.amount && (
                     <span className="text-xs text-red-400 flex items-center gap-1">
-                      <div className="w-1 h-1 rounded-full bg-red-400"></div>
+                      <div className="w-1 h-1 bg-red-400"></div>
                       {errors.amount.message}
                     </span>
                   )}
@@ -511,7 +508,7 @@ const CreateOrderForm = () => {
                           )?.name
                         }{" "}
                         Parameters
-                        <div className="w-1 h-1 rounded-full bg-emerald-400"></div>
+                        <div className="w-1 h-1 bg-emerald-400"></div>
                       </span>
                     </div>
 
@@ -526,7 +523,7 @@ const CreateOrderForm = () => {
 
                 <Button
                   type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm rounded-lg transition-all duration-300 transform hover:scale-[1.02] shadow-xl shadow-teal-500/25 border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group"
+                  className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group"
                 >
                   <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                   <span className="relative z-10">
@@ -540,8 +537,8 @@ const CreateOrderForm = () => {
                 </Button>
 
                 {/* Info Footer */}
-                <div className="mt-3 p-3 rounded-lg bg-black/40 backdrop-blur-sm border border-slate-600/30 shadow-inner relative">
-                  <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
+                <div className="mt-3 p-3 bg-black/40 backdrop-blur-sm border border-slate-600/30 relative">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
                   <div className="flex items-center gap-2 relative z-10">
                     <Info className="w-3 h-3 text-teal-400 flex-shrink-0" />
                     <div className="text-xs text-slate-300">
@@ -554,9 +551,7 @@ const CreateOrderForm = () => {
               </div>
             </form>
           </CardContent>
-        </Card>
-      </div>
-    </div>
+    </PanelWrapper>
   );
 };
 
