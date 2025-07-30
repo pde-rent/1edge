@@ -15,6 +15,7 @@ import {
 import { getTicker, getActiveTickers } from "./marketData";
 import { getActiveTickers as getActiveTickersFromMemory } from "./memoryStorage";
 import { orderbookReconstructor } from "./orderbookReconstructor";
+import { initOHLCStorage, getOHLCStorage } from "./ohlcStorage";
 import { logger } from "@back/utils/logger";
 import type { ApiServerConfig, ApiResponse } from "@common/types";
 import { services } from "@common/types";
@@ -28,6 +29,7 @@ class ApiServer {
   constructor() {
     this.config = getServiceConfig("apiServer");
     initStorage(getStorageConfig());
+    initOHLCStorage();
   }
 
   async start() {
@@ -133,6 +135,12 @@ class ApiServer {
 
         case path.startsWith("/orderbook-symbol/"):
           return this.handleOrderbookSymbol(path, url, headers);
+
+        case path.startsWith("/ohlc/"):
+          return this.handleOHLC(path, url, headers);
+
+        case path.startsWith("/ohlc-stats/"):
+          return this.handleOHLCStats(path, url, headers);
 
         default:
           return this.jsonResponse(
@@ -657,6 +665,123 @@ class ApiServer {
 
       return this.jsonResponse(
         { success: false, error: "Failed to reconstruct orderbook" },
+        headers,
+        500,
+      );
+    }
+  }
+
+  /**
+   * Handle OHLC data requests
+   * Endpoint: /ohlc/{symbol}?timeframe={timeframe}&startTime={timestamp}&endTime={timestamp}&limit={number}
+   */
+  private async handleOHLC(
+    path: string,
+    url: URL,
+    headers: any,
+  ): Promise<Response> {
+    try {
+      const symbol = decodeURIComponent(path.replace("/ohlc/", ""));
+      const timeframeSec = parseInt(url.searchParams.get("timeframe") || "60");
+      const startTime = url.searchParams.get("startTime") 
+        ? parseInt(url.searchParams.get("startTime")!) 
+        : undefined;
+      const endTime = url.searchParams.get("endTime") 
+        ? parseInt(url.searchParams.get("endTime")!) 
+        : undefined;
+      const limit = url.searchParams.get("limit") 
+        ? parseInt(url.searchParams.get("limit")!) 
+        : undefined;
+
+      if (!symbol) {
+        return this.jsonResponse(
+          { success: false, error: "Symbol is required" },
+          headers,
+          400,
+        );
+      }
+
+      // Validate timeframe
+      const validTimeframes = [5, 20, 60, 300, 1800]; // 5s, 20s, 1m, 5m, 30m
+      if (!validTimeframes.includes(timeframeSec)) {
+        return this.jsonResponse(
+          { 
+            success: false, 
+            error: `Invalid timeframe. Supported: ${validTimeframes.join(', ')} seconds` 
+          },
+          headers,
+          400,
+        );
+      }
+
+      const candles = await getOHLCStorage().getCandles(
+        symbol as any,
+        timeframeSec as any,
+        startTime,
+        endTime,
+        limit
+      );
+
+      return this.jsonResponse(
+        { 
+          success: true, 
+          data: {
+            symbol,
+            timeframe: timeframeSec,
+            candles,
+            count: candles.length
+          }
+        },
+        headers,
+      );
+
+    } catch (error: any) {
+      logger.error("OHLC API error:", error);
+      return this.jsonResponse(
+        { success: false, error: error.message },
+        headers,
+        500,
+      );
+    }
+  }
+
+  /**
+   * Handle OHLC statistics requests
+   * Endpoint: /ohlc-stats/{symbol}
+   */
+  private async handleOHLCStats(
+    path: string,
+    url: URL,
+    headers: any,
+  ): Promise<Response> {
+    try {
+      const symbol = decodeURIComponent(path.replace("/ohlc-stats/", ""));
+
+      if (!symbol) {
+        return this.jsonResponse(
+          { success: false, error: "Symbol is required" },
+          headers,
+          400,
+        );
+      }
+
+      const stats = await getOHLCStorage().getDataStats(symbol as any);
+
+      return this.jsonResponse(
+        { 
+          success: true, 
+          data: {
+            symbol,
+            statistics: stats
+          }
+        },
+        headers,
+      );
+
+    } catch (error: any) {
+      logger.error("OHLC Stats API error:", error);
+      return this.jsonResponse(
+        { success: false, error: error.message },
         headers,
         500,
       );

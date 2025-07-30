@@ -34,7 +34,8 @@
     "compile:contracts": "cd contracts && npx hardhat compile",
     "deploy:contracts": "cd contracts && npx hardhat run scripts/deploy.ts",
     "install:all": "bun install && cd front && bun install && cd ../contracts && npm install && cd ..",
-    "test:websocket": "bun run scripts/test-websocket.ts"
+    "test:websocket": "bun run scripts/test-websocket.ts",
+    "test:ohlc": "bun run scripts/test-ohlc.ts"
   },
   "dependencies": {
     "@1inch/limit-order-sdk": "^4.13.0",
@@ -57,5 +58,10 @@
     "prettier": "^3.6.2",
     "tslib": "^2.8.1",
     "typescript": "^5.8.3"
-  }
+  },
+  "workspaces": [
+    "front",
+    "back",
+    "contracts"
+  ]
 }

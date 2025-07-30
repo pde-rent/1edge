@@ -11,6 +11,7 @@ import { logger } from "@back/utils/logger";
 import type { CollectorConfig, Symbol, AggregatedTicker } from "@common/types";
 import { sleep } from "@common/utils";
 import { pubSubServer } from "./pubSubServer";
+import { initOHLCStorage, getOHLCStorage } from "./ohlcStorage";
 
 interface IndexData {
   bid: number;
@@ -64,6 +65,10 @@ class CollectorService {
   async start() {
     this.isRunning = true;
 
+    // Initialize OHLC storage
+    initOHLCStorage();
+    await getOHLCStorage().initialize();
+
     // Initialize pub/sub server
     await pubSubServer.start();
 
@@ -72,6 +77,10 @@ class CollectorService {
       logger.warn("No tickers configured for WebSocket streaming");
       return;
     }
+
+    // Run OHLC data sanity check and fill historical data if needed
+    const symbols = tickerKeys as Symbol[];
+    await getOHLCStorage().runDataSanityCheck(symbols);
 
     // Start WebSocket subscriptions
     this.wsSubscription = subToTickerFeeds(
@@ -106,6 +115,9 @@ class CollectorService {
 
     // Stop pub/sub server
     await pubSubServer.stop();
+
+    // Shutdown OHLC storage
+    await getOHLCStorage().shutdown();
 
     await closeAllExchanges();
     logger.info("Collector service stopped");
@@ -153,13 +165,23 @@ class CollectorService {
       // Calculate new weighted averages from all active sources
       this.calculateWeightedAverages(symbol, data, indexData);
 
+      // Process OHLC data (async, non-blocking)
+      if (indexData.mid > 0) {
+        const estimatedVolume = (indexData.vbid + indexData.vask) / 2;
+        setImmediate(() => {
+          getOHLCStorage().processPriceUpdate(symbol, indexData.mid, estimatedVolume)
+            .catch(error => {
+              logger.error(`Failed to process OHLC for ${symbol}:`, error);
+            });
+        });
+      }
+
       // Track calculation performance
       const calcTime = performance.now() - startTime;
       this.trackCalculationTime(calcTime);
 
       // Increment tick count for velocity calculation
       indexData.tickCount++;
-
 
       this.metrics.totalProcessed++;
 
