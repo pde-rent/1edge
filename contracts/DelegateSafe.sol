@@ -19,57 +19,57 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
     using MakerTraitsLib for MakerTraits;
 
     IOrderMixin private immutable LIMIT_ORDER_PROTOCOL;
-    IOrderRegistrator private immutable ORDER_REGISTRATOR;
+    // IOrderRegistrator private immutable ORDER_REGISTRATOR;
+
+    // need to have a post-call interaction that notifies us when a user's order has being executed.
+    // funds are tracked per order to enable refunds in case of order cancellation.
+    mapping(bytes32 orderId => OrderData) public orderData;
+    mapping(address keepers => bool) public approvedKeeper;
 
     // Errors
     error CallerNotApprovedKeeper();
     error KeeperNotApproved(address);
     error KeeperAlreadyApproved(address);
-
     error CallerNotLimitOrderProtocol();
     error OrderAlreadyExecutedOrCancelled();
     error CallerNotOrderCreator();
     error InvalidMakerAddress();
     error InvalidMakerTraits();
+    error InvalidOrder();
 
     // Events
     event KeeperApproved(address keeper);
     event KeeperRevoked(address keeper);
     event OrderCreated(bytes32 indexed orderId, IStrategy strategy, IOrderMixin.Order order);
+    event OrderCancelled(bytes32 indexed orderId, IStrategy strategy);
 
     // need to add support for partial fills.
     struct OrderData {
         uint256 amountCommitted; // amount of funds committed to the order
-        address creator; // address that has admin rights over the order;
         address receiver; // address that recieves order funds
         IStrategy strategy; // strategy used to compute the order fee;
         uint8 status; // status of the order (e.g., pending - 0, executed - 1, cancelled - 2)
+        bool isSignedOrder; // whether the order is signed by this contract or not
     }
-
-    // need to have a post-call interaction that notifies us when a user's order has being executed.
-    // funds are tracked per order to enable refunds in case of order cancellation.
-    mapping(bytes32 orderId => OrderData) public orderData;
-    mapping(IStrategy strategy => bool) public approvedStrategy;
-    mapping(address keepers => bool) public approvedKeeper;
 
     modifier onlyLimitOrderProtocol() {
         if (msg.sender != address(LIMIT_ORDER_PROTOCOL)) {
             revert CallerNotLimitOrderProtocol();
-            _;
         }
+        _;
     }
 
     modifier onlyApprovedKeeper() {
         // check if the caller is an approved keeper
         if (!approvedKeeper[msg.sender]) {
             revert CallerNotApprovedKeeper();
-            _;
         }
+        _;
     }
 
-    constructor(IOrderMixin _limitOrderProtocol, IOrderRegistrator _orderRegistrator) Ownable(msg.sender) {
+    constructor(IOrderMixin _limitOrderProtocol /*, IOrderRegistrator _orderRegistrator*/ ) Ownable(msg.sender) {
         LIMIT_ORDER_PROTOCOL = _limitOrderProtocol;
-        ORDER_REGISTRATOR = _orderRegistrator;
+        // ORDER_REGISTRATOR = _orderRegistrator;
     }
 
     // create user order with order registrator.
@@ -82,50 +82,66 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
 
             bytes32 orderId = LIMIT_ORDER_PROTOCOL.hashOrder(params[i].order);
 
+            if (orderData[orderId].isSignedOrder) {
+                revert InvalidOrder();
+            }
+
             orderData[orderId] = OrderData({
                 amountCommitted: params[i].order.makingAmount,
-                creator: params[i].orderCreator,
-                receiver: params[i].reciever,
+                receiver: params[i].receiver,
                 strategy: orderStrategy,
-                status: 0 // 0 for pending
+                status: 0, // 0 for pending
+                isSignedOrder: true
             });
 
             _validateOrderAndExtension(params[i].order, params[i].extension);
-            ORDER_REGISTRATOR.registerOrder(params[i].order, params[i].extension, "");
-            // committedFundsPerOrder[orderId] += ordersToExecute[i].makerAmount;
+            // ORDER_REGISTRATOR.registerOrder(params[i].order, params[i].extension, "");
             emit OrderCreated(orderId, orderStrategy, params[i].order);
         }
     }
 
     // cancel order and refund the committed funds to the user.
+    // in order to reduce interactions between the user and this contract, we delegate the cancellation to the strategy.
+    // this allows for a single interaction to cancel multiple orders.
     function cancelOrder(IOrderMixin.Order memory order) external {
         bytes32 orderId = LIMIT_ORDER_PROTOCOL.hashOrder(order);
+
         OrderData memory _orderData = orderData[orderId];
-        if (_orderData.creator != msg.sender) {
+        if (!_orderData.isSignedOrder) revert InvalidOrder();
+
+        if (address(_orderData.strategy) != msg.sender) {
             revert CallerNotOrderCreator();
         }
         if (_orderData.status != 0) {
-            revert OrderAlreadyExecutedOrCancelled(); // Order is not pending
+            revert OrderAlreadyExecutedOrCancelled(); // order is not pending
         }
 
-        orderData[orderId].status = 2; // mark as cancelled
+        _updateOrderStatus(orderId, 2); // mark as cancelled
         orderData[orderId].amountCommitted = 0; // reset committed amount
 
         LIMIT_ORDER_PROTOCOL.cancelOrder(order.makerTraits, orderId);
         // refund the committed funds to the user
         _pushFunds(IERC20(order.makerAsset.get()), _orderData.receiver, _orderData.amountCommitted);
+
+        emit OrderCancelled(orderId, _orderData.strategy);
     }
 
+    function isActiveOrder(IOrderMixin.Order memory order) external view returns (bool) {
+        bytes32 orderId = LIMIT_ORDER_PROTOCOL.hashOrder(order);
+        return orderData[orderId].isSignedOrder && orderData[orderId].status == 0;
+    }
+
+    // note: need to ensure that this contract is not bypassed during the post-interaction call.
     function _validateOrderAndExtension(IOrderMixin.Order memory order, bytes memory extension) internal {
         // validate the order and extension data
         order.receiver = Address.wrap(uint256(uint160(address(this)))); // Ensure the receiver is this contract
         if (order.maker.get() != address(this)) {
             revert InvalidMakerAddress();
         }
-        bool validExtension = uint256(keccak256(extension)) & type(uint160).max == order.salt & type(uint160).max;
-        if (!order.makerTraits.hasExtension() || !validExtension) {
-            revert InvalidMakerTraits();
-        }
+        // bool validExtension = uint256(keccak256(extension)) & type(uint160).max == order.salt & type(uint160).max;
+        // if (!order.makerTraits.hasExtension() || !validExtension) {
+        //     revert InvalidMakerTraits();
+        // }
 
         // ensure that this contract is called for post-interaction.
         if (!order.makerTraits.needPostInteractionCall()) {
@@ -134,19 +150,12 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
         IERC20 makerAsset = IERC20(order.makerAsset.get());
         // if this contract has not interacted with the maker asset before, approve it to spend the maximum amount.
         if (makerAsset.allowance(address(this), address(LIMIT_ORDER_PROTOCOL)) == 0) {
-            maxApproveToken(makerAsset);
+            _maxApproveToken(makerAsset);
         }
     }
 
     function _updateOrderStatus(bytes32 orderId, uint8 newStatus) internal {
         orderData[orderId].status = newStatus;
-    }
-
-    function _isApprovedStrategy(IStrategy strategy) internal view {
-        // check if the strategy is approved
-        if (!approvedStrategy[strategy]) {
-            revert StrategyNotApproved(strategy);
-        }
     }
 
     // MAKER INTERACTIONS
@@ -160,12 +169,11 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
         uint256 remainingMakingAmount,
         bytes calldata
     ) external override onlyLimitOrderProtocol {
-        if (remainingMakingAmount != 0) {
-            orderData[orderHash].amountCommitted -= makingAmount;
-        } else {
-            orderData[orderHash].amountCommitted = 0; // Reset committed amount if the order is fully filled
-            _updateOrderStatus(orderHash, 1); // Mark as executed
+        uint256 amountLeftToFill = orderData[orderHash].amountCommitted - makingAmount;
+        if (amountLeftToFill == 0) {
+            _updateOrderStatus(orderHash, 1); // mark as executed
         }
+
         IStrategy strategy = orderData[orderHash].strategy;
         // take fee
         uint256 fee = strategy.calculateFee(takingAmount);
@@ -190,14 +198,18 @@ contract DelegateSafe is IERC1271, IDelegateSafe, IPostInteraction, Ownable {
 
     // EIP-1271 IMPLEMENTATION
     function isValidSignature(bytes32 hash, bytes memory) external view override returns (bytes4 magicValue) {
-        if (orderData[hash].status != 0) {
+        if (orderData[hash].status == 0 && orderData[hash].isSignedOrder) {
             return 0x1626ba7e; // eip-1271 magic value for "isValidSignature"
         }
         return 0xffffffff;
     }
 
     // APPROVALS & REVOKATIONS
-    function maxApproveToken(IERC20 token) public onlyOwner {
+    function maxApproveToken(IERC20 token) internal onlyOwner {
+        _maxApproveToken(token);
+    }
+
+    function _maxApproveToken(IERC20 token) internal {
         token.approve(address(LIMIT_ORDER_PROTOCOL), type(uint256).max);
     }
 

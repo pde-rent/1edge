@@ -8,6 +8,9 @@ interface IDelegateSafe {
         IOrderMixin.Order order;
         bytes extension;
         address orderCreator;
-        address reciever;
+        address receiver;
     }
+
+    function cancelOrder(IOrderMixin.Order memory order) external;
+    function isActiveOrder(IOrderMixin.Order memory order) external view returns (bool);
 }
