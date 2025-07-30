@@ -1,12 +1,12 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
-import useSWR from 'swr';
-import { fetcher } from '../utils/fetcher';
-import { useWebSocketContext } from '../contexts/WebSocketContext';
-import { roundSig } from '@common/utils';
-import type { OneInchOrderBook, OrderbookLevel } from '@common/types';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { PanelWrapper } from './common/Panel';
+import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { fetcher } from "../utils/fetcher";
+import { useWebSocketContext } from "../contexts/WebSocketContext";
+import { roundSig } from "@common/utils";
+import type { OneInchOrderBook, OrderbookLevel } from "@common/types";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { PanelWrapper } from "./common/Panel";
 import {
   Select,
   SelectContent,
@@ -14,17 +14,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from '@/lib/utils';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { Loader2, RefreshCw, Plus } from "lucide-react";
+import { useOrderStore } from "@/stores/orderStore";
 
 // Step size options for order aggregation
 const STEP_OPTIONS = [
-  { value: '0.01', label: '0.01%' },
-  { value: '0.25', label: '0.25%' },
-  { value: '0.5', label: '0.5%' },
-  { value: '1.0', label: '1%' }
+  { value: "0.01", label: "0.01%" },
+  { value: "0.25", label: "0.25%" },
+  { value: "0.5", label: "0.5%" },
+  { value: "1.0", label: "1%" },
 ];
-
 
 interface AggregatedLevel {
   price: number;
@@ -36,25 +36,27 @@ interface AggregatedLevel {
 
 // TODO: Get token addresses from backend config API instead of hardcoding
 const TOKEN_ADDRESSES = {
-  'WETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  'ETH': '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  'WBTC': '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-  'BTC': '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
-  'USDT': '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  'USDC': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-  'USD': '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  '1INCH': '0x111111111117dC0aa78b770fA6A738034120C302',
-  'AAVE': '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9',
+  WETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  ETH: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+  WBTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  BTC: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  USD: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  "1INCH": "0x111111111117dC0aa78b770fA6A738034120C302",
+  AAVE: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
 };
 
 // Parse feed symbol to extract token pair
-const parseFeedSymbol = (feedSymbol: string | null): { base: string; quote: string } | null => {
+const parseFeedSymbol = (
+  feedSymbol: string | null,
+): { base: string; quote: string } | null => {
   if (!feedSymbol) return null;
 
-  const parts = feedSymbol.split(':');
+  const parts = feedSymbol.split(":");
   let pairSymbol = parts[parts.length - 1];
 
-  const quoteAssets = ['USDT', 'USDC', 'USD', 'WETH', 'ETH', 'WBTC', 'BTC'];
+  const quoteAssets = ["USDT", "USDC", "USD", "WETH", "ETH", "WBTC", "BTC"];
 
   for (const quote of quoteAssets) {
     if (pairSymbol.endsWith(quote)) {
@@ -69,10 +71,13 @@ const parseFeedSymbol = (feedSymbol: string | null): { base: string; quote: stri
 };
 
 // Enhanced number formatting with ellipses for large numbers
-const formatNumberWithEllipses = (value: string | number, maxLength: number = 10): string => {
+const formatNumberWithEllipses = (
+  value: string | number,
+  maxLength: number = 10,
+): string => {
   try {
-    const num = typeof value === 'string' ? parseFloat(value) : value;
-    if (num === 0) return '0';
+    const num = typeof value === "string" ? parseFloat(value) : value;
+    if (num === 0) return "0";
 
     // Handle very small numbers
     if (Math.abs(num) < 0.0001) {
@@ -82,52 +87,68 @@ const formatNumberWithEllipses = (value: string | number, maxLength: number = 10
     // Format the number with appropriate precision
     let formatted: string;
     if (Math.abs(num) >= 1000000) {
-      formatted = (num / 1000000).toFixed(2) + 'M';
+      formatted = (num / 1000000).toFixed(2) + "M";
     } else if (Math.abs(num) >= 1000) {
-      formatted = (num / 1000).toFixed(2) + 'K';
+      formatted = (num / 1000).toFixed(2) + "K";
     } else {
       formatted = roundSig(num, 4).toString();
     }
 
     // Add ellipses if too long
     if (formatted.length > maxLength) {
-      return formatted.substring(0, maxLength - 1) + '…';
+      return formatted.substring(0, maxLength - 1) + "…";
     }
 
     return formatted;
   } catch {
-    return '0';
+    return "0";
   }
 };
 
-const formatAmount = (amount: string | number) => formatNumberWithEllipses(amount, 8);
+const formatAmount = (amount: string | number) =>
+  formatNumberWithEllipses(amount, 8);
 
 const formatPrice = (price: string | number) => {
   try {
-    const num = typeof price === 'number' ? price : parseFloat(price);
+    const num = typeof price === "number" ? price : parseFloat(price);
     if (num < 0.001) {
       return num.toExponential(3);
     }
     return formatNumberWithEllipses(roundSig(num, 6), 10);
   } catch {
-    return '0';
+    return "0";
   }
 };
 
-export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string | null }) {
+export default function OrderBookPanel({
+  selectedFeed,
+}: {
+  selectedFeed: string | null;
+}) {
   const [selectedChain, setSelectedChain] = useState(1);
-  const [stepSize, setStepSize] = useState('0.5');
-  const [realtimeSpotPrice, setRealtimeSpotPrice] = useState<number | null>(null);
+  const [stepSize, setStepSize] = useState("0.5");
+  const [realtimeSpotPrice, setRealtimeSpotPrice] = useState<number | null>(
+    null,
+  );
+  const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
+  const [hoveredBetween, setHoveredBetween] = useState<{
+    upper: number;
+    lower: number;
+  } | null>(null);
 
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
+  const { setOrderDefaults } = useOrderStore();
 
   const parsedFeed = parseFeedSymbol(selectedFeed);
   const defaultPair = {
-    maker: TOKEN_ADDRESSES['WETH'],
-    taker: TOKEN_ADDRESSES['USDT']
+    maker: TOKEN_ADDRESSES["WETH"],
+    taker: TOKEN_ADDRESSES["USDT"],
   };
 
-  const [selectedPair, setSelectedPair] = useState<{ maker: string; taker: string }>(defaultPair);
+  const [selectedPair, setSelectedPair] = useState<{
+    maker: string;
+    taker: string;
+  }>(defaultPair);
 
   useEffect(() => {
     if (parsedFeed && parsedFeed.base && parsedFeed.quote) {
@@ -137,7 +158,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       if (baseAddress && quoteAddress) {
         setSelectedPair({
           maker: baseAddress,
-          taker: quoteAddress
+          taker: quoteAddress,
         });
       }
     }
@@ -146,7 +167,10 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   useEffect(() => {
     if (selectedFeed && isConnected) {
       const handleMessage = (message) => {
-        if (message.type === 'price_update' && message.symbol === selectedFeed) {
+        if (
+          message.type === "price_update" &&
+          message.symbol === selectedFeed
+        ) {
           const priceData = message.data;
           if (priceData.mid) {
             setRealtimeSpotPrice(priceData.mid);
@@ -168,82 +192,202 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     return `/orderbook/${selectedChain}?limit=100`;
   };
 
-  const { data: orderbookResponse, error, isValidating, mutate } = useSWR(
-    getApiEndpoint(),
-    fetcher,
-    {
-      refreshInterval: 60000,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true
-    }
-  );
+  const {
+    data: orderbookResponse,
+    error,
+    isValidating,
+    mutate,
+  } = useSWR(getApiEndpoint(), fetcher, {
+    refreshInterval: 60000,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: true,
+  });
 
-  const renderLevel = (level: AggregatedLevel, isBid: boolean, maxTotal: number) => {
+  const handleCreateOrder = (price: number, isBuy: boolean) => {
+    // Calculate default price range for Iceberg orders
+    const priceSpread = price * 0.005; // 0.5% spread from clicked price
+    const startPrice = isBuy ? price - priceSpread : price;
+    const endPrice = isBuy ? price : price + priceSpread;
+
+    // Get default expiry (30 days from now)
+    const getDefaultExpiry = () => {
+      const date = new Date();
+      date.setDate(date.getDate() + 30);
+      return date.toISOString().slice(0, 16);
+    };
+
+    const orderDefaults = {
+      orderType: "Iceberg",
+      price: price.toString(),
+      startPrice: startPrice.toString(),
+      endPrice: endPrice.toString(),
+      steps: "5",
+      expiry: getDefaultExpiry(),
+      isBuy,
+      fromCoin: parsedFeed?.base || "ETH",
+      toCoin: parsedFeed?.quote || "USDT",
+      timestamp: Date.now(),
+    };
+
+    setOrderDefaults(orderDefaults);
+  };
+
+  // Handle clicks between levels for mid-price orders
+  const handleCreateMidPriceOrder = (
+    upperPrice: number,
+    lowerPrice: number,
+  ) => {
+    const midPrice = (upperPrice + lowerPrice) / 2;
+    const isBuy = upperPrice > lowerPrice; // If upper is higher, we're buying
+
+    // For mid-price orders, use a tighter spread
+    const priceSpread = midPrice * 0.002; // 0.2% spread for mid-price orders
+    const startPrice = isBuy ? midPrice - priceSpread : midPrice;
+    const endPrice = isBuy ? midPrice : midPrice + priceSpread;
+
+    const getDefaultExpiry = () => {
+      const date = new Date();
+      date.setDate(date.getDate() + 30);
+      return date.toISOString().slice(0, 16);
+    };
+
+    const orderDefaults = {
+      orderType: "Iceberg",
+      price: midPrice.toString(),
+      startPrice: startPrice.toString(),
+      endPrice: endPrice.toString(),
+      steps: "5",
+      expiry: getDefaultExpiry(),
+      isBuy,
+      fromCoin: parsedFeed?.base || "ETH",
+      toCoin: parsedFeed?.quote || "USDT",
+      timestamp: Date.now(),
+    };
+
+    setOrderDefaults(orderDefaults);
+  };
+
+  const renderLevel = (
+    level: AggregatedLevel,
+    isBid: boolean,
+    maxTotal: number,
+    index: number,
+    levels: AggregatedLevel[],
+  ) => {
     // Calculate depth percentage for backdrop visualization
     const depthPercentage = maxTotal > 0 ? (level.total / maxTotal) * 100 : 0;
+    const isHovered = hoveredPrice === level.price;
 
     return (
-      <div
-        key={level.price}
-        className={cn(
-          "grid grid-cols-3 gap-2 py-0.5 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden leading-tight",
-          isBid
-            ? "border-l-emerald-500/70 hover:border-l-emerald-400 hover:bg-emerald-900/20"
-            : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20"
+      <div key={level.price} className="relative">
+        {/* Between-levels hover zone (only show between different levels) */}
+        {index > 0 && (
+          <div
+            className="relative h-1 group cursor-pointer"
+            onMouseEnter={() => {
+              const prevLevel = levels[index - 1];
+              setHoveredBetween({ upper: prevLevel.price, lower: level.price });
+            }}
+            onMouseLeave={() => setHoveredBetween(null)}
+            onClick={() => {
+              const prevLevel = levels[index - 1];
+              handleCreateMidPriceOrder(prevLevel.price, level.price);
+            }}
+          >
+            {hoveredBetween?.upper === levels[index - 1]?.price &&
+              hoveredBetween?.lower === level.price && (
+                <div className="absolute inset-0 bg-yellow-500/20 border-y border-yellow-500/40 flex items-center justify-center">
+                  <div className="bg-yellow-500 text-black text-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                    <Plus className="w-3 h-3" />
+                    {formatPrice((levels[index - 1].price + level.price) / 2)}
+                  </div>
+                </div>
+              )}
+          </div>
         )}
-      >
-        {/* Enhanced depth visualization backdrop with gradient fading */}
+
+        {/* Main level row */}
         <div
           className={cn(
-            "absolute inset-0 transition-all duration-300",
+            "grid grid-cols-3 gap-2 py-1 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden group",
             isBid
-              ? "bg-gradient-to-l from-emerald-500/20 via-emerald-500/15 to-emerald-500/5"
-              : "bg-gradient-to-l from-red-500/20 via-red-500/15 to-red-500/5"
+              ? "border-l-emerald-500/70 hover:border-l-emerald-400 hover:bg-emerald-900/20"
+              : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20",
+            isHovered && "ring-2 ring-yellow-400/50 bg-yellow-900/10",
           )}
-          style={{
-            width: `${depthPercentage}%`,
-            right: 0,
-            left: 'auto'
-          }}
-        />
+          onMouseEnter={() => setHoveredPrice(level.price)}
+          onMouseLeave={() => setHoveredPrice(null)}
+          onClick={() => handleCreateOrder(level.price, isBid)}
+        >
+          {/* Enhanced depth visualization backdrop with gradient fading */}
+          <div
+            className={cn(
+              "absolute inset-0 transition-all duration-300",
+              isBid
+                ? "bg-gradient-to-l from-emerald-500/20 via-emerald-500/15 to-emerald-500/5"
+                : "bg-gradient-to-l from-red-500/20 via-red-500/15 to-red-500/5",
+            )}
+            style={{
+              width: `${depthPercentage}%`,
+              right: 0,
+              left: "auto",
+            }}
+          />
 
-        {/* Additional subtle background layer for depth emphasis */}
-        <div
-          className={cn(
-            "absolute inset-0 opacity-60 transition-all duration-300",
-            isBid ? "bg-emerald-500/8" : "bg-red-500/8"
+          {/* Additional subtle background layer for depth emphasis */}
+          <div
+            className={cn(
+              "absolute inset-0 opacity-60 transition-all duration-300",
+              isBid ? "bg-emerald-500/8" : "bg-red-500/8",
+            )}
+            style={{
+              width: `${Math.min(depthPercentage * 1.3, 100)}%`,
+              right: 0,
+              left: "auto",
+              background: isBid
+                ? `linear-gradient(to left, rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)}), rgba(16, 185, 129, 0.01))`
+                : `linear-gradient(to left, rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)}), rgba(239, 68, 68, 0.01))`,
+            }}
+          />
+
+          {/* Hover overlay with + button */}
+          {isHovered && (
+            <div className="absolute inset-0 bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-end pr-2 z-20">
+              <div className="bg-yellow-500 text-black text-xs px-2 py-1 rounded-full flex items-center gap-1 font-medium">
+                <Plus className="w-3 h-3" />
+                {isBid ? "BUY" : "SELL"}
+              </div>
+            </div>
           )}
-          style={{
-            width: `${Math.min(depthPercentage * 1.3, 100)}%`,
-            right: 0,
-            left: 'auto',
-            background: isBid
-              ? `linear-gradient(to left, rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)}), rgba(16, 185, 129, 0.01))`
-              : `linear-gradient(to left, rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)}), rgba(239, 68, 68, 0.01))`
-          }}
-        />
 
-        {/* Price column */}
-        <span className={cn(
-          "font-mono text-xs tabular-nums text-left relative z-10 leading-none",
-          isBid ? "text-emerald-200" : "text-red-200"
-        )}>
-          {level.isRemainder ? `${formatPrice(level.price)}+` : formatPrice(level.price)}
-        </span>
+          {/* Price column */}
+          <span
+            className={cn(
+              "font-mono text-sm tabular-nums text-left relative z-10",
+              isBid ? "text-emerald-200" : "text-red-200",
+            )}
+          >
+            {level.isRemainder
+              ? `${formatPrice(level.price)}+`
+              : formatPrice(level.price)}
+          </span>
 
-        {/* Amount column with darker background to indicate order count */}
-        <span className={cn(
-          "font-mono text-xs tabular-nums text-right px-1.5 py-0.5 relative z-10 leading-none",
-          level.count > 1 ? "bg-slate-800/60 rounded-sm" : "",
-          isBid ? "text-slate-200" : "text-slate-200"
-        )}>
-          {formatAmount(level.amount)}
-        </span>
+          {/* Amount column with darker background to indicate order count */}
+          <span
+            className={cn(
+              "font-mono text-sm tabular-nums text-right px-2 py-0.5 relative z-10",
+              level.count > 1 ? "bg-slate-800/60 rounded-sm" : "",
+              isBid ? "text-slate-200" : "text-slate-200",
+            )}
+          >
+            {formatAmount(level.amount)}
+          </span>
 
-        {/* Total column */}
-        <span className="font-mono text-xs text-slate-300 tabular-nums text-right relative z-10 leading-none">
-          {formatAmount(level.total)}
-        </span>
+          {/* Total column */}
+          <span className="font-mono text-sm text-slate-300 tabular-nums text-right relative z-10">
+            {formatAmount(level.total)}
+          </span>
+        </div>
       </div>
     );
   };
@@ -252,12 +396,12 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   if (!orderbookResponse && !error) {
     return (
       <PanelWrapper>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-3 text-teal-400">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Loading orderbook...</span>
-              </div>
-            </CardContent>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3 text-teal-400">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Loading orderbook...</span>
+          </div>
+        </CardContent>
       </PanelWrapper>
     );
   }
@@ -266,9 +410,9 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   if (error) {
     return (
       <PanelWrapper>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-red-300 font-medium">Error: {error.message}</div>
-            </CardContent>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-red-300 font-medium">Error: {error.message}</div>
+        </CardContent>
       </PanelWrapper>
     );
   }
@@ -277,9 +421,11 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   if (orderbookResponse && !orderbookResponse.success) {
     return (
       <PanelWrapper>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-red-300 font-medium">Error: {orderbookResponse.error}</div>
-            </CardContent>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-red-300 font-medium">
+            Error: {orderbookResponse.error}
+          </div>
+        </CardContent>
       </PanelWrapper>
     );
   }
@@ -292,7 +438,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   const filterInvalidOrders = (
     bids: OrderbookLevel[],
     asks: OrderbookLevel[],
-    currentMidPrice: number | null
+    currentMidPrice: number | null,
   ): { validBids: OrderbookLevel[]; validAsks: OrderbookLevel[] } => {
     if (bids.length === 0 || asks.length === 0 || !currentMidPrice) {
       return { validBids: bids, validAsks: asks };
@@ -301,29 +447,42 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     // Filter out invalid orders using current market price:
     // - Bids above current mid price (unrealistic)
     // - Asks below current mid price (unrealistic)
-    const validBids = bids.filter(bid => {
-      const price = typeof bid.price === 'number' ? bid.price : parseFloat(bid.price);
+    const validBids = bids.filter((bid) => {
+      const price =
+        typeof bid.price === "number" ? bid.price : parseFloat(bid.price);
       return price <= currentMidPrice; // Bids must be at or below current market price
     });
 
-    const validAsks = asks.filter(ask => {
-      const price = typeof ask.price === 'number' ? ask.price : parseFloat(ask.price);
+    const validAsks = asks.filter((ask) => {
+      const price =
+        typeof ask.price === "number" ? ask.price : parseFloat(ask.price);
       return price >= currentMidPrice; // Asks must be at or above current market price
     });
 
     return { validBids, validAsks };
   };
 
-  const aggregateOrders = (levels: OrderbookLevel[], isBid: boolean, stepPercent: number, referencePrice: number | null = null): AggregatedLevel[] => {
+  const aggregateOrders = (
+    levels: OrderbookLevel[],
+    isBid: boolean,
+    stepPercent: number,
+    referencePrice: number | null = null,
+  ): AggregatedLevel[] => {
     if (!levels.length) return [];
 
     if (!referencePrice) {
       const aggregated = new Map<string, AggregatedLevel>();
 
-      levels.forEach(level => {
+      levels.forEach((level) => {
         const priceKey = level.price.toString();
-        const price = typeof level.price === 'number' ? level.price : parseFloat(level.price);
-        const amount = typeof level.amount === 'number' ? level.amount : parseFloat(level.amount);
+        const price =
+          typeof level.price === "number"
+            ? level.price
+            : parseFloat(level.price);
+        const amount =
+          typeof level.amount === "number"
+            ? level.amount
+            : parseFloat(level.amount);
         const count = parseInt(level.count.toString());
 
         if (!aggregated.has(priceKey)) {
@@ -331,7 +490,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
             price,
             amount: 0,
             total: 0,
-            count: 0
+            count: 0,
           });
         }
 
@@ -341,11 +500,11 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       });
 
       const sortedLevels = Array.from(aggregated.values()).sort((a, b) =>
-        isBid ? b.price - a.price : a.price - b.price
+        isBid ? b.price - a.price : a.price - b.price,
       );
 
       let runningTotal = 0;
-      sortedLevels.forEach(level => {
+      sortedLevels.forEach((level) => {
         runningTotal += level.amount;
         level.total = runningTotal;
       });
@@ -358,9 +517,11 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           const remainderLevel: AggregatedLevel = {
             price: remainder[0].price,
             amount: remainder.reduce((sum, level) => sum + level.amount, 0),
-            total: topFourteen[topFourteen.length - 1].total + remainder.reduce((sum, level) => sum + level.amount, 0),
+            total:
+              topFourteen[topFourteen.length - 1].total +
+              remainder.reduce((sum, level) => sum + level.amount, 0),
             count: remainder.reduce((sum, level) => sum + level.count, 0),
-            isRemainder: true
+            isRemainder: true,
           };
 
           return [...topFourteen, remainderLevel];
@@ -376,18 +537,26 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     const stepDecimal = stepPercent / 100;
     const aggregated = new Map<number, AggregatedLevel>();
 
-    levels.forEach(level => {
-      const price = typeof level.price === 'number' ? level.price : parseFloat(level.price);
-      const amount = typeof level.amount === 'number' ? level.amount : parseFloat(level.amount);
+    levels.forEach((level) => {
+      const price =
+        typeof level.price === "number" ? level.price : parseFloat(level.price);
+      const amount =
+        typeof level.amount === "number"
+          ? level.amount
+          : parseFloat(level.amount);
       const count = parseInt(level.count.toString());
 
       let bucketPrice: number;
       if (isBid) {
-        const stepsDown = Math.floor((referencePrice - price) / (referencePrice * stepDecimal));
-        bucketPrice = referencePrice - (stepsDown * referencePrice * stepDecimal);
+        const stepsDown = Math.floor(
+          (referencePrice - price) / (referencePrice * stepDecimal),
+        );
+        bucketPrice = referencePrice - stepsDown * referencePrice * stepDecimal;
       } else {
-        const stepsUp = Math.ceil((price - referencePrice) / (referencePrice * stepDecimal));
-        bucketPrice = referencePrice + (stepsUp * referencePrice * stepDecimal);
+        const stepsUp = Math.ceil(
+          (price - referencePrice) / (referencePrice * stepDecimal),
+        );
+        bucketPrice = referencePrice + stepsUp * referencePrice * stepDecimal;
       }
 
       if (!aggregated.has(bucketPrice)) {
@@ -395,7 +564,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           price: bucketPrice,
           amount: 0,
           total: 0,
-          count: 0
+          count: 0,
         });
       }
 
@@ -405,11 +574,11 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
     });
 
     const sortedLevels = Array.from(aggregated.values()).sort((a, b) =>
-      isBid ? b.price - a.price : a.price - b.price
+      isBid ? b.price - a.price : a.price - b.price,
     );
 
     let runningTotal = 0;
-    sortedLevels.forEach(level => {
+    sortedLevels.forEach((level) => {
       runningTotal += level.amount;
       level.total = runningTotal;
     });
@@ -422,9 +591,11 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         const remainderLevel: AggregatedLevel = {
           price: remainder[0].price,
           amount: remainder.reduce((sum, level) => sum + level.amount, 0),
-          total: topFourteen[topFourteen.length - 1].total + remainder.reduce((sum, level) => sum + level.amount, 0),
+          total:
+            topFourteen[topFourteen.length - 1].total +
+            remainder.reduce((sum, level) => sum + level.amount, 0),
           count: remainder.reduce((sum, level) => sum + level.count, 0),
-          isRemainder: true
+          isRemainder: true,
         };
 
         return [...topFourteen, remainderLevel];
@@ -437,13 +608,27 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
   };
 
   // Filter invalid orders from the orderbook using current market price
-  const { validBids, validAsks } = filterInvalidOrders(orderbook.bids, orderbook.asks, spotPrice);
-  const aggregatedBids = aggregateOrders(validBids, true, parseFloat(stepSize), spotPrice);
-  const aggregatedAsks = aggregateOrders(validAsks, false, parseFloat(stepSize), spotPrice);
+  const { validBids, validAsks } = filterInvalidOrders(
+    orderbook.bids,
+    orderbook.asks,
+    spotPrice,
+  );
+  const aggregatedBids = aggregateOrders(
+    validBids,
+    true,
+    parseFloat(stepSize),
+    spotPrice,
+  );
+  const aggregatedAsks = aggregateOrders(
+    validAsks,
+    false,
+    parseFloat(stepSize),
+    spotPrice,
+  );
 
   // Calculate max totals for depth visualization
-  const maxBidTotal = Math.max(...aggregatedBids.map(b => b.total), 0);
-  const maxAskTotal = Math.max(...aggregatedAsks.map(a => a.total), 0);
+  const maxBidTotal = Math.max(...aggregatedBids.map((b) => b.total), 0);
+  const maxAskTotal = Math.max(...aggregatedAsks.map((a) => a.total), 0);
   const maxTotal = Math.max(maxBidTotal, maxAskTotal);
 
   return (
@@ -455,7 +640,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
           <Select value={stepSize} onValueChange={setStepSize}>
             <SelectTrigger className="w-[80px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
               <SelectValue>
-                {STEP_OPTIONS.find(opt => opt.value === stepSize)?.label}
+                {STEP_OPTIONS.find((opt) => opt.value === stepSize)?.label}
               </SelectValue>
             </SelectTrigger>
             <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
@@ -476,77 +661,125 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
         {/* Simple Table Header */}
         <div className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-teal-500/20 bg-black/40 flex-shrink-0">
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide leading-none">Price</div>
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">Size ({parsedFeed?.quote || 'USDT'})</div>
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">Total</div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide leading-none">
+            Price
+          </div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">
+            Size ({parsedFeed?.quote || "USDT"})
+          </div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">
+            Total
+          </div>
         </div>
 
-            {/* Orderbook Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto">
-              {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-slate-500 mb-2">No orders available</p>
-                  <p className="text-xs text-slate-600">
-                    {selectedFeed ? `No data for ${selectedFeed}` : 'Select a feed to view orderbook'}
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  {/* Asks (sells) in reverse order */}
-                  <div>
-                    {aggregatedAsks.slice().reverse().map(level => renderLevel(level, false, maxTotal))}
-                  </div>
-
-                  {/* Spread row - emphasized */}
-                  {aggregatedAsks.length > 0 && aggregatedBids.length > 0 && (
-                    (() => {
-                      // Get the best ask (lowest ask price) and best bid (highest bid price)
-                      const bestAsk = aggregatedAsks[0].price;  // First ask (lowest)
-                      const bestBid = aggregatedBids[0].price;  // First bid (highest)
-
-                      // Calculate spread - should be positive now with filtered data
-                      const absoluteSpread = bestAsk - bestBid;
-                      const midPrice = (bestAsk + bestBid) / 2;
-                      const relativeSpread = midPrice > 0 ? (absoluteSpread / midPrice) * 100 : 0;
-
-                      // Show warning if spread is negative (shouldn't happen with filtered data)
-                      if (absoluteSpread < 0) {
-                        return (
-                          <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-red-900/80 via-red-800/60 to-red-900/80 border-y border-red-500/40 relative overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/10 to-red-500/5"></div>
-                            <span className="text-sm text-red-300 font-mono font-semibold relative z-10">Spread</span>
-                            <span className="text-sm text-red-200 font-mono text-right relative z-10">Invalid</span>
-                            <span className="text-sm text-red-100 font-mono text-right font-semibold relative z-10">
-                              {relativeSpread.toFixed(2)}%
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div className="grid grid-cols-3 gap-2 py-1 px-3 bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-y border-teal-500/40 relative overflow-hidden">
-                          {/* Subtle glow effect */}
-                          <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-yellow-500/10 to-teal-500/5"></div>
-
-                          <span className="text-xs text-yellow-300 font-mono font-semibold relative z-10 leading-none">Spread</span>
-                          <span className="text-xs text-yellow-200 font-mono text-right relative z-10 leading-none">
-                            {formatPrice(absoluteSpread)}
-                          </span>
-                          <span className="text-xs text-yellow-100 font-mono text-right font-semibold relative z-10 leading-none">
-                            {relativeSpread.toFixed(2)}%
-                          </span>
-                        </div>
-                      );
-                    })()
-                  )}
-
-                  {/* Bids (buys) */}
-                  <div>
-                    {aggregatedBids.map(level => renderLevel(level, true, maxTotal))}
-                  </div>
-                </div>
-              )}
+        {/* Orderbook Content - Scrollable */}
+        <div className="flex-1 overflow-y-auto">
+          {aggregatedBids.length === 0 && aggregatedAsks.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-slate-500 mb-2">No orders available</p>
+              <p className="text-xs text-slate-600">
+                {selectedFeed
+                  ? `No data for ${selectedFeed}`
+                  : "Select a feed to view orderbook"}
+              </p>
             </div>
+          ) : (
+            <div>
+              {/* Asks (sells) in reverse order */}
+              <div>
+                {aggregatedAsks
+                  .slice()
+                  .reverse()
+                  .map((level, index, array) =>
+                    renderLevel(
+                      level,
+                      false,
+                      maxTotal,
+                      array.length - 1 - index,
+                      [...array].reverse(),
+                    ),
+                  )}
+              </div>
+
+              {/* Spread row - emphasized */}
+              {aggregatedAsks.length > 0 &&
+                aggregatedBids.length > 0 &&
+                (() => {
+                  // Get the best ask (lowest ask price) and best bid (highest bid price)
+                  const bestAsk = aggregatedAsks[0].price; // First ask (lowest)
+                  const bestBid = aggregatedBids[0].price; // First bid (highest)
+
+                  // Calculate spread - should be positive now with filtered data
+                  const absoluteSpread = bestAsk - bestBid;
+                  const midPrice = (bestAsk + bestBid) / 2;
+                  const relativeSpread =
+                    midPrice > 0 ? (absoluteSpread / midPrice) * 100 : 0;
+
+                  // Show warning if spread is negative (shouldn't happen with filtered data)
+                  if (absoluteSpread < 0) {
+                    return (
+                      <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-red-900/80 via-red-800/60 to-red-900/80 border-y border-red-500/40 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/10 to-red-500/5"></div>
+                        <span className="text-xs text-red-300 font-mono font-semibold relative z-10 leading-none">
+                          Spread
+                        </span>
+                        <span className="text-xs text-red-200 font-mono text-right relative z-10 leading-none">
+                          Invalid
+                        </span>
+                        <span className="text-xs text-red-100 font-mono text-right font-semibold relative z-10 leading-none">
+                          {relativeSpread.toFixed(2)}%
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-y border-teal-500/40 relative overflow-hidden cursor-pointer hover:bg-yellow-900/20 transition-all duration-300 group"
+                      onClick={() =>
+                        handleCreateMidPriceOrder(bestAsk, bestBid)
+                      }
+                      onMouseEnter={() =>
+                        setHoveredBetween({ upper: bestAsk, lower: bestBid })
+                      }
+                      onMouseLeave={() => setHoveredBetween(null)}
+                    >
+                      {/* Subtle glow effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-yellow-500/10 to-teal-500/5"></div>
+
+                      {/* Hover overlay for spread */}
+                      {hoveredBetween?.upper === bestAsk &&
+                        hoveredBetween?.lower === bestBid && (
+                          <div className="absolute inset-0 bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-end pr-2 z-20">
+                            <div className="bg-yellow-500 text-black text-xs px-2 py-1 rounded-full flex items-center gap-1 font-medium">
+                              <Plus className="w-3 h-3" />
+                              MID
+                            </div>
+                          </div>
+                        )}
+
+                      <span className="text-xs text-yellow-300 font-mono font-semibold relative z-10 leading-none">
+                        Spread
+                      </span>
+                      <span className="text-xs text-yellow-200 font-mono text-right relative z-10 leading-none">
+                        {formatPrice(absoluteSpread)}
+                      </span>
+                      <span className="text-xs text-yellow-100 font-mono text-right font-semibold relative z-10 leading-none">
+                        {relativeSpread.toFixed(2)}%
+                      </span>
+                    </div>
+                  );
+                })()}
+
+              {/* Bids (buys) */}
+              <div>
+                {aggregatedBids.map((level, index) =>
+                  renderLevel(level, true, maxTotal, index, aggregatedBids),
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Footer Status Bar */}
         <div className="px-3 py-2 border-t border-teal-500/20 bg-black/40 flex-shrink-0">
@@ -555,10 +788,10 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
               Chain {orderbook.chain} • Updated {lastUpdated}
             </span>
             <div className="flex items-center gap-2">
-              {isValidating && <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />}
-              <span className="font-mono">
-                60s refresh • Step: {stepSize}%
-              </span>
+              {isValidating && (
+                <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />
+              )}
+              <span className="font-mono">60s refresh • Step: {stepSize}%</span>
             </div>
           </div>
         </div>
