@@ -20,9 +20,11 @@ class OrderRegistryService {
   private config: KeeperConfig;
   private isRunning: boolean = false;
   private watchers: Map<string, boolean> = new Map();
+  private mockMode: boolean = false;
 
-  constructor() {
+  constructor(mockMode: boolean = false) {
     this.config = getServiceConfig("keeper");
+    this.mockMode = mockMode;
     initStorage(getServiceConfig("keeper" as any));
   }
 
@@ -196,8 +198,8 @@ class OrderRegistryService {
       // Increment trigger count
       order.triggerCount = (order.triggerCount || 0) + 1;
 
-      // Execute using watcher
-      await watcher.execute(order);
+      // Submit using watcher
+      await watcher.submit(order);
 
       // Create 1inch order hash (placeholder - will be set by watcher)
       const mockOrderHash = `0x${generateId()}`;
@@ -302,6 +304,11 @@ class OrderRegistryService {
 
 // Export singleton instance
 export const orderRegistry = new OrderRegistryService();
+
+// Export function to create instance with mock mode
+export function createOrderRegistry(mockMode: boolean = false): OrderRegistryService {
+  return new OrderRegistryService(mockMode);
+}
 
 // Main execution when run directly
 if (import.meta.main) {

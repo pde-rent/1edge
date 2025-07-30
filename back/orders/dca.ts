@@ -3,7 +3,7 @@ import { OrderType } from "@common/types";
 import { logger } from "@back/utils/logger";
 import { registerOrderWatcher, type OrderWatcher } from "./base";
 
-class DCAHandler implements OrderWatcher {
+class DCAWacther implements OrderWatcher {
   async shouldTrigger(order: Order): Promise<boolean> {
     if (!order.nextTriggerValue) {
       return false;
@@ -35,5 +35,5 @@ class DCAHandler implements OrderWatcher {
   }
 }
 
-// Register handler
-registerOrderWatcher(OrderType.DCA, new DCAHandler());
+// Register watcher
+registerOrderWatcher(OrderType.DCA, new DCAWacther());

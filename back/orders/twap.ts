@@ -1,10 +1,11 @@
 import type { Order, TwapParams } from "@common/types";
 import { OrderType } from "@common/types";
 import { logger } from "@back/utils/logger";
-import { registerOrderWatcher, type OrderWatcher } from "./base";
+import { registerOrderWatcher, BaseOrderWatcher } from "./base";
 import { priceCache } from "@back/services/priceCache";
+import { getSymbolFromAssets, getAssetSymbol } from "@back/utils/assetMapping";
 
-class TWAPHandler implements OrderWatcher {
+class TWAPWatcher extends BaseOrderWatcher {
   async shouldTrigger(order: Order): Promise<boolean> {
     const params = order.params as TwapParams;
     if (!params) {
@@ -41,26 +42,36 @@ class TWAPHandler implements OrderWatcher {
     return shouldTriggerNow;
   }
 
-  async execute(order: Order): Promise<void> {
+  calculateSubmissionAmount(order: Order): string {
     const params = order.params as TwapParams;
     if (!params) {
       throw new Error("Invalid TWAP order params");
     }
 
-    // Calculate how many intervals should have occurred by now
-    const now = Date.now();
+    // Calculate total intervals and amount per interval
     const totalDuration = params.endDate - params.startDate;
-    const intervalMs = params.interval; // Already in milliseconds
+    const intervalMs = params.interval;
     const totalIntervals = Math.ceil(totalDuration / intervalMs);
+    const amountPerInterval = parseFloat(params.amount) / totalIntervals;
+
+    return amountPerInterval.toString();
+  }
+
+  async submit(order: Order): Promise<void> {
+    const params = order.params as TwapParams;
+    if (!params) {
+      throw new Error("Invalid TWAP order params");
+    }
 
     // Check if we're within the execution window
+    const now = Date.now();
     if (now < params.startDate || now >= params.endDate) {
       throw new Error("TWAP execution outside time window");
     }
 
     // Check price constraint if specified
     if (params.maxPrice) {
-      const symbol = this.getSymbolFromAssets(order.makerAsset, order.takerAsset);
+      const symbol = getSymbolFromAssets(order.makerAsset, order.takerAsset);
       const priceData = priceCache.getPrice(symbol);
       if (priceData?.last?.mid && priceData.last.mid > params.maxPrice) {
         logger.info(`TWAP execution skipped: price ${priceData.last.mid} exceeds max ${params.maxPrice}`);
@@ -68,16 +79,19 @@ class TWAPHandler implements OrderWatcher {
       }
     }
 
+    // Calculate interval information for logging
+    const totalDuration = params.endDate - params.startDate;
+    const intervalMs = params.interval;
+    const totalIntervals = Math.ceil(totalDuration / intervalMs);
     const currentInterval = order.triggerCount + 1;
-    const amountPerInterval = parseFloat(params.amount) / totalIntervals;
+    const amountPerInterval = this.calculateSubmissionAmount(order);
 
-    // Get asset symbol for logging (simplified)
-    const assetSymbol = this.getAssetSymbol(order.makerAsset);
-    logger.info(`Executing TWAP slice ${currentInterval}/${totalIntervals} for ${amountPerInterval} ${assetSymbol}`);
+    // Get asset symbol for logging
+    const assetSymbol = getAssetSymbol(order.makerAsset);
+    logger.info(`Submitting TWAP slice ${currentInterval}/${totalIntervals} for ${amountPerInterval} ${assetSymbol}`);
 
-    // In production, this would create a 1inch limit order
-    // For testing, we just log the execution
-    logger.debug(`Would create 1inch order: ${amountPerInterval} at limit price (spot - 0.05%)`);
+    // Call parent submit method to handle 1inch integration
+    await super.submit(order);
   }
 
   updateNextTrigger(order: Order): void {
@@ -100,31 +114,7 @@ class TWAPHandler implements OrderWatcher {
     }
   }
 
-  private getSymbolFromAssets(makerAsset: string, takerAsset: string): string {
-    // Simple mapping for common assets - in production this would be more sophisticated
-    const assetMap: Record<string, string> = {
-      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "ETH", // WETH
-      "0xdAC17F958D2ee523a2206206994597C13D831ec7": "USDT", // USDT
-      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": "USDC", // USDC
-    };
-
-    const makerSymbol = assetMap[makerAsset] || "UNKNOWN";
-    const takerSymbol = assetMap[takerAsset] || "UNKNOWN";
-
-    return `agg:spot:${makerSymbol}${takerSymbol}`;
-  }
-
-  private getAssetSymbol(assetAddress: string): string {
-    // Simple mapping for logging - in production this would query token metadata
-    const assetMap: Record<string, string> = {
-      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": "WETH",
-      "0xdAC17F958D2ee523a2206206994597C13D831ec7": "USDT",
-      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": "USDC",
-    };
-
-    return assetMap[assetAddress] || "UNKNOWN";
-  }
 }
 
-// Register handler
-registerOrderWatcher(OrderType.TWAP, new TWAPHandler());
+// Register watcher - mock mode will be set by OrderRegistry
+registerOrderWatcher(OrderType.TWAP, new TWAPWatcher(true)); // Default to mock mode
