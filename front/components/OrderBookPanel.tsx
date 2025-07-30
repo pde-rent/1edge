@@ -186,7 +186,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
       <div
         key={level.price}
         className={cn(
-          "grid grid-cols-3 gap-2 py-1 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden",
+          "grid grid-cols-3 gap-2 py-0.5 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden leading-tight",
           isBid
             ? "border-l-emerald-500/70 hover:border-l-emerald-400 hover:bg-emerald-900/20"
             : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20"
@@ -225,7 +225,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
 
         {/* Price column */}
         <span className={cn(
-          "font-mono text-sm tabular-nums text-left relative z-10",
+          "font-mono text-xs tabular-nums text-left relative z-10 leading-none",
           isBid ? "text-emerald-200" : "text-red-200"
         )}>
           {level.isRemainder ? `${formatPrice(level.price)}+` : formatPrice(level.price)}
@@ -233,7 +233,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
 
         {/* Amount column with darker background to indicate order count */}
         <span className={cn(
-          "font-mono text-sm tabular-nums text-right px-2 py-0.5 relative z-10",
+          "font-mono text-xs tabular-nums text-right px-1.5 py-0.5 relative z-10 leading-none",
           level.count > 1 ? "bg-slate-800/60 rounded-sm" : "",
           isBid ? "text-slate-200" : "text-slate-200"
         )}>
@@ -241,7 +241,7 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
         </span>
 
         {/* Total column */}
-        <span className="font-mono text-sm text-slate-300 tabular-nums text-right relative z-10">
+        <span className="font-mono text-xs text-slate-300 tabular-nums text-right relative z-10 leading-none">
           {formatAmount(level.total)}
         </span>
       </div>
@@ -475,10 +475,10 @@ export default function OrderBookPanel({ selectedFeed }: { selectedFeed: string 
 
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
         {/* Simple Table Header */}
-        <div className="grid grid-cols-3 gap-2 px-3 py-2 border-b border-teal-500/20 bg-black/40 flex-shrink-0">
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide">Price</div>
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right">Size ({parsedFeed?.quote || 'USDT'})</div>
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right">Total</div>
+        <div className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-teal-500/20 bg-black/40 flex-shrink-0">
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide leading-none">Price</div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">Size ({parsedFeed?.quote || 'USDT'})</div>
+          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">Total</div>
         </div>
 
             {/* Orderbook Content - Scrollable */}
