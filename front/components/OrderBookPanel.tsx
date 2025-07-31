@@ -311,7 +311,7 @@ export default function OrderBookPanel({
           className={cn(
             "grid grid-cols-3 gap-2 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden group",
             isBid
-              ? "border-l-emerald-500/70 hover:border-l-emerald-400 hover:bg-emerald-900/20"
+              ? "border-l-success/70 hover:border-l-success hover:bg-success/20"
               : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20",
             isHovered && "ring-2 ring-yellow-400/50 bg-yellow-900/10",
           )}
@@ -324,8 +324,8 @@ export default function OrderBookPanel({
             className={cn(
               "absolute inset-0 transition-all duration-300",
               isBid
-                ? "bg-gradient-to-l from-emerald-500/20 via-emerald-500/15 to-emerald-500/5"
-                : "bg-gradient-to-l from-red-500/20 via-red-500/15 to-red-500/5",
+                ? "bg-chart-up/20"
+                : "bg-chart-down/20",
             )}
             style={{
               width: `${depthPercentage}%`,
@@ -338,15 +338,15 @@ export default function OrderBookPanel({
           <div
             className={cn(
               "absolute inset-0 opacity-60 transition-all duration-300",
-              isBid ? "bg-emerald-500/8" : "bg-red-500/8",
+              isBid ? "bg-chart-up/8" : "bg-chart-down/8",
             )}
             style={{
               width: `${Math.min(depthPercentage * 1.3, 100)}%`,
               right: 0,
               left: "auto",
-              background: isBid
-                ? `linear-gradient(to left, rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)}), rgba(16, 185, 129, 0.01))`
-                : `linear-gradient(to left, rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)}), rgba(239, 68, 68, 0.01))`,
+              backgroundColor: isBid
+                ? `rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)})`
+                : `rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)})`,
             }}
           />
 
@@ -364,7 +364,7 @@ export default function OrderBookPanel({
           <span
             className={cn(
               "font-mono text-sm tabular-nums text-left relative z-10",
-              isBid ? "text-emerald-200" : "text-red-200",
+              isBid ? "text-success" : "text-destructive",
             )}
           >
             {level.isRemainder
@@ -397,7 +397,7 @@ export default function OrderBookPanel({
     return (
       <PanelWrapper>
         <CardContent className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-3 text-teal-400">
+          <div className="flex items-center gap-3 text-primary">
             <Loader2 className="w-5 h-5 animate-spin" />
             <span>Loading orderbook...</span>
           </div>
@@ -634,11 +634,11 @@ export default function OrderBookPanel({
   return (
     <PanelWrapper>
       {/* Header */}
-      <CardHeader className="border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl flex-shrink-0 px-4 py-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-teal-600">Order Book</h2>
+      <CardHeader className="bg-background backdrop-blur-xl flex-shrink-0 px-4 py-3 h-[60px] flex items-center">
+        <div className="flex items-center justify-between w-full">
+          <h2 className="text-lg font-bold text-primary">Order Book</h2>
           <Select value={stepSize} onValueChange={setStepSize}>
-            <SelectTrigger className="w-[80px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
+            <SelectTrigger size="sm" className="w-[70px] bg-card backdrop-blur-sm border-primary/50 text-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 hover:bg-card/80">
               <SelectValue>
                 {STEP_OPTIONS.find((opt) => opt.value === stepSize)?.label}
               </SelectValue>
@@ -648,7 +648,7 @@ export default function OrderBookPanel({
                 <SelectItem
                   key={option.value}
                   value={option.value}
-                  className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                  className="text-foreground hover:bg-primary/20 focus:bg-primary/30 hover:text-primary focus:text-primary cursor-pointer transition-all duration-200"
                 >
                   {option.label}
                 </SelectItem>
@@ -660,14 +660,14 @@ export default function OrderBookPanel({
 
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
         {/* Simple Table Header */}
-        <div className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-teal-500/20 bg-black/40 flex-shrink-0">
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide leading-none">
+        <div className="grid grid-cols-3 gap-2 px-3 py-1.5 border-b border-primary/50 bg-card flex-shrink-0">
+          <div className="text-xs font-medium text-primary uppercase tracking-wide leading-none">
             Price
           </div>
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">
-            Size ({parsedFeed?.quote || "USDT"})
+          <div className="text-xs font-medium text-primary uppercase tracking-wide text-right leading-none">
+            {parsedFeed?.quote || "USDT"}
           </div>
-          <div className="text-xs font-medium text-teal-200 uppercase tracking-wide text-right leading-none">
+          <div className="text-xs font-medium text-primary uppercase tracking-wide text-right leading-none">
             Total
           </div>
         </div>
@@ -718,8 +718,7 @@ export default function OrderBookPanel({
                   // Show warning if spread is negative (shouldn't happen with filtered data)
                   if (absoluteSpread < 0) {
                     return (
-                      <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-red-900/80 via-red-800/60 to-red-900/80 border-y border-red-500/40 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-r from-red-500/5 via-orange-500/10 to-red-500/5"></div>
+                      <div className="grid grid-cols-3 gap-2 py-2 px-3 bg-destructive/10 border-y border-destructive/40 relative overflow-hidden">
                         <span className="text-xs text-red-300 font-mono font-semibold relative z-10 leading-none">
                           Spread
                         </span>
@@ -735,7 +734,7 @@ export default function OrderBookPanel({
 
                   return (
                     <div
-                      className="grid grid-cols-3 gap-2 py-2 px-3 bg-gradient-to-r from-slate-900/80 via-slate-800/60 to-slate-900/80 border-y border-teal-500/40 relative overflow-hidden cursor-pointer hover:bg-yellow-900/20 transition-all duration-300 group"
+                      className="grid grid-cols-3 gap-2 py-2 px-3 bg-primary/10 hover:bg-primary/20 border-y border-primary/50 relative overflow-hidden cursor-pointer transition-all duration-300 group"
                       onClick={() =>
                         handleCreateMidPriceOrder(bestAsk, bestBid)
                       }
@@ -745,7 +744,6 @@ export default function OrderBookPanel({
                       onMouseLeave={() => setHoveredBetween(null)}
                     >
                       {/* Subtle glow effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-yellow-500/10 to-teal-500/5"></div>
 
                       {/* Hover overlay for spread */}
                       {hoveredBetween?.upper === bestAsk &&
@@ -758,13 +756,13 @@ export default function OrderBookPanel({
                           </div>
                         )}
 
-                      <span className="text-xs text-yellow-300 font-mono font-semibold relative z-10 leading-none">
+                      <span className="text-xs font-mono font-semibold relative z-10 leading-none" style={{color: '#F0B90B'}}>
                         Spread
                       </span>
-                      <span className="text-xs text-yellow-200 font-mono text-right relative z-10 leading-none">
+                      <span className="text-xs font-mono text-right relative z-10 leading-none" style={{color: '#F0B90B'}}>
                         {formatPrice(absoluteSpread)}
                       </span>
-                      <span className="text-xs text-yellow-100 font-mono text-right font-semibold relative z-10 leading-none">
+                      <span className="text-xs font-mono text-right font-semibold relative z-10 leading-none" style={{color: '#F0B90B'}}>
                         {relativeSpread.toFixed(2)}%
                       </span>
                     </div>
@@ -782,14 +780,14 @@ export default function OrderBookPanel({
         </div>
 
         {/* Footer Status Bar */}
-        <div className="px-3 py-2 border-t border-teal-500/20 bg-black/40 flex-shrink-0">
+        <div className="px-3 py-2 border-t border-primary/50 bg-card flex-shrink-0">
           <div className="flex items-center justify-between text-xs text-slate-500">
             <span className="font-mono">
               Chain {orderbook.chain} • Updated {lastUpdated}
             </span>
             <div className="flex items-center gap-2">
               {isValidating && (
-                <RefreshCw className="w-3 h-3 animate-spin text-teal-400" />
+                <RefreshCw className="w-3 h-3 animate-spin text-primary" />
               )}
               <span className="font-mono">10s refresh</span>
             </div>
