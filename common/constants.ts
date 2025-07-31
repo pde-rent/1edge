@@ -33,7 +33,7 @@ export const NEXT_URL =
 /** UI Theme configuration - single source of truth for application styling */
 export const THEME = {
   /** Primary brand color */
-  primary: "#00B8D4", // Bright Cyan
+  primary: "#4fd1c5", // Bright Cyan
   /** Secondary brand color */
   secondary: "#F0B90B", // Orange
   /** Warning state color */

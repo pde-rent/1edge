@@ -35,12 +35,16 @@ class StorageService {
   private migrateDatabase() {
     // Check if we need to migrate from old schema
     try {
-      const result = this.db.prepare("PRAGMA table_info(orders)").all() as Array<{name: string}>;
-      const hasRawData = result.some(col => col.name === 'raw_data');
-      const hasTriggerType = result.some(col => col.name === 'trigger_type');
-      
+      const result = this.db
+        .prepare("PRAGMA table_info(orders)")
+        .all() as Array<{ name: string }>;
+      const hasRawData = result.some((col) => col.name === "raw_data");
+      const hasTriggerType = result.some((col) => col.name === "trigger_type");
+
       if (!hasRawData || !hasTriggerType) {
-        logger.info("Migrating database schema to support complete Order serialization...");
+        logger.info(
+          "Migrating database schema to support complete Order serialization...",
+        );
         // Drop and recreate tables for clean migration
         this.db.run("DROP TABLE IF EXISTS orders");
         this.db.run("DROP TABLE IF EXISTS order_events");
@@ -169,9 +173,7 @@ class StorageService {
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`,
     );
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_orders_maker ON orders(maker)`,
-    );
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_orders_maker ON orders(maker)`);
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_hash ON orders(order_hash)`,
     );
@@ -190,9 +192,7 @@ class StorageService {
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_strategy ON orders(strategy_id)`,
     );
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_orders_type ON orders(type)`,
-    );
+    this.db.run(`CREATE INDEX IF NOT EXISTS idx_orders_type ON orders(type)`);
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id)`,
     );
@@ -209,60 +209,78 @@ class StorageService {
 
   private setupOptimizations() {
     // SQLite performance optimizations
-    this.db.run('PRAGMA journal_mode = WAL'); // Write-Ahead Logging for better concurrency
-    this.db.run('PRAGMA synchronous = NORMAL'); // Balance between safety and speed
-    this.db.run('PRAGMA cache_size = 10000'); // 10MB cache
-    this.db.run('PRAGMA temp_store = MEMORY'); // Store temp data in memory
-    this.db.run('PRAGMA mmap_size = 268435456'); // 256MB memory-mapped I/O
-    this.db.run('PRAGMA optimize'); // Run query planner optimizations
+    this.db.run("PRAGMA journal_mode = WAL"); // Write-Ahead Logging for better concurrency
+    this.db.run("PRAGMA synchronous = NORMAL"); // Balance between safety and speed
+    this.db.run("PRAGMA cache_size = 10000"); // 10MB cache
+    this.db.run("PRAGMA temp_store = MEMORY"); // Store temp data in memory
+    this.db.run("PRAGMA mmap_size = 268435456"); // 256MB memory-mapped I/O
+    this.db.run("PRAGMA optimize"); // Run query planner optimizations
   }
 
   private prepareCriticalStatements() {
     // Pre-compile frequently used statements for better performance
     // Note: Prepared statements are built dynamically, not used for complex inserts
 
-    this.preparedStatements.set('getOrder', this.db.prepare(`
+    this.preparedStatements.set(
+      "getOrder",
+      this.db.prepare(`
       SELECT raw_data FROM orders WHERE id = ?
-    `));
+    `),
+    );
 
-    this.preparedStatements.set('getActiveOrders', this.db.prepare(`
+    this.preparedStatements.set(
+      "getActiveOrders",
+      this.db.prepare(`
       SELECT raw_data FROM orders 
       WHERE status IN ('PENDING', 'SUBMITTED', 'ACTIVE', 'PARTIALLY_FILLED')
       ORDER BY created_at DESC
-    `));
+    `),
+    );
 
-    this.preparedStatements.set('getOrdersByMaker', this.db.prepare(`
+    this.preparedStatements.set(
+      "getOrdersByMaker",
+      this.db.prepare(`
       SELECT raw_data FROM orders 
       WHERE maker = ? 
       ORDER BY created_at DESC
-    `));
+    `),
+    );
 
-    this.preparedStatements.set('getPendingOrders', this.db.prepare(`
+    this.preparedStatements.set(
+      "getPendingOrders",
+      this.db.prepare(`
       SELECT raw_data FROM orders 
       WHERE status = 'PENDING'
       ORDER BY created_at ASC
-    `));
+    `),
+    );
 
-    this.preparedStatements.set('insertOrderEvent', this.db.prepare(`
+    this.preparedStatements.set(
+      "insertOrderEvent",
+      this.db.prepare(`
       INSERT INTO order_events (
         order_id, order_hash, type, timestamp,
         tx_hash, filled_amount, remaining_amount, gas_used, error
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `));
+    `),
+    );
   }
 
-  // Order methods
   async saveOrder(order: Order): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO orders (
-        id, order_hash, strategy_id, type, status,
-        maker_asset, taker_asset, making_amount, taking_amount,
-        maker, receiver, salt, signature, size, remaining_size,
-        trigger_count, next_trigger_value, trigger_price,
-        filled_amount, created_at, executed_at, cancelled_at, tx_hash,
-        network, expiry, user_signed_payload, one_inch_order_hashes, raw_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+    INSERT OR REPLACE INTO orders (
+      id, order_hash, strategy_id, type, status,
+      maker_asset, taker_asset, making_amount, taking_amount,
+      maker, receiver, salt, signature, size, remaining_size,
+      trigger_count, next_trigger_value, trigger_price,
+      filled_amount, created_at, executed_at, cancelled_at, tx_hash,
+      network, expiry, user_signed_payload, one_inch_order_hashes, raw_data
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+    const makingAmount = order?.makingAmount || order.size.toString();
+    const takingAmount = order?.takingAmount || "0";
+    const remainingSize = order?.remainingSize || order.size.toString();
 
     stmt.run(
       order.id,
@@ -272,17 +290,17 @@ class StorageService {
       order.status,
       order.makerAsset,
       order.takerAsset,
-      order.makingAmount,
-      order.takingAmount,
+      makingAmount, // Ensure this is never null
+      takingAmount, // Ensure this is never null
       order.maker,
       order.receiver || null,
       order.salt || null,
       order.signature || null,
-      order.size,
-      order.remainingSize || order.size,
+      order.size.toString(), // Convert to string to be safe
+      remainingSize,
       order.triggerCount || 0,
       order.nextTriggerValue ? String(order.nextTriggerValue) : null,
-      order.triggerPrice || null,
+      order.triggerPrice ? String(order.triggerPrice) : null,
       order.filledAmount || "0",
       order.createdAt,
       order.executedAt || null,
@@ -290,16 +308,21 @@ class StorageService {
       order.txHash || null,
       1, // Default to Ethereum mainnet
       order.expiry || null,
-      order.userSignedPayload || null,
-      order.oneInchOrderHashes ? JSON.stringify(order.oneInchOrderHashes) : null,
+      typeof order.userSignedPayload === "string"
+        ? order.userSignedPayload
+        : JSON.stringify(order.userSignedPayload || {}),
+      order.oneInchOrderHashes
+        ? JSON.stringify(order.oneInchOrderHashes)
+        : null,
       JSON.stringify(order), // Complete order object for reliable reconstruction
     );
 
-    logger.debug(`Saved order ${order.id}`);
+    logger.debug(
+      `Saved order ${order.id} with makingAmount: ${makingAmount}, takingAmount: ${takingAmount}`,
+    );
   }
-
   async getOrder(id: string): Promise<Order | null> {
-    const stmt = this.preparedStatements.get('getOrder');
+    const stmt = this.preparedStatements.get("getOrder");
     const result = stmt.get(id) as { raw_data: string } | null;
     return result ? JSON.parse(result.raw_data) : null;
   }
@@ -323,19 +346,21 @@ class StorageService {
   }
 
   async getActiveOrders(): Promise<Order[]> {
-    const stmt = this.preparedStatements.get('getActiveOrders');
+    const stmt = this.preparedStatements.get("getActiveOrders");
     const results = stmt.all() as { raw_data: string }[];
     return results.map((r) => JSON.parse(r.raw_data));
   }
 
   async getOrdersByMaker(makerAddress: string): Promise<Order[]> {
-    const stmt = this.preparedStatements.get('getOrdersByMaker');
-    const results = stmt.all(makerAddress.toLowerCase()) as { raw_data: string }[];
+    const stmt = this.preparedStatements.get("getOrdersByMaker");
+    const results = stmt.all(makerAddress.toLowerCase()) as {
+      raw_data: string;
+    }[];
     return results.map((r) => JSON.parse(r.raw_data));
   }
 
   async getPendingOrders(): Promise<Order[]> {
-    const stmt = this.preparedStatements.get('getPendingOrders');
+    const stmt = this.preparedStatements.get("getPendingOrders");
     const results = stmt.all() as { raw_data: string }[];
     return results.map((r) => JSON.parse(r.raw_data));
   }
@@ -535,18 +560,33 @@ class StorageService {
       INSERT OR REPLACE INTO token_decimals (chain_id, token_address, decimals, cached_at, expires_at)
       VALUES (?, ?, ?, ?, ?)
     `);
-    
-    stmt.run(chainId, tokenAddress.toLowerCase(), decimals, Date.now(), expiresAt);
-    logger.debug(`Cached decimals for token ${tokenAddress} on chain ${chainId}: ${decimals}`);
+
+    stmt.run(
+      chainId,
+      tokenAddress.toLowerCase(),
+      decimals,
+      Date.now(),
+      expiresAt,
+    );
+    logger.debug(
+      `Cached decimals for token ${tokenAddress} on chain ${chainId}: ${decimals}`,
+    );
   }
 
-  async getCachedTokenDecimals(chainId: number, tokenAddress: string): Promise<number | null> {
+  async getCachedTokenDecimals(
+    chainId: number,
+    tokenAddress: string,
+  ): Promise<number | null> {
     const stmt = this.db.prepare(`
       SELECT decimals FROM token_decimals 
       WHERE chain_id = ? AND token_address = ? AND expires_at > ?
     `);
-    
-    const result = stmt.get(chainId, tokenAddress.toLowerCase(), Date.now()) as { decimals: number } | null;
+
+    const result = stmt.get(
+      chainId,
+      tokenAddress.toLowerCase(),
+      Date.now(),
+    ) as { decimals: number } | null;
     return result?.decimals ?? null;
   }
 
@@ -580,7 +620,7 @@ export const getOrderByHash = (hash: string) =>
 export const getOrdersByStrategy = (strategyId: string) =>
   getStorage().getOrdersByStrategy(strategyId);
 export const getActiveOrders = () => getStorage().getActiveOrders();
-export const getOrdersByMaker = (makerAddress: string) => 
+export const getOrdersByMaker = (makerAddress: string) =>
   getStorage().getOrdersByMaker(makerAddress);
 export const getPendingOrders = () => getStorage().getPendingOrders();
 export const saveOrderEvent = (event: OrderEvent) =>

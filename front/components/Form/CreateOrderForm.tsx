@@ -32,86 +32,120 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import TWAPForm from "./components/TWAPForm";
-import RangeForm, { getDefaultExpiry } from "./components/RangeForm";
+import RangeForm from "./components/RangeForm";
 import IcebergForm from "./components/IcebergForm";
 import DCAForm from "./components/DSAForm";
 import GridMarketMakingForm from "./components/GridMarketMakingForm";
 import MomentumReversalForm from "./components/MomentumReversalForm";
 import RangeBreakoutForm from "./components/RangeBreakoutForm";
-import { toast } from "sonner";
 import StopLimitForm from "./components/StopLimitForm";
 import ChaseLimitForm from "./components/ChaseLimitForm";
+import { toast } from "sonner";
 import { useOrderStore } from "@/stores/orderStore";
+import {
+  FormData,
+  OrderType,
+  getDefaultFormValues,
+  getRelevantParams,
+  applyOrderDefaults,
+} from "./helpers";
+import {
+  useAccount,
+  useSignMessage,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
+import { v4 as uuidv4 } from "uuid";
 
-export interface FormData {
-  // TWAP fields
-  startDate: string;
-  endDate: string;
-  interval: string;
-  maxPrice: string;
-  // Legacy fields (you can remove these if not needed)
-
-  // Range fields
-  startPrice: string;
-  endPrice: string;
-  stepPct: string;
-  expiry: string;
-  steps: string;
-
-  tpPct: string;
-  singleSide: boolean;
-  stepMultiplier: string;
-  rsiPeriod: string;
-  rsimaPeriod: string;
-  slPct: string;
-  adxPeriod: string;
-  adxmaPeriod: string;
-  emaPeriod: string;
-  stopPrice: string;
-  limitPrice: string;
-  distancePct: string;
-
-  twapDuration: string;
-  twapInterval: string;
-  minBuyPrice: string;
-  maxSellPrice: string;
-  totalSize: string;
-  hiddenSize: string;
-  dcaAmount: string;
-  dcaFrequency: string;
-  gridLower: string;
-  gridUpper: string;
-  gridLevels: string;
-  rsiThreshold: string;
-  stopLoss: string;
-  takeProfit: string;
-  breakoutThreshold: string;
-  fastEMA: string;
-  slowEMA: string;
-  amount?: string;
-  fromCoin: string;
-  toCoin: string;
+// Order Type Enum to match API
+export enum APIOrderType {
+  // One-off Orders
+  STOP_LIMIT = "STOP_LIMIT",
+  CHASE_LIMIT = "CHASE_LIMIT",
+  TWAP = "TWAP",
+  RANGE = "RANGE",
+  ICEBERG = "ICEBERG",
+  // Recurring Orders
+  DCA = "DCA", // Dollar-Cost Averaging
+  GRID_TRADING = "GRID_TRADING",
+  MOMENTUM_REVERSAL = "MOMENTUM_REVERSAL",
+  RANGE_BREAKOUT = "RANGE_BREAKOUT",
 }
 
-export interface OrderType {
-  id: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  description: string;
-}
+// Map internal order types to API order types
+const ORDER_TYPE_MAPPING: Record<string, APIOrderType> = {
+  TWAP: APIOrderType.TWAP,
+  Range: APIOrderType.RANGE,
+  Iceberg: APIOrderType.ICEBERG,
+  StopLimit: APIOrderType.STOP_LIMIT,
+  ChaseLimit: APIOrderType.CHASE_LIMIT,
+  DCA: APIOrderType.DCA,
+  GridMarketMaking: APIOrderType.GRID_TRADING,
+  MomentumReversal: APIOrderType.MOMENTUM_REVERSAL,
+  RangeBreakout: APIOrderType.RANGE_BREAKOUT,
+};
 
-export interface Coin {
-  symbol: string;
-  name: string;
-  icon: string;
-}
+// Environment variables
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:40005";
+const CONTRACT_ADDRESS =
+  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
+  "0x0000000000000000000000000000000000000000";
+
+// ERC20 ABI for allowance
+const ERC20_ABI = [
+  {
+    constant: false,
+    inputs: [
+      {
+        name: "_spender",
+        type: "address",
+      },
+      {
+        name: "_value",
+        type: "uint256",
+      },
+    ],
+    name: "approve",
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
 
 const CreateOrderForm = () => {
-  const [orderType, setOrderType] = useState<string>("Iceberg");
+  const [orderCategory, setOrderCategory] = useState<"Order" | "Strategy">(
+    "Order",
+  );
+  const [orderType, setOrderType] = useState<string>("TWAP");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderCreated, setOrderCreated] = useState(false);
+  const [pendingAllowance, setPendingAllowance] = useState(false);
 
-  // Zustand store integration
-  const { orderDefaults, clearOrderDefaults, orderSettings, setOrderFormOpen } =
-    useOrderStore();
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { writeContractAsync } = useWriteContract();
+
+  const {
+    orderDefaults,
+    clearOrderDefaults,
+    orderSettings,
+    setOrderFormOpen,
+    updateFormData,
+    setCurrentOrderType,
+    clearFormData,
+    currentFormData,
+    currentPair,
+    makerAsset,
+    takerAsset,
+    setPairInfo,
+  } = useOrderStore();
 
   const {
     control,
@@ -121,68 +155,8 @@ const CreateOrderForm = () => {
     setValue,
     reset,
   } = useForm<FormData>({
-    defaultValues: {
-      // Default dates: startDate = now + 10min rounded down, endDate = startDate + 1 week
-      startDate: (() => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 10);
-        now.setMinutes(Math.floor(now.getMinutes() / 10) * 10); // Round down to nearest 10 minutes
-        now.setSeconds(0, 0);
-        return now.toISOString().slice(0, 16);
-      })(),
-      endDate: (() => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + 10);
-        now.setMinutes(Math.floor(now.getMinutes() / 10) * 10);
-        now.setSeconds(0, 0);
-        now.setDate(now.getDate() + 7); // Add 1 week
-        return now.toISOString().slice(0, 16);
-      })(),
-      interval: "86400000", // 1 day in ms
-      maxPrice: "",
-      startPrice: "",
-      endPrice: "",
-      stepPct: "0.5", // 0.5%
-      expiry: getDefaultExpiry(),
-      steps: "",
-
-      tpPct: "",
-      singleSide: true,
-      stepMultiplier: "1.0",
-      rsiPeriod: "",
-      rsimaPeriod: "",
-      slPct: "",
-      adxPeriod: "",
-      adxmaPeriod: "",
-      emaPeriod: "",
-      stopPrice: "",
-      limitPrice: "",
-      distancePct: "",
-
-      twapDuration: "60",
-      twapInterval: "5",
-      minBuyPrice: "3739.17",
-      maxSellPrice: "3814.71",
-      totalSize: "",
-      hiddenSize: "",
-      dcaAmount: "",
-      dcaFrequency: "",
-      gridLower: "",
-      gridUpper: "",
-      gridLevels: "10",
-      rsiThreshold: "30",
-      stopLoss: "",
-      takeProfit: "",
-      breakoutThreshold: "25",
-      fastEMA: "12",
-      slowEMA: "26",
-      amount: "",
-      fromCoin: "ETH",
-      toCoin: "USDC",
-    },
+    defaultValues: getDefaultFormValues(),
   });
-
-  // Replace the existing useEffect in your CreateOrderForm component
 
   useEffect(() => {
     if (orderDefaults) {
@@ -193,74 +167,11 @@ const CreateOrderForm = () => {
       }
 
       // Pre-fill form values from orderbook click
-      const updates: Partial<FormData> = {};
-
-      // Common price fields
-      if (orderDefaults.price) {
-        updates.maxPrice = orderDefaults.price;
-        updates.stopPrice = orderDefaults.price;
-        updates.limitPrice = orderDefaults.price;
-      }
-
-      // Iceberg specific fields
-      if (orderDefaults.startPrice) {
-        updates.startPrice = orderDefaults.startPrice;
-      }
-
-      if (orderDefaults.endPrice) {
-        updates.endPrice = orderDefaults.endPrice;
-      }
-
-      if (orderDefaults.steps) {
-        updates.steps = orderDefaults.steps;
-      }
-
-      if (orderDefaults.expiry) {
-        updates.expiry = orderDefaults.expiry;
-      }
-
-      // Other order type fields
-      if (orderDefaults.distancePct) {
-        updates.distancePct = orderDefaults.distancePct;
-      }
-
-      if (orderDefaults.startDate) {
-        updates.startDate = orderDefaults.startDate;
-      }
-
-      if (orderDefaults.endDate) {
-        updates.endDate = orderDefaults.endDate;
-      }
-
-      if (orderDefaults.interval) {
-        updates.interval = orderDefaults.interval;
-      }
-
-      if (orderDefaults.stepPct) {
-        updates.stepPct = orderDefaults.stepPct;
-      }
-
-      // Coin pair
-      if (orderDefaults.fromCoin) {
-        updates.fromCoin = orderDefaults.fromCoin;
-      }
-
-      if (orderDefaults.toCoin) {
-        updates.toCoin = orderDefaults.toCoin;
-      }
-
-      if (orderDefaults.amount) {
-        updates.amount = orderDefaults.amount;
-      }
-
-      // Apply updates to form
-      Object.entries(updates).forEach(([key, value]) => {
-        setValue(key as keyof FormData, value);
-      });
+      applyOrderDefaults(orderDefaults, setValue);
 
       // Show notification
       toast.success(
-        `Pre-filled  ${orderDefaults.orderType} order at $${orderDefaults.price}`,
+        `Pre-filled ${orderDefaults.orderType} order at $${orderDefaults.price}`,
         {
           action: {
             label: "Clear",
@@ -270,6 +181,26 @@ const CreateOrderForm = () => {
       );
     }
   }, [orderDefaults, setValue, clearOrderDefaults]);
+
+  useEffect(() => {
+    setCurrentOrderType(orderType);
+  }, [orderType, setCurrentOrderType]);
+
+  useEffect(() => {
+    const subscription = watch((data) => {
+      // Only sync non-empty values to avoid unnecessary updates
+      const filteredData = Object.entries(data).reduce((acc, [key, value]) => {
+        if (value !== "" && value !== undefined && value !== null) {
+          acc[key as keyof FormData] = value;
+        }
+        return acc;
+      }, {} as Partial<FormData>);
+
+      updateFormData(filteredData);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch, updateFormData]);
 
   const orderTypes: Record<"Order" | "Strategy", OrderType[]> = {
     Order: [
@@ -363,146 +294,159 @@ const CreateOrderForm = () => {
     }
   };
 
-  const onSubmit = async (data: FormData) => {
-    // Define which fields belong to each order type
-    const getRelevantParams = (orderType: string, formData: FormData) => {
-      switch (orderType) {
-        case "TWAP":
-          return {
-            amount: formData.amount,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            interval: formData.interval,
-            maxPrice: formData.maxPrice,
-          };
+  const createOrderPayload = (data: FormData, relevantParams: any) => {
+    const orderId = uuidv4();
+    const apiOrderType = ORDER_TYPE_MAPPING[orderType];
 
-        case "Range":
-          return {
-            amount: formData.amount,
-            startPrice: formData.startPrice,
-            endPrice: formData.endPrice,
-            stepPct: formData.stepPct,
-            expiry: formData.expiry,
-          };
-
-        case "Iceberg":
-          return {
-            amount: formData.amount,
-            startPrice: formData.startPrice,
-            endPrice: formData.endPrice,
-            steps: formData.steps,
-            expiry: formData.expiry,
-          };
-
-        case "DCA":
-          return {
-            amount: formData.amount,
-            interval: formData.interval,
-            maxPrice: formData.maxPrice,
-            startDate: formData.startDate,
-          };
-
-        case "GridMarketMaking":
-          return {
-            amount: formData.amount,
-            startPrice: formData.startPrice,
-            endPrice: formData.endPrice,
-            stepPct: formData.stepPct,
-            stepMultiplier: formData.stepMultiplier,
-            singleSide: formData.singleSide,
-            tpPct: formData.tpPct,
-          };
-
-        case "MomentumReversal":
-          return {
-            amount: formData.amount,
-            rsiPeriod: formData.rsiPeriod,
-            rsimaPeriod: formData.rsimaPeriod,
-            slPct: formData.slPct,
-            tpPct: formData.tpPct,
-          };
-
-        case "RangeBreakout":
-          return {
-            amount: formData.amount,
-            adxPeriod: formData.adxPeriod,
-            adxmaPeriod: formData.adxmaPeriod,
-            emaPeriod: formData.emaPeriod,
-            slPct: formData.slPct,
-            tpPct: formData.tpPct,
-          };
-        case "StopLimit":
-          return {
-            amount: formData.amount,
-            stopPrice: formData.stopPrice,
-            limitPrice: formData.limitPrice,
-            expiry: formData.expiry,
-          };
-        case "ChaseLimit":
-          return {
-            amount: formData.amount,
-            distancePct: formData.distancePct,
-            expiry: formData.expiry,
-            maxPrice: formData.maxPrice,
-          };
-
-        default:
-          return {
-            amount: formData.amount,
-          };
-      }
+    return {
+      id: orderId,
+      type: apiOrderType,
+      pair: currentPair || `${data.fromCoin}/${data.toCoin}`,
+      size: parseFloat(data.size),
+      maker: address,
+      makerAsset: makerAsset,
+      takerAsset: takerAsset,
+      params: relevantParams,
     };
+  };
 
-    const relevantParams = getRelevantParams(orderType, data);
-
-    const strategy = {
-      id: new Date().toISOString(),
-      name: orderType,
-      type: orderType,
-      config: relevantParams,
-      // Include orderbook context if available
-      context: orderDefaults
-        ? {
-            triggeredFromOrderbook: true,
-            originalPrice: orderDefaults.price,
-            isBuy: orderDefaults.isBuy,
-            timestamp: orderDefaults.timestamp,
-          }
-        : null,
-    };
-
+  const createAndValidateOrder = async (
+    orderPayload: any,
+    signature: string,
+    userSignedPayload: string,
+  ) => {
     try {
-      const response = await fetch("http://localhost:40005/strategies", {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(strategy),
+        body: JSON.stringify({
+          ...orderPayload,
+          signature,
+          userSignedPayload,
+        }),
       });
 
-      if (response.ok) {
-        toast.success("Strategy saved successfully");
-        console.log("Strategy saved successfully");
-        console.log("Submitted params:", relevantParams); // Debug log
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Order creation failed");
+      }
 
-        // Clear orderbook defaults after successful submission
+      return await response.json();
+    } catch (error) {
+      console.error("Order creation error:", error);
+      throw error;
+    }
+  };
+
+  const handleAllowance = async (tokenAddress: string, amount: string) => {
+    try {
+      setPendingAllowance(true);
+      toast.info("Please approve token allowance in your wallet...");
+
+      const txHash = await writeContractAsync({
+        address: tokenAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [CONTRACT_ADDRESS, BigInt(amount)],
+      });
+
+      toast.success("Allowance approved! Transaction submitted.");
+      return txHash;
+    } catch (error) {
+      console.error("Allowance error:", error);
+      toast.error("Failed to approve allowance");
+      throw error;
+    } finally {
+      setPendingAllowance(false);
+    }
+  };
+
+  const onSubmit = async (data: FormData) => {
+    if (!address) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setOrderCreated(false);
+
+    try {
+      const relevantParams = getRelevantParams(orderType, data);
+      const orderPayload = createOrderPayload(data, relevantParams);
+
+      // Step 1: Sign the order payload (free signature)
+      toast.info("Please sign the order...");
+      const messageToSign = JSON.stringify(orderPayload);
+      const signature = await signMessageAsync({
+        message: messageToSign,
+      });
+
+      // Step 2: Create and validate order in one API call
+      toast.info("Creating order...");
+      const result = await createAndValidateOrder(
+        orderPayload,
+        signature,
+        messageToSign,
+      );
+
+      if (result.success) {
+        setOrderCreated(true);
+        toast.success("Order created successfully!");
+
+        // Step 3: Now handle allowance after successful order creation
+        toast.info("Order created! Now please approve token allowance...");
+        const allowanceTxHash = await handleAllowance(
+          makerAsset || "0x0000000000000000000000000000000000000000",
+          (parseFloat(data.size) * 1e18).toString(), // Convert to wei equivalent
+        );
+
+        toast.success("Complete! Order is now active and allowance approved.");
+
+        // Clear orderbook defaults and form data after successful submission
         clearOrderDefaults();
+        clearFormData();
 
-        // Optionally reset form
-        // reset();
+        // Reset form state and form fields
+        setOrderCreated(false);
+        reset(); // Reset react-hook-form to default values
+
+        console.log("Order created successfully:", result);
+        console.log("Submitted params:", relevantParams);
+        console.log("Pair info:", { currentPair, makerAsset, takerAsset });
+        console.log("Allowance tx hash:", allowanceTxHash);
       } else {
-        toast.error("Failed to save strategy");
-        console.error("Failed to save strategy");
+        toast.error(result.message || "Order creation failed");
       }
     } catch (error) {
-      toast.error("An error occurred while saving the strategy");
-      console.error("An error occurred while saving the strategy:", error);
+      toast.error(error.message || "Failed to submit order");
+      console.error("Order submission error:", error);
+      setOrderCreated(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleClearOrderbookData = () => {
     clearOrderDefaults();
+    clearFormData();
+    setOrderCreated(false);
     toast.success("Cleared orderbook data");
+  };
+
+  const getButtonText = () => {
+    if (!address) return "Connect Wallet";
+    if (isSubmitting) {
+      if (orderCreated && pendingAllowance) {
+        return "Approving Allowance...";
+      }
+      return "Creating Order...";
+    }
+    const orderTypeName = orderTypes[orderCategory].find(
+      (t) => t.id === orderType,
+    )?.name;
+    return `Create ${orderTypeName} ${orderCategory}`;
   };
 
   return (
@@ -607,7 +551,7 @@ const CreateOrderForm = () => {
                 <div className="w-1 h-1 bg-primary"></div>
               </label>
               <Controller
-                name="amount"
+                name="size"
                 control={control}
                 rules={{ required: "Size is required" }}
                 render={({ field }) => (
@@ -620,10 +564,10 @@ const CreateOrderForm = () => {
                   />
                 )}
               />
-              {errors.amount && (
+              {errors.size && (
                 <span className="text-xs text-red-400 flex items-center gap-1">
                   <div className="w-1 h-1 bg-red-400"></div>
-                  {errors.amount.message}
+                  {errors.size.message}
                 </span>
               )}
             </div>
@@ -654,17 +598,11 @@ const CreateOrderForm = () => {
 
             <Button
               type="submit"
-              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-primary/50 backdrop-blur-sm relative overflow-hidden group"
+              disabled={isSubmitting || !address}
+              className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
-              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <span className="relative z-10">
-                Create{" "}
-                {(() => {
-                  const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
-                  const selectedType = allOrderTypes.find(t => t.id === orderType);
-                  return selectedType?.name;
-                })()} Order
-              </span>
+              <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <span className="relative z-10">{getButtonText()}</span>
             </Button>
 
             {/* Info Footer */}
@@ -673,12 +611,11 @@ const CreateOrderForm = () => {
               <div className="flex items-center gap-2 relative z-10">
                 <Info className="w-3 h-3 text-primary flex-shrink-0" />
                 <div className="text-xs text-slate-300">
-                  {(() => {
-                    const strategyTypes = ["DCA", "GridMarketMaking", "MomentumReversal", "RangeBreakout", "TrendFollowing"];
-                    return strategyTypes.includes(orderType)
-                      ? "Runs continuously with automated strategy execution"
-                      : "Executed based on market conditions and parameters";
-                  })()}
+                  {orderCreated
+                    ? "Order created successfully! Please approve allowance to activate."
+                    : orderCategory === "Order"
+                      ? "Executed based on market conditions and parameters"
+                      : "Runs continuously with automated strategy execution"}
                 </div>
               </div>
             </div>

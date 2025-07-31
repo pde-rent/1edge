@@ -47,6 +47,13 @@ const TOKEN_ADDRESSES = {
   AAVE: "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",
 };
 
+const getTokenSymbolFromAddress = (address: string): string => {
+  const reverseMapping = Object.entries(TOKEN_ADDRESSES).find(
+    ([symbol, addr]) => addr.toLowerCase() === address.toLowerCase(),
+  );
+  return reverseMapping ? reverseMapping[0] : address.slice(0, 6);
+};
+
 // Parse feed symbol to extract token pair
 const parseFeedSymbol = (
   feedSymbol: string | null,
@@ -137,7 +144,8 @@ export default function OrderBookPanel({
   } | null>(null);
 
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
-  const { setOrderDefaults } = useOrderStore();
+
+  const { setOrderDefaults, setPairInfo } = useOrderStore();
 
   const parsedFeed = parseFeedSymbol(selectedFeed);
   const defaultPair = {
@@ -156,13 +164,18 @@ export default function OrderBookPanel({
       const quoteAddress = TOKEN_ADDRESSES[parsedFeed.quote];
 
       if (baseAddress && quoteAddress) {
-        setSelectedPair({
+        const newPair = {
           maker: baseAddress,
           taker: quoteAddress,
-        });
+        };
+
+        setSelectedPair(newPair);
+
+        const pairString = `${parsedFeed.base}/${parsedFeed.quote}`;
+        setPairInfo(pairString, baseAddress, quoteAddress);
       }
     }
-  }, [selectedFeed]);
+  }, [selectedFeed, setPairInfo]);
 
   useEffect(() => {
     if (selectedFeed && isConnected) {
@@ -204,17 +217,19 @@ export default function OrderBookPanel({
   });
 
   const handleCreateOrder = (price: number, isBuy: boolean) => {
-    // Calculate default price range for Iceberg orders
-    const priceSpread = price * 0.005; // 0.5% spread from clicked price
+    const priceSpread = price * 0.005;
     const startPrice = isBuy ? price - priceSpread : price;
     const endPrice = isBuy ? price : price + priceSpread;
 
-    // Get default expiry (30 days from now)
     const getDefaultExpiry = () => {
       const date = new Date();
       date.setDate(date.getDate() + 30);
       return date.toISOString().slice(0, 16);
     };
+
+    const makerSymbol = getTokenSymbolFromAddress(selectedPair.maker);
+    const takerSymbol = getTokenSymbolFromAddress(selectedPair.taker);
+    const pairString = `${makerSymbol}/${takerSymbol}`;
 
     const orderDefaults = {
       orderType: "Iceberg",
@@ -224,15 +239,17 @@ export default function OrderBookPanel({
       steps: "5",
       expiry: getDefaultExpiry(),
       isBuy,
-      fromCoin: parsedFeed?.base || "ETH",
-      toCoin: parsedFeed?.quote || "USDT",
+      fromCoin: parsedFeed?.base || makerSymbol,
+      toCoin: parsedFeed?.quote || takerSymbol,
       timestamp: Date.now(),
+      currentPair: pairString,
+      makerAsset: selectedPair.maker,
+      takerAsset: selectedPair.taker,
     };
 
     setOrderDefaults(orderDefaults);
   };
 
-  // Handle clicks between levels for mid-price orders
   const handleCreateMidPriceOrder = (
     upperPrice: number,
     lowerPrice: number,
@@ -251,6 +268,11 @@ export default function OrderBookPanel({
       return date.toISOString().slice(0, 16);
     };
 
+    // Create pair string in MAKER/TAKER format
+    const makerSymbol = getTokenSymbolFromAddress(selectedPair.maker);
+    const takerSymbol = getTokenSymbolFromAddress(selectedPair.taker);
+    const pairString = `${makerSymbol}/${takerSymbol}`;
+
     const orderDefaults = {
       orderType: "Iceberg",
       price: midPrice.toString(),
@@ -259,14 +281,16 @@ export default function OrderBookPanel({
       steps: "5",
       expiry: getDefaultExpiry(),
       isBuy,
-      fromCoin: parsedFeed?.base || "ETH",
-      toCoin: parsedFeed?.quote || "USDT",
+      fromCoin: parsedFeed?.base || makerSymbol,
+      toCoin: parsedFeed?.quote || takerSymbol,
       timestamp: Date.now(),
+      currentPair: pairString,
+      makerAsset: selectedPair.maker,
+      takerAsset: selectedPair.taker,
     };
 
     setOrderDefaults(orderDefaults);
   };
-
   const renderLevel = (
     level: AggregatedLevel,
     isBid: boolean,

@@ -230,7 +230,6 @@ const MomentumReversalForm = ({ control, errors }: any) => {
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 bg-primary"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
-              <Activity className="w-3 h-3" />
               Momentum Reversal Summary
             </div>
           </div>

@@ -1,15 +1,23 @@
 // @ts-nocheck
-import { useEffect, useRef, useState } from 'react';
-import useSWR from 'swr';
-import { createChart, ColorType, IChartApi, ISeriesApi, CandlestickData, CandlestickSeries, BarSeries, LineSeries } from 'lightweight-charts';
-import { fetcher } from '../utils/fetcher';
-import { useWebSocketContext } from '../contexts/WebSocketContext';
-// Use path aliases
-import { API_URL, THEME } from '@common/constants';
-import type { TickerFeed, ApiResponse } from '@common/types';
-import { roundSig } from '@common/utils';
-import { Badge } from '@/components/ui/badge';
-import { PanelWrapper } from './common/Panel';
+import { useEffect, useRef, useState } from "react";
+import useSWR from "swr";
+import {
+  createChart,
+  ColorType,
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+  CandlestickSeries,
+  BarSeries,
+  LineSeries,
+} from "lightweight-charts";
+import { fetcher } from "../utils/fetcher";
+import { useWebSocketContext } from "../contexts/WebSocketContext";
+import { API_URL, THEME } from "@common/constants";
+import type { TickerFeed, ApiResponse } from "@common/types";
+import { roundSig } from "@common/utils";
+import { Badge } from "@/components/ui/badge";
+import { PanelWrapper } from "./common/Panel";
 import {
   Select,
   SelectContent,
@@ -17,8 +25,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { TrendingUp, BarChart3, Activity, ChevronDown } from 'lucide-react';
-import StatusIndicator from './StatusIndicator';
+import { TrendingUp, BarChart3, Activity, ChevronDown } from "lucide-react";
+import StatusIndicator from "./StatusIndicator";
+import AuthComponent from "./AuthComponent";
 
 // Custom candlestick icon component
 function CandlestickIcon({ className }: { className?: string }) {
@@ -32,20 +41,19 @@ function CandlestickIcon({ className }: { className?: string }) {
   );
 }
 
-// Chart type options
 const CHART_TYPE_OPTIONS = [
-  { value: 'candles', label: 'Candles', icon: CandlestickIcon },
+  { value: 'candles',  label: 'Candles', icon: CandlestickIcon },
   { value: 'bars', label: 'Bars', icon: BarChart3 },
   { value: 'line', label: 'Line', icon: TrendingUp }
 ];
 
 // Timeframe options
 const TIMEFRAME_OPTIONS = [
-  { value: '5', label: '5s' },
-  { value: '20', label: '20s' },
-  { value: '60', label: '1m' },
-  { value: '300', label: '5m' },
-  { value: '1800', label: '30m' }
+  { value: "5", label: "5s" },
+  { value: "20", label: "20s" },
+  { value: "60", label: "1m" },
+  { value: "300", label: "5m" },
+  { value: "1800", label: "30m" },
 ];
 
 interface ActiveFeedPanelProps {
@@ -139,37 +147,50 @@ function FeedTag({ children }: { children: React.ReactNode }) {
  * ActiveFeedPanel displays a chart and info for a selected feed.
  * @param feedId - The feed symbol to display.
  */
-export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPanelProps) {
+export default function ActiveFeedPanel({
+  feedId,
+  onFeedSelect,
+}: ActiveFeedPanelProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<any> | null>(null);
-  const [chartType, setChartType] = useState<'candles' | 'bars' | 'line'>('candles');
+  const [chartType, setChartType] = useState<"candles" | "bars" | "line">(
+    "candles",
+  );
   const [realtimePrice, setRealtimePrice] = useState(null);
-  const [timeframe, setTimeframe] = useState('20'); // Default 20 seconds as string for ToggleGroup
+  const [timeframe, setTimeframe] = useState("20"); // Default 20 seconds as string for ToggleGroup
   const tickBufferRef = useRef({}); // Store ticks per candle period
 
   const { data: apiResponse, error } = useSWR<ApiResponse<TickerFeed>>(
     feedId ? `/api/feeds/${feedId}` : null,
     fetcher,
-    { refreshInterval: 5000 }
+    { refreshInterval: 5000 },
   );
 
   const { data: historyResponse } = useSWR<ApiResponse<TickerFeed>>(
     feedId ? `/api/feeds/history/${feedId}` : null,
-    fetcher
+    fetcher,
   );
 
   // Fetch all feeds for the dropdown
-  const { data: feedsResponse } = useSWR<ApiResponse<any[]>>('/api/feeds', fetcher);
+  const { data: feedsResponse } = useSWR<ApiResponse<any[]>>(
+    "/api/feeds",
+    fetcher,
+  );
 
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
 
   // Set default feed if none selected
   useEffect(() => {
-    if (feedsResponse?.success && feedsResponse.data && feedsResponse.data.length > 0 && !feedId) {
+    if (
+      feedsResponse?.success &&
+      feedsResponse.data &&
+      feedsResponse.data.length > 0 &&
+      !feedId
+    ) {
       // Look for BTCUSDC first
-      const btcFeed = feedsResponse.data.find(feed =>
-        feed.symbol && feed.symbol.includes('BTCUSDC')
+      const btcFeed = feedsResponse.data.find(
+        (feed) => feed.symbol && feed.symbol.includes("BTCUSDC"),
       );
 
       if (btcFeed && btcFeed.symbol) {
@@ -188,17 +209,19 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
   useEffect(() => {
     if (feedId && isConnected) {
       const handleMessage = (message) => {
-        if (message.type === 'price_update' && message.symbol === feedId) {
+        if (message.type === "price_update" && message.symbol === feedId) {
           const priceData = message.data;
           setRealtimePrice(priceData);
 
           if (priceData.mid && seriesRef.current) {
             const currentTime = Math.floor(Date.now() / 1000);
             const timeframeSeconds = parseInt(timeframe);
-            const candleTime = Math.floor(currentTime / timeframeSeconds) * timeframeSeconds;
+            const candleTime =
+              Math.floor(currentTime / timeframeSeconds) * timeframeSeconds;
 
             if (!tickBufferRef.current[candleTime]) {
-              const lastCandle = tickBufferRef.current[Object.keys(tickBufferRef.current).pop()];
+              const lastCandle =
+                tickBufferRef.current[Object.keys(tickBufferRef.current).pop()];
               tickBufferRef.current[candleTime] = {
                 open: lastCandle ? lastCandle.close : priceData.mid,
                 high: priceData.mid,
@@ -213,10 +236,10 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
             candle.low = Math.min(candle.low, priceData.mid);
             candle.close = priceData.mid;
 
-            if (chartType === 'line') {
+            if (chartType === "line") {
               seriesRef.current.update({
                 time: currentTime,
-                value: priceData.mid
+                value: priceData.mid,
               });
             } else {
               seriesRef.current.update({
@@ -224,7 +247,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                 open: candle.open,
                 high: candle.high,
                 low: candle.low,
-                close: candle.close
+                close: candle.close,
               });
             }
           }
@@ -262,11 +285,11 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
         borderColor: THEME.chart.borderColor,
         timeVisible: true,
         secondsVisible: true,
-        rightOffset: 5
+        rightOffset: 5,
       },
       autoSize: true,
       localization: {
-        priceFormatter: price => roundSig(price, 6).toLocaleString(undefined),
+        priceFormatter: (price) => roundSig(price, 6).toLocaleString(undefined),
       },
       crosshair: {
         vertLine: {
@@ -278,11 +301,11 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
       },
       watermark: {
         visible: true,
-        color: 'rgba(51, 65, 85, 0.3)', // slate-700 with opacity
-        text: '1edge',
+        color: "rgba(51, 65, 85, 0.3)", // slate-700 with opacity
+        text: "1edge",
         fontSize: 18,
-        horzAlign: 'right',
-        vertAlign: 'bottom',
+        horzAlign: "right",
+        vertAlign: "bottom",
       },
     });
     chartRef.current = chart;
@@ -308,7 +331,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
 
     // Create new series with proper colors
     let newSeries;
-    if (chartType === 'candles') {
+    if (chartType === "candles") {
       newSeries = chart.addSeries(CandlestickSeries, {
         upColor: THEME.chart.upColor,
         downColor: THEME.chart.downColor,
@@ -317,7 +340,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
         wickDownColor: THEME.chart.downColor,
         wickUpColor: THEME.chart.upColor,
       });
-    } else if (chartType === 'bars') {
+    } else if (chartType === "bars") {
       newSeries = chart.addSeries(BarSeries, {
         upColor: THEME.chart.upColor,
         downColor: THEME.chart.downColor,
@@ -337,28 +360,33 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
     // Load historical data
     if (historyResponse?.success && historyResponse.data?.history?.ts) {
       const rawData = historyResponse.data.history;
-      const formattedData = rawData.ts.map((timestamp, index) => {
-        let time = timestamp;
-        if (typeof time === 'string') time = parseInt(time, 10);
-        if (time > 1000000000000) time = Math.floor(time / 1000);
+      const formattedData = rawData.ts
+        .map((timestamp, index) => {
+          let time = timestamp;
+          if (typeof time === "string") time = parseInt(time, 10);
+          if (time > 1000000000000) time = Math.floor(time / 1000);
 
-        const now = Math.floor(Date.now() / 1000);
-        if (time > now || time < 1262304000) {
-          time = now - ((rawData.ts.length - index) * 60);
-        }
+          const now = Math.floor(Date.now() / 1000);
+          if (time > now || time < 1262304000) {
+            time = now - (rawData.ts.length - index) * 60;
+          }
 
-        return {
-          time,
-          open: rawData.o[index],
-          high: rawData.h[index],
-          low: rawData.l[index],
-          close: rawData.c[index],
-          value: rawData.c[index],
-        };
-      }).sort((a, b) => a.time - b.time);
+          return {
+            time,
+            open: rawData.o[index],
+            high: rawData.h[index],
+            low: rawData.l[index],
+            close: rawData.c[index],
+            value: rawData.c[index],
+          };
+        })
+        .sort((a, b) => a.time - b.time);
 
-      if (chartType === 'line') {
-        const lineData = formattedData.map(item => ({ time: item.time, value: item.close }));
+      if (chartType === "line") {
+        const lineData = formattedData.map((item) => ({
+          time: item.time,
+          value: item.close,
+        }));
         newSeries.setData(lineData);
       } else {
         newSeries.setData(formattedData);
@@ -403,20 +431,32 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
   }
 
   // Parse feed symbol for display
-  const parsedSymbol = feedId ? parseFeedSymbol(feedId) : { main: '', tags: [] };
+  const parsedSymbol = feedId
+    ? parseFeedSymbol(feedId)
+    : { main: "", tags: [] };
   const latestPrice = realtimePrice?.mid
     ? roundSig(realtimePrice.mid, 6).toLocaleString()
-    : (apiResponse?.success && apiResponse.data?.last?.mid
+    : apiResponse?.success && apiResponse.data?.last?.mid
       ? roundSig(apiResponse.data.last.mid, 6).toLocaleString()
-      : '-');
+      : "-";
 
   // Display enhanced index data if available
-  const indexMetrics = realtimePrice ? {
-    velocity: realtimePrice.velocity ? roundSig(realtimePrice.velocity, 2).toLocaleString() : '0',
-    dispersion: realtimePrice.dispersion ? `${roundSig(realtimePrice.dispersion, 2).toLocaleString()}%` : '0%',
-    vbid: realtimePrice.vbid ? roundSig(realtimePrice.vbid, 2).toLocaleString() : '0',
-    vask: realtimePrice.vask ? roundSig(realtimePrice.vask, 2).toLocaleString() : '0'
-  } : null;
+  const indexMetrics = realtimePrice
+    ? {
+        velocity: realtimePrice.velocity
+          ? roundSig(realtimePrice.velocity, 2).toLocaleString()
+          : "0",
+        dispersion: realtimePrice.dispersion
+          ? `${roundSig(realtimePrice.dispersion, 2).toLocaleString()}%`
+          : "0%",
+        vbid: realtimePrice.vbid
+          ? roundSig(realtimePrice.vbid, 2).toLocaleString()
+          : "0",
+        vask: realtimePrice.vask
+          ? roundSig(realtimePrice.vask, 2).toLocaleString()
+          : "0",
+      }
+    : null;
 
   return (
     <PanelWrapper>
@@ -505,6 +545,7 @@ export default function ActiveFeedPanel({ feedId, onFeedSelect }: ActiveFeedPane
                 })}
               </SelectContent>
             </Select>
+            <AuthComponent/>
           </div>
 
           {/* Center: Current Price */}

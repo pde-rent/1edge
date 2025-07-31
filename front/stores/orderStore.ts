@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
+import { FormData } from "../components/Form/helpers"; // Import your FormData type
 
 interface OrderDefaults {
   orderType: string;
@@ -14,7 +15,6 @@ interface OrderDefaults {
   endPrice?: string;
   steps?: string;
   expiry?: string;
-  // Other order type fields can be added here as needed
   stopPrice?: string;
   limitPrice?: string;
   distancePct?: string;
@@ -24,15 +24,32 @@ interface OrderDefaults {
   interval?: string;
   stepPct?: string;
   currentPair: string;
-  makerAsset: string;
-  takerAsset: string;
+  makerAsset: string; // Address
+  takerAsset: string; // Address
 }
 
 interface OrderStore {
   orderDefaults: OrderDefaults | null;
+  
+  // Current form state sync
+  currentFormData: Partial<FormData> | null;
+  currentOrderType: string | null;
+  
+  // Trading pair info
+  currentPair: string;
+  makerAsset: string; // Address
+  takerAsset: string; // Address
 
   setOrderDefaults: (defaults: OrderDefaults) => void;
   clearOrderDefaults: () => void;
+
+  // Form sync methods
+  updateFormData: (formData: Partial<FormData>) => void;
+  setCurrentOrderType: (orderType: string) => void;
+  clearFormData: () => void;
+  
+  // Trading pair methods
+  setPairInfo: (pair: string, makerAsset: string, takerAsset: string) => void;
 
   isOrderFormOpen: boolean;
   setOrderFormOpen: (open: boolean) => void;
@@ -50,16 +67,25 @@ export const useOrderStore = create<OrderStore>()(
     persist(
       (set, get) => ({
         orderDefaults: null,
+        currentFormData: null,
+        currentOrderType: null,
+        currentPair: "",
+        makerAsset: "",
+        takerAsset: "",
         isOrderFormOpen: false,
         orderSettings: {
           defaultOrderType: "Iceberg",
           defaultAmount: "",
           autoFillFromOrderbook: true,
         },
+
         setOrderDefaults: (defaults) => {
           set(
             {
               orderDefaults: defaults,
+              currentPair: defaults.currentPair,
+              makerAsset: defaults.makerAsset,
+              takerAsset: defaults.takerAsset,
               isOrderFormOpen: get().orderSettings.autoFillFromOrderbook,
             },
             false,
@@ -75,6 +101,55 @@ export const useOrderStore = create<OrderStore>()(
             },
             false,
             "clearOrderDefaults",
+          );
+        },
+
+        // Form sync methods
+        updateFormData: (formData) => {
+          const state = get();
+          set(
+            {
+              currentFormData: {
+                ...state.currentFormData,
+                ...formData,
+              },
+            },
+            false,
+            "updateFormData",
+          );
+        },
+
+        setCurrentOrderType: (orderType) => {
+          set(
+            {
+              currentOrderType: orderType,
+            },
+            false,
+            "setCurrentOrderType",
+          );
+        },
+
+        clearFormData: () => {
+          set(
+            {
+              currentFormData: null,
+              currentOrderType: null,
+            },
+            false,
+            "clearFormData",
+          );
+        },
+
+        // Trading pair methods
+        setPairInfo: (pair, makerAsset, takerAsset) => {
+          set(
+            {
+              currentPair: pair,
+              makerAsset,
+              takerAsset,
+            },
+            false,
+            "setPairInfo",
           );
         },
 
@@ -96,6 +171,9 @@ export const useOrderStore = create<OrderStore>()(
         name: "order-store",
         partialize: (state) => ({
           orderSettings: state.orderSettings,
+          currentPair: state.currentPair,
+          makerAsset: state.makerAsset,
+          takerAsset: state.takerAsset,
         }),
       },
     ),
