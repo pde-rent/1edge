@@ -24,7 +24,10 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -104,10 +107,7 @@ export interface Coin {
 }
 
 const CreateOrderForm = () => {
-  const [orderCategory, setOrderCategory] = useState<"Order" | "Strategy">(
-    "Order",
-  );
-  const [orderType, setOrderType] = useState<string>("TWAP");
+  const [orderType, setOrderType] = useState<string>("Iceberg");
 
   // Zustand store integration
   const { orderDefaults, clearOrderDefaults, orderSettings, setOrderFormOpen } =
@@ -122,18 +122,27 @@ const CreateOrderForm = () => {
     reset,
   } = useForm<FormData>({
     defaultValues: {
-      // TWAP defaults
-      startDate: new Date().toISOString().slice(0, 16),
-      endDate: (() => {
-        const date = new Date();
-        date.setMonth(date.getMonth() + 1);
-        return date.toISOString().slice(0, 16);
+      // Default dates: startDate = now + 10min rounded down, endDate = startDate + 1 week
+      startDate: (() => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 10);
+        now.setMinutes(Math.floor(now.getMinutes() / 10) * 10); // Round down to nearest 10 minutes
+        now.setSeconds(0, 0);
+        return now.toISOString().slice(0, 16);
       })(),
-      interval: "24",
+      endDate: (() => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + 10);
+        now.setMinutes(Math.floor(now.getMinutes() / 10) * 10);
+        now.setSeconds(0, 0);
+        now.setDate(now.getDate() + 7); // Add 1 week
+        return now.toISOString().slice(0, 16);
+      })(),
+      interval: "86400000", // 1 day in ms
       maxPrice: "",
       startPrice: "",
       endPrice: "",
-      stepPct: "0.3",
+      stepPct: "0.5", // 0.5%
       expiry: getDefaultExpiry(),
       steps: "",
 
@@ -181,22 +190,6 @@ const CreateOrderForm = () => {
       if (orderDefaults.orderType) {
         setOrderType(orderDefaults.orderType);
 
-        // Set the category based on order type
-        const orderTypes = {
-          Order: ["TWAP", "Range", "Iceberg", "StopLimit", "ChaseLimit"],
-          Strategy: [
-            "DCA",
-            "GridMarketMaking",
-            "MomentumReversal",
-            "RangeBreakout",
-            "TrendFollowing",
-          ],
-        };
-
-        const category = orderTypes.Order.includes(orderDefaults.orderType)
-          ? "Order"
-          : "Strategy";
-        setOrderCategory(category);
       }
 
       // Pre-fill form values from orderbook click
@@ -514,14 +507,76 @@ const CreateOrderForm = () => {
 
   return (
     <PanelWrapper>
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold pl-4 pt-3 relative z-10 text-teal-600">
-          Create Order
+      <div className="flex items-center gap-4 px-4 py-3 h-[60px] bg-background backdrop-blur-xl">
+        <h2 className="text-lg font-bold relative z-10 text-primary">
+          Create
         </h2>
+        
+        {/* Order Type Selector */}
+        <Select value={orderType} onValueChange={setOrderType}>
+          <SelectTrigger className="flex items-center gap-2 px-4 py-3 bg-primary/20 backdrop-blur-sm rounded-lg text-foreground hover:bg-primary/30 transition-all duration-300 border-0 w-auto cursor-pointer">
+            <SelectValue>
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
+                  const selectedType = allOrderTypes.find(t => t.id === orderType);
+                  const IconComponent = selectedType?.icon;
+                  return (
+                    <>
+                      {IconComponent && <IconComponent className="w-4 h-4" />}
+                      <span className="font-medium">{selectedType?.name} Order</span>
+                    </>
+                  );
+                })()}
+              </div>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/50 shadow-2xl">
+            <SelectGroup>
+              <SelectLabel className="text-primary font-medium">Orders</SelectLabel>
+              {orderTypes.Order.map((type) => {
+                const IconComponent = type.icon;
+                return (
+                  <SelectItem
+                    key={type.id}
+                    value={type.id}
+                    className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComponent className="w-4 h-4" />
+                      <span>{type.name} - {type.description}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+            <SelectSeparator className="bg-primary/30" />
+            <SelectGroup>
+              <SelectLabel className="text-primary font-medium">Strategies</SelectLabel>
+              {orderTypes.Strategy.map((type) => {
+                const IconComponent = type.icon;
+                return (
+                  <SelectItem
+                    key={type.id}
+                    value={type.id}
+                    className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComponent className="w-4 h-4" />
+                      <span>{type.name} - {type.description}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
 
+        <div className="flex-1" />
+        
         {/* Show indicator if order was triggered from orderbook */}
         {orderDefaults && (
-          <div className="flex items-center gap-2 pr-4 pt-3">
+          <div className="flex items-center gap-2">
             <div className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full border border-yellow-500/30">
               From Orderbook
             </div>
@@ -537,91 +592,19 @@ const CreateOrderForm = () => {
         )}
       </div>
 
-      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
+      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-background backdrop-blur-xl">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="h-full flex flex-col"
         >
           {/* Order Configuration - Scrollable */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Order Type & Category Selection */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-teal-200">
-                  Type & Parameters
-                </span>
-                <div className="h-px flex-1 bg-gradient-to-r from-teal-500/30 to-transparent"></div>
-              </div>
-
-              {/* Category Toggle */}
-              <div className="flex bg-black/60 backdrop-blur-sm p-1 border border-slate-700/50">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setOrderCategory("Order");
-                    setOrderType("TWAP");
-                  }}
-                  variant={orderCategory === "Order" ? "default" : "ghost"}
-                  className={`flex-1 py-2 px-3 text-sm font-medium transition-all duration-300 ${
-                    orderCategory === "Order"
-                      ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-300/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
-                  }`}
-                >
-                  Orders
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setOrderCategory("Strategy");
-                    setOrderType("DCA");
-                  }}
-                  variant={orderCategory === "Strategy" ? "default" : "ghost"}
-                  className={`flex-1 py-2 px-3 text-sm font-medium transition-all duration-300 ${
-                    orderCategory === "Strategy"
-                      ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-400/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
-                  }`}
-                >
-                  Strategies
-                </Button>
-              </div>
-
-              {/* Type Selection using shadcn Select */}
-              <div className="relative">
-                <Select value={orderType} onValueChange={setOrderType}>
-                  <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80">
-                    <SelectValue placeholder="Select order type" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
-                    {orderTypes[orderCategory].map((type) => {
-                      const IconComponent = type.icon;
-                      return (
-                        <SelectItem
-                          key={type.id}
-                          value={type.id}
-                          className="text-white hover:bg-slate-800 focus:bg-slate-800"
-                        >
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-4 h-4" />
-                            <span>
-                              {type.name} - {type.description}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             {/* Size in USD */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+              <label className="text-sm font-medium text-primary flex items-center gap-2">
                 Size (USD)
-                <div className="w-1 h-1 bg-teal-400"></div>
+                <div className="w-1 h-1 bg-primary"></div>
               </label>
               <Controller
                 name="amount"
@@ -632,7 +615,7 @@ const CreateOrderForm = () => {
                     {...field}
                     type="number"
                     step="0.01"
-                    className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80"
+                    className="w-full bg-card backdrop-blur-sm border-primary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 hover:bg-card/80"
                     placeholder="Enter amount in USD"
                   />
                 )}
@@ -647,16 +630,16 @@ const CreateOrderForm = () => {
 
             {/* Dynamic Form Fields Based on Order Type */}
             <div className="space-y-3">
-              <div className="border-t border-teal-500/20 pt-3 relative">
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+              <div className="border-t border-primary/50 pt-3 relative">
+                <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-teal-100 flex items-center gap-2">
-                    {
-                      orderTypes[orderCategory].find((t) => t.id === orderType)
-                        ?.name
-                    }{" "}
-                    Parameters
-                    <div className="w-1 h-1 bg-emerald-400"></div>
+                  <span className="text-sm font-medium text-primary flex items-center gap-2">
+                    {(() => {
+                      const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
+                      const selectedType = allOrderTypes.find(t => t.id === orderType);
+                      return selectedType?.name;
+                    })()} Parameters
+                    <div className="w-1 h-1 bg-success"></div>
                   </span>
                 </div>
 
@@ -666,33 +649,36 @@ const CreateOrderForm = () => {
           </div>
 
           {/* Footer with Submit Button */}
-          <div className="border-t border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md p-4 flex-shrink-0 relative">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+          <div className="border-t border-primary/50 bg-background backdrop-blur-md p-4 flex-shrink-0 relative">
+            <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
 
             <Button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group"
+              className="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-primary/50 backdrop-blur-sm relative overflow-hidden group"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <span className="relative z-10">
                 Create{" "}
-                {
-                  orderTypes[orderCategory].find((t) => t.id === orderType)
-                    ?.name
-                }{" "}
-                {orderCategory}
+                {(() => {
+                  const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
+                  const selectedType = allOrderTypes.find(t => t.id === orderType);
+                  return selectedType?.name;
+                })()} Order
               </span>
             </Button>
 
             {/* Info Footer */}
             <div className="mt-3 p-3 bg-black/40 backdrop-blur-sm border border-slate-600/30 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
+              <div className="absolute inset-0 bg-primary/5"></div>
               <div className="flex items-center gap-2 relative z-10">
-                <Info className="w-3 h-3 text-teal-400 flex-shrink-0" />
+                <Info className="w-3 h-3 text-primary flex-shrink-0" />
                 <div className="text-xs text-slate-300">
-                  {orderCategory === "Order"
-                    ? "Executed based on market conditions and parameters"
-                    : "Runs continuously with automated strategy execution"}
+                  {(() => {
+                    const strategyTypes = ["DCA", "GridMarketMaking", "MomentumReversal", "RangeBreakout", "TrendFollowing"];
+                    return strategyTypes.includes(orderType)
+                      ? "Runs continuously with automated strategy execution"
+                      : "Executed based on market conditions and parameters";
+                  })()}
                 </div>
               </div>
             </div>
