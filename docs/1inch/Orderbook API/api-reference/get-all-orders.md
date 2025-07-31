@@ -3,6 +3,7 @@
 Retrieve all orders with optional filtering parameters.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph LR
     subgraph "Query Parameters"
         PAGE[page] --> FILTER[Filter Engine]

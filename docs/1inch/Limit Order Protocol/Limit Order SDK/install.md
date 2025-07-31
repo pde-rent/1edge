@@ -1,6 +1,6 @@
 # 1inch Limit Order Protocol v4 SDK Installation
 
-> **🚀 Quick Start Guide**  
+> ** Quick Start Guide**  
 > This guide covers installation and basic setup of the 1inch Limit Order Protocol SDK for seamless integration into your DeFi applications.
 
 ---
@@ -90,13 +90,13 @@ const signature = await maker.signTypedData(
   typedData.message,
 );
 
-// 🚀 Submit to orderbook
+//  Submit to orderbook
 await sdk.submitOrder(order, signature);
 ```
 
 ### RFQ Order Creation
 
-> **💡 Pro Tip**  
+> ** Pro Tip**  
 > RfqOrder is a lightweight, gas-efficient version of LimitOrder optimized for market makers. It doesn't support multiple fills and extensions but offers superior performance.
 
 ```javascript
@@ -112,7 +112,7 @@ const maker = new Wallet(privateKey);
 const expiresIn = 120n; // ⏰ 2 minutes
 const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 
-// 🏗️ Create RFQ order
+//  Create RFQ order
 const order = new RfqOrder(
   {
     makerAsset: new Address("0xdac17f958d2ee523a2206206994597c13d831ec7"), // 💵 USDT
@@ -122,7 +122,7 @@ const order = new RfqOrder(
     maker: new Address(maker.address),
   },
   {
-    allowedSender: new Address("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"), // 🎯 Specific taker only
+    allowedSender: new Address("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"), //  Specific taker only
     expiration,
     nonce: randBigInt(UINT_40_MAX),
   },
@@ -139,7 +139,7 @@ const signature = await maker.signTypedData(
 
 #### RFQ vs Standard Orders Comparison
 
-| Feature            | ✅ Standard Orders | ⚡ RFQ Orders    |
+| Feature            | ✅ Standard Orders |  RFQ Orders    |
 | ------------------ | ------------------ | ---------------- |
 | **Gas Efficiency** | 🟡 Moderate        | 🟢 **High**      |
 | **Partial Fills**  | ✅ Supported       | ❌ Not supported |
@@ -198,13 +198,13 @@ import { AxiosProviderConnector } from "@1inch/limit-order-sdk/axios";
 const api = new Api({
   networkId: 1, // 🌍 Ethereum mainnet
   authKey: "your_api_key", // 🔑 Get from https://portal.1inch.dev/
-  httpConnector: new AxiosProviderConnector(), // 🔧 Axios-based connector
+  httpConnector: new AxiosProviderConnector(), //  Axios-based connector
 });
 ```
 
 #### HTTP Connector Comparison
 
-| Connector                  | 📦 Dependencies   | 🔧 Setup      | 🚀 Performance  |
+| Connector                  | 📦 Dependencies   |  Setup      |  Performance  |
 | -------------------------- | ----------------- | ------------- | --------------- |
 | **FetchProviderConnector** | ✅ Built-in       | 🟢 Simple     | 🟢 Native       |
 | **AxiosProviderConnector** | ⚠️ Requires axios | 🟡 Extra step | 🟢 Feature-rich |
@@ -234,7 +234,7 @@ bun test
 
 ### Integration Tests
 
-> **⚙️ Advanced Testing**  
+> ** Advanced Testing**  
 > Integration tests use Foundry fork nodes to simulate real blockchain transactions in a controlled environment.
 
 #### Setup Dependencies
@@ -253,12 +253,12 @@ bun test:integration
 
 ### Test Coverage Overview
 
-| Test Type             | 🎯 Purpose           | 📁 Location           | ⚡ Speed    |
+| Test Type             |  Purpose           | 📁 Location           |  Speed    |
 | --------------------- | -------------------- | --------------------- | ----------- |
 | **Unit Tests**        | Component validation | `/tests/unit/`        | 🟢 Fast     |
 | **Integration Tests** | End-to-end workflows | `/tests/integration/` | 🟡 Moderate |
 
-> **💡 Development Tip**  
+> ** Development Tip**  
 > Run unit tests during development for quick feedback, and integration tests before deployment to ensure full compatibility.
 
 ---
@@ -270,9 +270,9 @@ bun test:integration
 ### What's Next?
 
 1. **📖 Read the Integration Guide** - [Learn order creation and management](./integration.md)
-2. **🏗️ Explore SDK Features** - [Review the complete SDK overview](./overview.md)
-3. **⚙️ Understand Contracts** - [Study maker and taker contracts](../limit-order-maker-contract.md)
-4. **🔧 Build Extensions** - [Add custom functionality](../extensions.md)
+2. ** Explore SDK Features** - [Review the complete SDK overview](./overview.md)
+3. ** Understand Contracts** - [Study maker and taker contracts](../limit-order-maker-contract.md)
+4. ** Build Extensions** - [Add custom functionality](../extensions.md)
 
 ### Need Help?
 

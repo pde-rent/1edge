@@ -3,6 +3,7 @@
 Retrieve prices for specific tokens using either GET (single token) or POST (multiple tokens) requests. This endpoint provides flexible price querying with currency options.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph TD
     subgraph "Request Types"
         SINGLE[Single Token GET] --> VALIDATE1[Validate Token Address]
@@ -616,7 +617,7 @@ class PriceAlertSystem {
 
   async start(checkInterval = 30000) {
     this.isRunning = true;
-    console.log(`🎯 Price alert system started (checking every ${checkInterval/1000}s)`);
+    console.log(` Price alert system started (checking every ${checkInterval/1000}s)`);
 
     while (this.isRunning) {
       try {

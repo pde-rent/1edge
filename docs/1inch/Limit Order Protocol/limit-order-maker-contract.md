@@ -1,9 +1,10 @@
 # Limit Order Maker Contract
 
-> **⚙️ Core Protocol Engine**  
+> ** Core Protocol Engine**  
 > Deep dive into the essential functions and classes that power limit order creation and management in the 1inch Limit Order Protocol v4.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph TD
     subgraph "Order Creation Flow"
         MAKER[Maker] --> BUILD[Build Order]
@@ -32,7 +33,7 @@ graph TD
 
 ## Core Calculation Functions
 
-> **📊 Precision Mathematics**  
+> ** Precision Mathematics**  
 > These utility functions handle the precise calculations required for proportional order fills and amount conversions.
 
 ### Amount Calculation Methods
@@ -125,7 +126,7 @@ calcMakingAmount = (swapTakerAmount × orderMakerAmount) ÷ orderTakerAmount
 
 ### High Bits (Control Flags)
 
-| Bit     | 🎯 Flag Name                    | ✅ When Set               | ❌ When Clear         | 💡 Use Case           |
+| Bit     |  Flag Name                    | ✅ When Set               | ❌ When Clear         |  Use Case           |
 | ------- | ------------------------------- | ------------------------- | --------------------- | --------------------- |
 | **255** | `NO_PARTIAL_FILLS_FLAG`         | Partial fills disabled    | Partial fills allowed | All-or-nothing orders |
 | **254** | `ALLOW_MULTIPLE_FILLS_FLAG`     | Multiple fills enabled    | Single fill only      | Market maker orders   |
@@ -138,26 +139,26 @@ calcMakingAmount = (swapTakerAmount × orderMakerAmount) ÷ orderTakerAmount
 
 ### Low Bits (Data Fields)
 
-| Bits        | 📝 Field           | 🎯 Purpose                               | 💡 Details                               |
+| Bits        | 📝 Field           |  Purpose                               |  Details                               |
 | ----------- | ------------------ | ---------------------------------------- | ---------------------------------------- |
 | **120-199** | **Allowed Sender** | Restrict order fills to specific address | Last 10 bytes of address (80 bits)       |
 | **80-119**  | **Expiration**     | Order deadline timestamp                 | Unix timestamp (40 bits, max ~35k years) |
 | **40-79**   | **Nonce/Epoch**    | Unique order identifier                  | For cancellation and tracking            |
 | **0-39**    | **Series**         | Epoch series grouping                    | Used with epoch manager                  |
 
-> **⚡ Gas Optimization**  
+> ** Gas Optimization**  
 > By packing all configuration into a single uint256, MakerTraits minimizes storage costs and enables efficient bitwise operations.
 
 ---
 
 ## MakerTraits Methods
 
-> **🔧 Fluent Configuration API**  
+> ** Fluent Configuration API**  
 > Comprehensive methods for configuring and querying order behavior with a developer-friendly interface.
 
 ### Creation & Configuration
 
-| Method                   | 🎯 Purpose                 | 📝 Signature                              | 🔗 Chainable |
+| Method                   |  Purpose                 | 📝 Signature                              | 🔗 Chainable |
 | ------------------------ | -------------------------- | ----------------------------------------- | ------------ |
 | **🆕 default**           | Create default instance    | `() => MakerTraits`                       | ❌ Static    |
 | **👤 withAllowedSender** | Restrict to specific taker | `(sender: Address) => this`               | ✅           |
@@ -168,7 +169,7 @@ calcMakingAmount = (swapTakerAmount × orderMakerAmount) ÷ orderTakerAmount
 
 ### Query Methods
 
-| Method               | 🎯 Purpose             | 📝 Returns       | 💡 Description                 |
+| Method               |  Purpose             | 📝 Returns       |  Description                 |
 | -------------------- | ---------------------- | ---------------- | ------------------------------ |
 | **👤 allowedSender** | Get restricted address | `string`         | Last 10 bytes of allowed taker |
 | **🔒 isPrivate**     | Check if restricted    | `boolean`        | True if specific taker only    |
@@ -178,19 +179,19 @@ calcMakingAmount = (swapTakerAmount × orderMakerAmount) ÷ orderTakerAmount
 
 ### Feature Toggles
 
-| Method                      | 🎯 Purpose               | 📝 Signature | 💡 Effect               |
+| Method                      |  Purpose               | 📝 Signature |  Effect               |
 | --------------------------- | ------------------------ | ------------ | ----------------------- |
 | **✂️ disablePartialFills**  | Require full execution   | `() => this` | All-or-nothing          |
 | **🔄 allowPartialFills**    | Enable partial execution | `() => this` | Default behavior        |
 | **🔁 allowMultipleFills**   | Enable reusable orders   | `() => this` | Market maker mode       |
 | **1️⃣ disableMultipleFills** | Single use only          | `() => this` | Default behavior        |
-| **🔧 withExtension**        | Mark extension usage     | `() => this` | Required for extensions |
+| ** withExtension**        | Mark extension usage     | `() => this` | Required for extensions |
 
 ### Detailed Method Documentation
 
 #### default
 
-> **🏗️ Foundation Builder**  
+> ** Foundation Builder**  
 > Creates a new MakerTraits instance with sensible defaults.
 
 ```typescript

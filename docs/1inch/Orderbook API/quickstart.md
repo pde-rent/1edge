@@ -4,6 +4,7 @@
 > This comprehensive guide walks you through creating, signing, and submitting your first Limit Order v4.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 flowchart TD
     START[Start] --> SETUP[Setup Environment]
     SETUP --> APPROVE[Approve Tokens]
@@ -75,7 +76,7 @@ import {
   getLimitOrderV4Domain,
 } from "@1inch/limit-order-sdk";
 
-// 🔧 Standard ERC-20 ABI fragment (used for token approval)
+//  Standard ERC-20 ABI fragment (used for token approval)
 const erc20AbiFragment = [
   "function approve(address spender, uint256 amount) external returns (bool)",
   "function allowance(address owner, address spender) external view returns (uint256)",
@@ -123,7 +124,7 @@ const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 
 ## Step 3: Check Allowance and Approve Token
 
-> **💡 Important Note**  
+> ** Important Note**  
 > The 1inch Limit Order smart contract must be authorized to transfer your tokens. This requires an ERC-20 approval transaction.
 
 ### Approval Process
@@ -281,9 +282,9 @@ try {
 
   // Handle common errors
   if (error.message.includes("insufficient allowance")) {
-    console.log("💡 Tip: Check your token approval");
+    console.log(" Tip: Check your token approval");
   } else if (error.message.includes("invalid signature")) {
-    console.log("💡 Tip: Verify your order signing process");
+    console.log(" Tip: Verify your order signing process");
   }
 }
 ```
@@ -325,8 +326,8 @@ Your order is now live and discoverable by resolvers across the network!
 ### Next Steps
 
 - [📖 API Reference](./api-reference/) - Explore all available endpoints
-- [🏗️ Advanced Integration](../1inch%20LOP/limit-order-maker-contract.md) - Learn about contract interactions
-- [🔧 SDK Documentation](../1inch%20LOP/Limit%20Order%20SDK/) - Dive deeper into the SDK features
+- [ Advanced Integration](../1inch%20LOP/limit-order-maker-contract.md) - Learn about contract interactions
+- [ SDK Documentation](../1inch%20LOP/Limit%20Order%20SDK/) - Dive deeper into the SDK features
 
 ### Need Help?
 
@@ -336,5 +337,5 @@ Your order is now live and discoverable by resolvers across the network!
 
 ---
 
-> **💡 Pro Tip**  
+> ** Pro Tip**  
 > For production applications, implement proper error handling, logging, and monitoring to ensure reliable order management.

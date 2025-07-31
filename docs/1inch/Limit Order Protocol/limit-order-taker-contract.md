@@ -1,9 +1,10 @@
 # Limit Order Taker Contract
 
-> **⚡ Order Execution Engine**  
+> ** Order Execution Engine**  
 > Master the LimitOrderContract class and its methods for filling limit orders in the 1inch Limit Order Protocol. From simple fills to complex contract interactions.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 sequenceDiagram
     participant T as Taker
     participant SDK as 1inch SDK
@@ -30,7 +31,7 @@ sequenceDiagram
 
 ## LimitOrderContract Overview
 
-> **🔧 Calldata Generation Hub**  
+> ** Calldata Generation Hub**  
 > The LimitOrderContract class is your gateway to generating optimized calldata for different order execution scenarios.
 
 ### Execution Scenarios
@@ -46,7 +47,7 @@ sequenceDiagram
 
 ## Core Filling Methods
 
-> **⚡ Optimized Execution**  
+> ** Optimized Execution**  
 > Each method is optimized for specific use cases, ensuring minimal gas consumption and maximum reliability.
 
 ### Method Reference
@@ -62,7 +63,7 @@ sequenceDiagram
 
 #### getFillOrderCalldata
 
-> **⚡ Lightning Fast Fills**  
+> ** Lightning Fast Fills**  
 > Optimized for simple EOA orders without extensions or taker interactions.
 
 ```typescript
@@ -86,11 +87,11 @@ await wallet.sendTransaction({
 });
 ```
 
-**⚡ Gas Optimization**: Most efficient method for standard order fills.
+** Gas Optimization**: Most efficient method for standard order fills.
 
 #### getFillContractOrderCalldata
 
-> **🏗️ Smart Contract Integration**  
+> ** Smart Contract Integration**  
 > Specialized for orders where the maker is a smart contract.
 
 ```typescript
@@ -126,12 +127,12 @@ const calldata = contract.getFillOrderArgsCalldata(
 );
 ```
 
-**🚀 Power**: Supports all protocol features including:
+** Power**: Supports all protocol features including:
 
-- 🔧 Extensions (predicates, interactions, custom logic)
+-  Extensions (predicates, interactions, custom logic)
 - 💰 Dynamic amount calculations
 - 🔄 Pre/post execution hooks
-- 🎯 Custom taker behaviors
+-  Custom taker behaviors
 
 #### getFillContractOrderArgsCalldata
 
@@ -148,7 +149,7 @@ const calldata = contract.getFillContractOrderArgsCalldata(
 );
 ```
 
-**🎯 Use Cases**:
+** Use Cases**:
 
 - 🏦 Institutional trading systems
 - 🤖 Advanced trading bots
@@ -159,7 +160,7 @@ const calldata = contract.getFillContractOrderArgsCalldata(
 
 ## Method Selection Guide
 
-> **🎯 Choose the Right Tool**  
+> ** Choose the Right Tool**  
 > Selecting the optimal method ensures the best gas efficiency and functionality for your use case.
 
 ### Decision Tree
@@ -167,7 +168,7 @@ const calldata = contract.getFillContractOrderArgsCalldata(
 ```
 Is the order maker a contract?
 ├─ No (EOA) ────────────┬─ Has extensions/interactions?
-│                       ├─ No  → getFillOrderCalldata (⚡ Most efficient)
+│                       ├─ No  → getFillOrderCalldata ( Most efficient)
 │                       └─ Yes → getFillOrderArgsCalldata (🎭 Full features)
 └─ Yes (Contract) ──────┬─ Has extensions/interactions?
                         ├─ No  → getFillContractOrderCalldata (🏢 Contract optimized)
@@ -176,12 +177,12 @@ Is the order maker a contract?
 
 ### Performance Comparison
 
-| Method                                  | ⛽ Gas Cost | 🚀 Speed   | 🔧 Features | 🎯 Complexity |
+| Method                                  | ⛽ Gas Cost |  Speed   |  Features |  Complexity |
 | --------------------------------------- | ----------- | ---------- | ----------- | ------------- |
-| **🚀 getFillOrderCalldata**             | 🟢 Lowest   | 🟢 Fastest | 🔴 Basic    | 🟢 Simple     |
+| ** getFillOrderCalldata**             | 🟢 Lowest   | 🟢 Fastest | 🔴 Basic    | 🟢 Simple     |
 | **🏢 getFillContractOrderCalldata**     | 🟡 Low      | 🟢 Fast    | 🔴 Basic    | 🟡 Medium     |
-| **⚡ getFillOrderArgsCalldata**         | 🟡 Medium   | 🟡 Medium  | 🟢 Full     | 🟡 Medium     |
-| **🏗️ getFillContractOrderArgsCalldata** | 🔴 Highest  | 🔴 Slowest | 🟢 Full     | 🔴 Complex    |
+| ** getFillOrderArgsCalldata**         | 🟡 Medium   | 🟡 Medium  | 🟢 Full     | 🟡 Medium     |
+| ** getFillContractOrderArgsCalldata** | 🔴 Highest  | 🔴 Slowest | 🟢 Full     | 🔴 Complex    |
 
 ---
 
@@ -202,7 +203,7 @@ class OrderFiller {
   private contract = new LimitOrderContract();
 
   async fillSimpleOrder(order: LimitOrderV4Struct, signature: string) {
-    // ⚡ Simple, gas-efficient fill
+    //  Simple, gas-efficient fill
     const traits = TakerTraits.default().setAmountMode(AmountMode.maker);
 
     const calldata = this.contract.getFillOrderCalldata(
@@ -256,6 +257,6 @@ class OrderFiller {
 ### Next Steps
 
 1. **🧪 Test Integration**: Try different fill scenarios on testnets
-2. **⚡ Optimize Gas**: Benchmark different methods for your use case
-3. **🔧 Build Tools**: Create utilities for your specific trading strategies
-4. **📊 Monitor Performance**: Track execution success rates and costs
+2. ** Optimize Gas**: Benchmark different methods for your use case
+3. ** Build Tools**: Create utilities for your specific trading strategies
+4. ** Monitor Performance**: Track execution success rates and costs
