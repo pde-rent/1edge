@@ -34,11 +34,9 @@ class StatusCheckerService {
     switch (serviceId) {
       case "api":
         return `http://localhost:${SERVICE_PORTS.API}/ping`;
+      case "order-registry":
+        return `http://localhost:${SERVICE_PORTS.ORDER_REGISTRY}/ping`;
       case "collector":
-        return undefined; // No direct ping endpoint
-      case "order-executor":
-        return undefined; // No direct ping endpoint
-      case "keeper":
         return undefined; // No direct ping endpoint
       case "status-checker":
         return undefined; // Self
@@ -142,7 +140,7 @@ class StatusCheckerService {
 
   private async checkProcessStatus(service: Service) {
     // Services that should be running based on start-back.ts configuration
-    const runningServices = ["collector", "api", "websocket", "status-checker"];
+    const runningServices = ["collector", "api", "websocket", "order-registry", "status-checker"];
 
     try {
       if (runningServices.includes(service.id)) {

@@ -1,6 +1,6 @@
 # Limit Orders Integration Guide
 
-> **🎯 Complete Integration Walkthrough**  
+> ** Complete Integration Walkthrough**  
 > Master the art of creating, signing, and managing limit orders with the 1inch Limit Order Protocol SDK. Build sophisticated trading applications with precision and control.
 
 ---
@@ -11,17 +11,17 @@ Limit orders revolutionize DeFi trading by allowing users to define exact price 
 
 ### Order Lifecycle
 
-| Phase            | 📍 Location  | 🔧 Action                   | ⚙️ Technology |
+| Phase            | 📍 Location  |  Action                   |  Technology |
 | ---------------- | ------------ | --------------------------- | ------------- |
 | **1. Creation**  | 🌐 Off-chain | Define trade parameters     | 📝 SDK        |
 | **2. Signing**   | 🔐 Off-chain | Cryptographic authorization | ✍️ EIP-712    |
 | **3. Sharing**   | 📡 API       | Broadcast to orderbook      | 🌐 1inch API  |
-| **4. Execution** | ⛓️ On-chain  | Smart contract fulfillment  | 🏗️ Protocol   |
+| **4. Execution** | ⛓️ On-chain  | Smart contract fulfillment  |  Protocol   |
 
 ### Key Benefits
 
-- **🎯 Precision**: Execute trades at exact target prices
-- **⚡ Efficiency**: Gas-optimized smart contract execution
+- ** Precision**: Execute trades at exact target prices
+- ** Efficiency**: Gas-optimized smart contract execution
 - **🔒 Security**: Cryptographically signed and verified
 - **🌐 Accessibility**: Available across multiple networks
 
@@ -50,7 +50,7 @@ const privateKey =
   "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80";
 const maker = new Wallet(privateKey);
 
-// 🔧 Initialize SDK with authentication
+//  Initialize SDK with authentication
 const sdk = new Sdk({
   authKey: "YOUR_AUTH_KEY", // 🔑 Get from https://portal.1inch.dev/
   networkId: 1, // 🌍 Ethereum mainnet
@@ -76,7 +76,7 @@ const order = await sdk.createOrder(
     takingAmount: 10_00000000000000000n, // 💎 10 1INCH (18 decimals)
     maker: new Address(maker.address), // 👤 Order creator
   },
-  makerTraits, // ⚙️ Order configuration
+  makerTraits, //  Order configuration
 );
 
 // ✍️ Generate EIP-712 signature for verification
@@ -87,13 +87,13 @@ const signature = await maker.signTypedData(
   typedData.message,
 );
 
-// 🚀 Submit to 1inch Orderbook (optional)
+//  Submit to 1inch Orderbook (optional)
 await sdk.submitOrder(order, signature);
 ```
 
 ### Step-by-Step Breakdown
 
-| Step                  | 🎯 Purpose            | 📝 Details                                  |
+| Step                  |  Purpose            | 📝 Details                                  |
 | --------------------- | --------------------- | ------------------------------------------- |
 | **1. SDK Setup**      | Initialize connection | Configure network, auth, and HTTP provider  |
 | **2. Traits Config**  | Define order behavior | Set expiration, nonce, and other parameters |
@@ -112,12 +112,12 @@ await sdk.submitOrder(order, signature);
 
 The EIP-712 signature provides multiple layers of protection:
 
-- **🎯 Precision**: Order can only be filled with exact parameters specified
+- ** Precision**: Order can only be filled with exact parameters specified
 - **🔐 Authentication**: Cryptographically proves maker authorization
 - **⛓️ Domain Binding**: Tied to specific network and protocol version
 - **🚫 Replay Protection**: Prevents cross-chain and cross-protocol attacks
 
-> **💡 Developer Tip**  
+> ** Developer Tip**  
 > The SDK handles all typed data construction automatically via `order.getTypedData()`. No manual EIP-712 implementation required!
 
 ---
@@ -129,7 +129,7 @@ The EIP-712 signature provides multiple layers of protection:
 
 ### Core Configuration Options
 
-| Feature            | 📝 Description                               | 🔧 Method                     | ✅ Default |
+| Feature            | 📝 Description                               |  Method                     | ✅ Default |
 | ------------------ | -------------------------------------------- | ----------------------------- | ---------- |
 | **Partial Fills**  | Allow order to be filled in chunks           | `.withPartialFill()`          | Enabled    |
 | **Multiple Fills** | Allow same order to be filled multiple times | `.allowMultipleFills()`       | Disabled   |
@@ -180,7 +180,7 @@ const marketMakerTraits = MakerTraits.default()
 ```javascript
 // Restricted to specific taker
 const privateTraits = MakerTraits.default()
-  .withAllowedSender(new Address("0x1234...")) // 🎯 Specific taker only
+  .withAllowedSender(new Address("0x1234...")) //  Specific taker only
   .withExpiration(expiration)
   .withNonce(randBigInt(UINT_40_MAX));
 ```
@@ -189,7 +189,7 @@ const privateTraits = MakerTraits.default()
 
 ## Order Field Reference
 
-> **🎯 Essential Parameters**  
+> ** Essential Parameters**  
 > Understanding each field is crucial for creating precise and effective limit orders.
 
 ### Core Order Fields
@@ -198,8 +198,8 @@ const privateTraits = MakerTraits.default()
 | ------------------ | --------- | --------------------------------- | ---------------------------------- |
 | **`makerAsset`**   | `Address` | 💰 Token being sold by maker      | ERC-20 contract address            |
 | **`takerAsset`**   | `Address` | 💎 Token expected from taker      | ERC-20 contract address            |
-| **`makingAmount`** | `bigint`  | 📊 Amount maker is offering       | Wei units (respect token decimals) |
-| **`takingAmount`** | `bigint`  | 🎯 Amount maker wants in return   | Wei units (respect token decimals) |
+| **`makingAmount`** | `bigint`  |  Amount maker is offering       | Wei units (respect token decimals) |
+| **`takingAmount`** | `bigint`  |  Amount maker wants in return   | Wei units (respect token decimals) |
 | **`maker`**        | `Address` | 👤 Order creator's wallet address | Ethereum address                   |
 
 ### Field Best Practices
@@ -236,12 +236,12 @@ Before submitting orders, obtain your API key:
 1. **🌐 Visit**: [1inch Developer Portal](https://portal.1inch.dev/)
 2. **📝 Register**: Create developer account
 3. **🔑 Generate**: API authentication key
-4. **⚙️ Configure**: Add key to SDK initialization
+4. ** Configure**: Add key to SDK initialization
 
 ### Submission Process
 
 ```javascript
-// 🚀 Submit order to global orderbook
+//  Submit order to global orderbook
 try {
   await sdk.submitOrder(order, signature);
   console.log("✅ Order successfully submitted to orderbook!");
@@ -252,16 +252,16 @@ try {
 
 ### Benefits of Orderbook Submission
 
-| Advantage            | 📝 Description                      | 🚀 Impact               |
+| Advantage            | 📝 Description                      |  Impact               |
 | -------------------- | ----------------------------------- | ----------------------- |
 | **🌍 Global Reach**  | Visible to all network participants | Higher fill probability |
-| **⚡ Fast Matching** | Professional resolver network       | Quick execution         |
+| ** Fast Matching** | Professional resolver network       | Quick execution         |
 | **💰 Best Prices**   | Competitive market environment      | Optimal pricing         |
 | **🔍 Transparency**  | Public order visibility             | Market confidence       |
 
 ### Alternative Approaches
 
-> **💡 Flexible Integration**  
+> ** Flexible Integration**  
 > Orderbook submission is optional. You can also:
 
 - **🔗 Direct Integration**: Embed orders in your own application
@@ -277,6 +277,6 @@ try {
 ### Next Steps
 
 1. **🧪 Test Integration** - Deploy on testnets first
-2. **⚙️ Explore Extensions** - Add custom functionality with [Extensions](../extensions.md)
-3. **🏗️ Study Contracts** - Understand the underlying [smart contracts](../limit-order-maker-contract.md)
-4. **📊 Monitor Orders** - Implement order tracking and management
+2. ** Explore Extensions** - Add custom functionality with [Extensions](../extensions.md)
+3. ** Study Contracts** - Understand the underlying [smart contracts](../limit-order-maker-contract.md)
+4. ** Monitor Orders** - Implement order tracking and management

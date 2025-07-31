@@ -11,23 +11,23 @@
   height: 100%;
 }
 
-/* CSS variables - updated for black theme */
+/* CSS variables - centralized from common/constants.ts */
 :root {
-  /* Black theme colors */
-  --background-main: #000000;
-  --background-secondary: #0a0a0a;
-  --text-primary: #ffffff;
-  --text-secondary: #a0a0a0;
-  --primary-color: #22c55e;
-  --secondary-color: #ef4444;
-  --border-color: #1a1a1a;
-  --success-color: #22c55e;
-  --error-color: #ef4444;
+  /* Core theme colors - will be overridden by syncThemeWithCSSVars() */
+  --background-main: var(--background-main, #000000);
+  --background-secondary: var(--background-secondary, #0a0a0a);
+  --text-primary: var(--text-primary, #ffffff);
+  --text-secondary: var(--text-secondary, #a0a0a0);
+  --primary-color: var(--primary-color, #00B8D4);
+  --secondary-color: var(--secondary-color, #F0B90B);
+  --border-color: var(--border-color, rgba(0, 184, 212, 0.5));
+  --success-color: var(--success-color, #0ECB81);
+  --error-color: var(--error-color, #F6465D);
 
   /* Shadow fallbacks */
-  --shadow-light: rgba(0, 0, 0, 0.3);
-  --shadow-medium: rgba(0, 0, 0, 0.5);
-  --shadow-dark: rgba(0, 0, 0, 0.7);
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.2);
+  --shadow-dark: rgba(0, 0, 0, 0.3);
 
   /* Font fallbacks */
   --font-family: "Inter Variable", system-ui, sans-serif;
@@ -44,43 +44,45 @@
   --radius: 0.5rem;
 
   /* Custom variables for MUI components consistency */
-  --mui-tooltip-bg: #000000;
+  --mui-tooltip-bg: var(--mui-tooltip-bg, #000000);
   --mui-shadow-opacity: 0.5;
   --mui-shadow: 0px 4px 6px rgba(0, 0, 0, var(--mui-shadow-opacity));
 
   /* Force dark mode at the HTML level using direct CSS - updated for pure black */
   color-scheme: dark;
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.05 0 0);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.05 0 0);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.65 0.18 142);
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.1 0 0);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.1 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.1 0 0);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.62 0.25 29);
-  --border: oklch(0.1 0 0);
-  --input: oklch(0.1 0 0);
-  --ring: oklch(0.65 0.18 142);
-  --chart-1: oklch(0.65 0.18 142);
+  
+  /* Shadcn/UI variables - direct values for immediate application */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #00B8D4;
+  --primary-foreground: #000000;
+  --secondary: #0a0a0a;
+  --secondary-foreground: #ffffff;
+  --muted: #0a0a0a;
+  --muted-foreground: #a0a0a0;
+  --accent: #0a0a0a;
+  --accent-foreground: #ffffff;
+  --destructive: #F6465D;
+  --border: #00B8D480;
+  --input: #00B8D480;
+  --ring: #00B8D4;
+  --chart-1: oklch(0.76 0.196 198.3);
   --chart-2: oklch(0.62 0.25 29);
   --chart-3: oklch(0.55 0.15 60);
   --chart-4: oklch(0.7 0.2 200);
   --chart-5: oklch(0.6 0.2 280);
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.65 0.18 142);
+  --sidebar-primary: oklch(0.76 0.196 198.3);
   --sidebar-primary-foreground: oklch(0 0 0);
   --sidebar-accent: oklch(0.1 0 0);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.1 0 0);
-  --sidebar-ring: oklch(0.65 0.18 142);
+  --sidebar-ring: oklch(0.76 0.196 198.3);
   --color-1: hsl(0 100% 63%);
   --color-2: hsl(270 100% 63%);
   --color-3: hsl(210 100% 63%);
@@ -88,10 +90,10 @@
   --color-5: hsl(90 100% 63%);
 
   /* Scrollbar theming variables */
-  --scrollbar-track: #0a0a0a;
-  --scrollbar-thumb: #2a2a2a;
-  --scrollbar-thumb-hover: #3a3a3a;
-  --scrollbar-thumb-active: #4a4a4a;
+  --scrollbar-track: var(--scrollbar-track, #0a0a0a);
+  --scrollbar-thumb: var(--scrollbar-thumb, #22d3ee40);
+  --scrollbar-thumb-hover: var(--scrollbar-thumb-hover, #22d3ee60);
+  --scrollbar-thumb-active: var(--scrollbar-thumb-active, #22d3ee80);
   --scrollbar-width: 8px;
 }
 
@@ -136,21 +138,21 @@
 
 /* Status colors */
 .status-up {
-  color: #22c55e; /* Green */
+  color: var(--status-online);
 }
 
 .status-down {
-  color: #ef4444; /* Red */
+  color: var(--status-offline);
 }
 
 .status-unknown {
-  color: #f59e0b; /* Amber */
+  color: var(--status-warning);
 }
 
 /* Custom MUI overrides for consistent styling */
 .MuiTooltip-tooltip {
   background-color: var(--mui-tooltip-bg) !important;
-  border: 1px solid #1a1a1a !important;
+  border: 1px solid var(--muted) !important;
   box-shadow: var(--mui-shadow) !important;
   font-size: var(--font-size-xs) !important;
   color: var(--text-primary) !important;
@@ -167,7 +169,7 @@ div.MuiPopover-paper,
 .MuiPopover-paper,
 .MuiMenu-paper {
   background-color: var(--mui-tooltip-bg) !important;
-  border: 1px solid #1a1a1a !important;
+  border: 1px solid var(--muted) !important;
   color: var(--text-primary) !important;
 }
 
@@ -277,37 +279,38 @@ ul.MuiList-padding {
 }
 
 .dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.05 0 0);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.05 0 0);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.65 0.18 142);
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.1 0 0);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.1 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.1 0 0);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.62 0.25 29);
-  --border: oklch(0.1 0 0);
-  --input: oklch(0.1 0 0);
-  --ring: oklch(0.65 0.18 142);
-  --chart-1: oklch(0.65 0.18 142);
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #00B8D4;
+  --primary-foreground: #000000;
+  --secondary: #0a0a0a;
+  --secondary-foreground: #ffffff;
+  --muted: #0a0a0a;
+  --muted-foreground: #a0a0a0;
+  --accent: #0a0a0a;
+  --accent-foreground: #ffffff;
+  --destructive: #F6465D;
+  --border: #00B8D480;
+  --input: #00B8D480;
+  --ring: #00B8D4;
+  --border-strong: oklch(0.58 0.08 175.95);
+  --chart-1: oklch(0.76 0.196 198.3);
   --chart-2: oklch(0.62 0.25 29);
   --chart-3: oklch(0.55 0.15 60);
   --chart-4: oklch(0.7 0.2 200);
   --chart-5: oklch(0.6 0.2 280);
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.65 0.18 142);
+  --sidebar-primary: oklch(0.76 0.196 198.3);
   --sidebar-primary-foreground: oklch(0 0 0);
   --sidebar-accent: oklch(0.1 0 0);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.1 0 0);
-  --sidebar-ring: oklch(0.65 0.18 142);
+  --sidebar-ring: oklch(0.76 0.196 198.3);
 }
 
 /* Custom Scrollbar Styling - Cross-browser support */
@@ -381,23 +384,334 @@ ul.MuiList-padding {
   background: var(--scrollbar-thumb-active);
 }
 
-/* Teal accent scrollbar variant */
-.scrollbar-teal {
-  scrollbar-color: #14b8a6 var(--scrollbar-track);
+/* Cyan accent scrollbar variant - consistent with app theme */
+.scrollbar-cyan {
+  scrollbar-color: var(--scrollbar-full) var(--scrollbar-track);
 }
 
-.scrollbar-teal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #0d9488, #14b8a6);
-  border: 1px solid rgba(20, 184, 166, 0.2);
+.scrollbar-cyan::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 1px solid var(--scrollbar-track);
 }
 
-.scrollbar-teal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #0f766e, #0d9488);
-  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+.scrollbar-cyan::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  box-shadow: 0 0 8px var(--primary-color);
 }
 
-.scrollbar-teal::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(135deg, #134e4a, #0f766e);
+.scrollbar-cyan::-webkit-scrollbar-thumb:active {
+  background: var(--scrollbar-thumb-active);
+}
+
+/* Code block styling - Override all existing themes */
+pre,
+code {
+  font-family: var(--font-family) !important;
+}
+
+pre,
+pre[class*="language-"],
+.prose pre {
+  background: var(--background-secondary) !important;
+  color: var(--syntax-default) !important;
+  padding: 1.5rem !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  overflow-x: auto;
+  margin: 1rem 0 !important;
+  font-size: var(--font-size-sm) !important;
+  line-height: 1.5 !important;
+}
+
+pre code,
+pre[class*="language-"] code {
+  background: transparent !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: inherit !important;
+  color: inherit !important;
+}
+
+code:not(pre code) {
+  background: var(--background-secondary) !important;
+  color: var(--syntax-default) !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 0.25rem !important;
+  border: none !important;
+  box-shadow: none !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+/* Prism.js syntax highlighting - Clean cyan theme */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--syntax-comment) !important;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: var(--syntax-punctuation) !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: var(--syntax-type) !important;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: var(--syntax-string) !important;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: var(--syntax-operator) !important;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: var(--syntax-keyword) !important;
+}
+
+.token.function,
+.token.class-name {
+  color: var(--syntax-function) !important;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: var(--syntax-variable) !important;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* JSON highlighting */
+.token.property.string {
+  color: var(--syntax-property) !important;
+}
+
+.token.string {
+  color: var(--syntax-string) !important;
+}
+
+.token.number {
+  color: var(--syntax-number) !important;
+}
+
+.token.boolean {
+  color: var(--syntax-type) !important;
+}
+
+.token.null {
+  color: var(--syntax-operator) !important;
+}
+
+/* Markdown table styling - Clean theme compliant */
+.prose table,
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--background-secondary) !important;
+  border: none !important;
+  margin: 1rem 0 !important;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.prose thead,
+thead {
+  background: var(--background-main) !important;
+}
+
+.prose th,
+th {
+  background: var(--background-main) !important;
+  color: var(--text-secondary) !important;
+  font-weight: 600 !important;
+  font-size: var(--font-size-sm) !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem !important;
+  text-align: left;
+  border: none !important;
+  border-bottom: 1px solid var(--primary-color) !important;
+}
+
+.prose td,
+td {
+  background: var(--background-secondary) !important;
+  color: var(--text-primary) !important;
+  padding: 0.75rem 1rem !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.prose tbody tr:last-child td,
+tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.prose tbody tr:hover,
+tbody tr:hover {
+  background: rgba(0, 184, 212, 0.05) !important;
+}
+
+/* Mermaid diagram styling */
+.mermaid {
+  background: transparent !important;
+}
+
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon {
+  fill: oklch(0.1 0 0) !important;
+  stroke: oklch(0.76 0.196 198.3) !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .node .label {
+  color: oklch(1 0 0) !important;
+}
+
+.mermaid .edgePath .path {
+  stroke: oklch(0.6 0 0) !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .edgeLabel {
+  background-color: oklch(0.05 0 0) !important;
+  color: oklch(1 0 0) !important;
+}
+
+/* Search highlighting */
+mark {
+  background-color: oklch(0.76 0.196 198.3 / 0.2);
+  color: oklch(0.76 0.196 198.3);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Markdown prose styling - using primary/50 like panel borders */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  border-bottom: 1px solid rgba(0, 184, 212, 0.5) !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.prose hr {
+  border-color: rgba(0, 184, 212, 0.5) !important;
+  margin: 2rem 0 !important;
+}
+
+.prose blockquote {
+  border-left: 4px solid rgba(0, 184, 212, 0.3) !important;
+  background: var(--background-secondary) !important;
+  margin: 1rem 0 !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem;
+}
+
+/* Ensure all section dividers use primary/50 borders like panels */
+.prose .section-divider,
+.prose .divider,
+.section-divider,
+.divider {
+  border-color: rgba(0, 184, 212, 0.5) !important;
+}
+
+/* Standardized primary styling classes */
+.primary-button {
+  @apply bg-primary hover:bg-primary/90 text-primary-foreground border border-primary/50;
+}
+
+.primary-button-outline {
+  @apply border border-primary text-primary hover:bg-primary/10;
+}
+
+.primary-input {
+  @apply border-primary/50 focus:ring-primary/50 focus:border-primary;
+}
+
+.primary-panel {
+  @apply bg-background border border-primary/50;
+}
+
+.primary-panel-header {
+  @apply border-b border-primary/50 bg-background;
+}
+
+.primary-hover {
+  @apply hover:bg-primary/10 transition-colors duration-200;
+}
+
+.primary-active {
+  @apply bg-primary/20 border-primary;
+}
+
+/* Remove gradients utility classes */
+.no-gradient {
+  background-image: none !important;
 }
 
 @layer base {

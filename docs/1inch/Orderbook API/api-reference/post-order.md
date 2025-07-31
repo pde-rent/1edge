@@ -4,6 +4,7 @@
 > This endpoint allows you to submit a cryptographically signed limit order for discovery by takers and resolvers.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 sequenceDiagram
     participant M as Maker
     participant API as 1inch API
@@ -241,7 +242,7 @@ const result = await api.submitOrder(order, signature);
 
 ### Financial Requirements
 
-> **💡 Before Submitting**
+> ** Before Submitting**
 >
 > - Maker must have sufficient balance of the maker asset
 > - Maker must have approved the limit order contract to spend tokens
@@ -269,5 +270,5 @@ const result = await api.submitOrder(order, signature);
 ## Next Steps
 
 - [📖 **Order Creation Guide**](../../quickstart.md) - Learn how to create and sign orders
-- [🔧 **SDK Integration**](../../../1inch%20LOP/Limit%20Order%20SDK/install.md) - Use the JavaScript SDK
-- [📊 **Order Management**](./get-orders-by-address.md) - Track your submitted orders
+- [ **SDK Integration**](../../../1inch%20LOP/Limit%20Order%20SDK/install.md) - Use the JavaScript SDK
+- [ **Order Management**](./get-orders-by-address.md) - Track your submitted orders

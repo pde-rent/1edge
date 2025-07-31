@@ -3,6 +3,7 @@
 Welcome to the comprehensive documentation for 1inch Protocol integration. This documentation covers both the **Limit Order Protocol** and **Orderbook API**, providing everything you need to build advanced trading applications on 1inch.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph TB
     subgraph "1inch Protocol Ecosystem"
         LOP[Limit Order Protocol]
@@ -48,6 +49,7 @@ The **Orderbook API** provides a centralized interface for managing limit orders
 ## Documentation Structure
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph LR
     subgraph "Limit Order Protocol"
         LOP_OVERVIEW[Overview & Concepts]
@@ -141,6 +143,7 @@ const orders = await fetch(
 ## Order Lifecycle
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 sequenceDiagram
     participant M as Maker
     participant API as Orderbook API
@@ -243,4 +246,4 @@ const tradingInterface = new TradingInterface({
 
 ---
 
-💡 **Need help?** Check out our [examples](./Limit%20Order%20Protocol/Examples/) or refer to the specific documentation sections above.
+ **Need help?** Check out our [examples](./Limit%20Order%20Protocol/Examples/) or refer to the specific documentation sections above.

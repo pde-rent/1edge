@@ -6,6 +6,10 @@ import { registerOrderWatcher, BaseOrderWatcher } from "./base";
 import { getSymbolFromAssets } from "@back/utils/assetMapping";
 
 class StopLimitWatcher extends BaseOrderWatcher {
+  updateNextTrigger?(order: Order): void {
+    // Stop-limit orders are one-time triggers, no next trigger needed
+  }
+
   async shouldTrigger(order: Order): Promise<boolean> {
     if (!order.params || !('stopPrice' in order.params)) {
       return false;

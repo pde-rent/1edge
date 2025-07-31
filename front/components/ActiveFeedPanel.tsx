@@ -29,10 +29,22 @@ import { TrendingUp, BarChart3, Activity, ChevronDown } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import AuthComponent from "./AuthComponent";
 
+// Custom candlestick icon component
+function CandlestickIcon({ className }: { className?: string }) {
+  return (
+    <img
+      src="/candles.svg"
+      alt="Candles"
+      className={className}
+      style={{ filter: 'brightness(0) saturate(100%) invert(92%) sepia(4%) saturate(1033%) hue-rotate(169deg) brightness(78%) contrast(85%)' }}
+    />
+  );
+}
+
 const CHART_TYPE_OPTIONS = [
-  { value: "candles", label: "Candles", icon: Activity },
-  { value: "bars", label: "Bars", icon: BarChart3 },
-  { value: "line", label: "Line", icon: TrendingUp },
+  { value: 'candles',  label: 'Candles', icon: CandlestickIcon },
+  { value: 'bars', label: 'Bars', icon: BarChart3 },
+  { value: 'line', label: 'Line', icon: TrendingUp }
 ];
 
 // Timeframe options
@@ -55,22 +67,65 @@ interface ActiveFeedPanelProps {
  * @returns An object with main and tags properties.
  */
 function parseFeedSymbol(symbol: string) {
-  if (!symbol) return { main: "N/A", tags: [] };
-  const parts = symbol.split(":");
+  if (!symbol) return { main: 'N/A', tags: [], base: '', quote: '' };
+
+  const parts = symbol.split(':');
+  let main: string;
+  let tags: string[];
+
   if (parts.length === 3) {
     // e.g., agg:spot:BTCUSD -> main: BTCUSD, tags: [agg, spot]
-    return { main: parts[2], tags: [parts[0], parts[1]] };
-  }
-  if (parts.length === 2) {
+    main = parts[2];
+    tags = [parts[0], parts[1]];
+  } else if (parts.length === 2) {
     // e.g., binance:BTCUSDT -> main: BTCUSDT, tags: [binance]
-    return { main: parts[1], tags: [parts[0]] };
-  }
-  if (parts.length === 1 && parts[0].includes("-")) {
+    main = parts[1];
+    tags = [parts[0]];
+  } else if (parts.length === 1 && parts[0].includes('-')) {
     // e.g. BTC-USD -> main: BTC-USD, tags: [] (could be from coinbase, treat as main)
-    return { main: parts[0], tags: [] };
+    main = parts[0];
+    tags = [];
+  } else {
+    // Default fallback if parsing fails or format is unexpected
+    main = symbol;
+    tags = [];
   }
-  // Default fallback if parsing fails or format is unexpected
-  return { main: symbol, tags: [] };
+
+  // Extract base and quote tokens from main symbol
+  let base = '';
+  let quote = '';
+
+  if (main.includes('-')) {
+    // Format: BTC-USD
+    const tokenParts = main.split('-');
+    base = tokenParts[0] || '';
+    quote = tokenParts[1] || '';
+  } else {
+    // Format: BTCUSDT, ETHUSDC, etc.
+    // Common quote currencies to try matching
+    const commonQuotes = ['USDT', 'USDC', 'USD', 'BTC', 'ETH'];
+    for (const commonQuote of commonQuotes) {
+      if (main.endsWith(commonQuote)) {
+        quote = commonQuote;
+        base = main.slice(0, -commonQuote.length);
+        break;
+      }
+    }
+
+    // Fallback if no common quote found
+    if (!base && !quote && main.length > 3) {
+      // Assume last 3-4 chars are quote
+      if (main.length > 6) {
+        quote = main.slice(-4);
+        base = main.slice(0, -4);
+      } else {
+        quote = main.slice(-3);
+        base = main.slice(0, -3);
+      }
+    }
+  }
+
+  return { main, tags, base, quote };
 }
 
 /**
@@ -81,7 +136,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
   return (
     <Badge
       variant="outline"
-      className="text-xs font-medium uppercase h-5 px-2 bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300"
+      className="text-xs font-medium uppercase h-5 px-2 bg-primary/20 border-primary/50 text-primary hover:bg-primary/30 transition-all duration-300"
     >
       {children}
     </Badge>
@@ -216,19 +271,18 @@ export default function ActiveFeedPanel({
       width: container.clientWidth,
       height: container.clientHeight,
       layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#e2e8f0", // slate-200
-        fontFamily:
-          'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: THEME.chart.textColor,
+        fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
         fontSize: 12,
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: "#334155" }, // slate-700
-        horzLines: { color: "#334155" }, // slate-700
+        vertLines: { color: THEME.chart.gridColor },
+        horzLines: { color: THEME.chart.gridColor }
       },
       timeScale: {
-        borderColor: "#64748b", // slate-500
+        borderColor: THEME.chart.borderColor,
         timeVisible: true,
         secondsVisible: true,
         rightOffset: 5,
@@ -239,10 +293,10 @@ export default function ActiveFeedPanel({
       },
       crosshair: {
         vertLine: {
-          labelBackgroundColor: "#1e293b", // slate-800
+          labelBackgroundColor: THEME.chart.labelBg,
         },
         horzLine: {
-          labelBackgroundColor: "#1e293b", // slate-800
+          labelBackgroundColor: THEME.chart.labelBg,
         },
       },
       watermark: {
@@ -279,22 +333,22 @@ export default function ActiveFeedPanel({
     let newSeries;
     if (chartType === "candles") {
       newSeries = chart.addSeries(CandlestickSeries, {
-        upColor: "#10b981", // emerald-500
-        downColor: "#ef4444", // red-500
-        borderDownColor: "#ef4444",
-        borderUpColor: "#10b981",
-        wickDownColor: "#ef4444",
-        wickUpColor: "#10b981",
+        upColor: THEME.chart.upColor,
+        downColor: THEME.chart.downColor,
+        borderDownColor: THEME.chart.downColor,
+        borderUpColor: THEME.chart.upColor,
+        wickDownColor: THEME.chart.downColor,
+        wickUpColor: THEME.chart.upColor,
       });
     } else if (chartType === "bars") {
       newSeries = chart.addSeries(BarSeries, {
-        upColor: "#10b981",
-        downColor: "#ef4444",
+        upColor: THEME.chart.upColor,
+        downColor: THEME.chart.downColor,
         thinBars: false,
       });
     } else {
       newSeries = chart.addSeries(LineSeries, {
-        color: "#14b8a6", // teal-500
+        color: THEME.chart.volumeColor,
         lineWidth: 2,
         crosshairMarkerVisible: true,
         crosshairMarkerRadius: 4,
@@ -364,8 +418,7 @@ export default function ActiveFeedPanel({
         <div className="flex-1 flex justify-center items-center">
           <div className="text-center">
             <div className="relative mb-4">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 blur-xl"></div>
-              <Activity className="w-12 h-12 text-teal-400 mx-auto relative z-10" />
+              <Activity className="w-12 h-12 text-primary mx-auto relative z-10" />
             </div>
             <p className="text-slate-200 font-medium">No feed selected</p>
             <p className="text-xs text-slate-400 mt-1">
@@ -407,85 +460,132 @@ export default function ActiveFeedPanel({
 
   return (
     <PanelWrapper>
-      {/* Enhanced Header with Logo and Feed Selector */}
-      <div className="px-4 py-3 flex-shrink-0 border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md relative">
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+      <div className="h-full flex flex-col">
+        {/* Redesigned Header - One Line */}
+        <div className="px-4 py-3 flex-shrink-0 bg-background/95 backdrop-blur-md relative h-[60px] flex items-center justify-between">
 
-        <div className="flex items-center justify-between mb-3">
-          {/* Left: Logo and Feed Selector */}
+          {/* Left: Logo and Token Pair Selector */}
           <div className="flex items-center gap-4">
             <img
               src="/logo.svg"
               alt="1edge"
-              className="h-[32px] w-[80px] object-contain brightness-110 contrast-125"
+              className="h-[36px] w-[90px] object-contain brightness-110 contrast-125"
             />
 
-            {/* Feed Selector Dropdown */}
-            <div className="relative">
-              <select
-                value={feedId || ""}
-                onChange={(e) => onFeedSelect(e.target.value)}
-                className="px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 appearance-none cursor-pointer pr-10 min-w-[180px] transition-all duration-300 hover:bg-black/80"
-              >
-                <option value="" disabled>
-                  Select a feed
-                </option>
-                {feedsResponse?.success &&
-                  feedsResponse.data?.map((feed: any) => (
-                    <option
-                      key={feed.symbol}
+            {/* Token Pair Selector with Icons */}
+            <Select value={feedId || ''} onValueChange={onFeedSelect}>
+              <SelectTrigger className="flex items-center gap-3 px-4 py-3 bg-primary/20 backdrop-blur-sm rounded-lg text-foreground hover:bg-primary/30 transition-all duration-300 border-0 w-auto cursor-pointer">
+                <SelectValue>
+                  {feedId ? (
+                    <div className="flex items-center gap-3">
+                      {/* Overlapping Token Icons */}
+                      <div className="flex items-center relative">
+                        <img
+                          src={`/${parsedSymbol.base.toLowerCase()}.svg`}
+                          alt={parsedSymbol.base}
+                          className="w-8 h-8 rounded-full border border-primary/30"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                        <img
+                          src={`/${parsedSymbol.quote.toLowerCase()}.svg`}
+                          alt={parsedSymbol.quote}
+                          className="w-8 h-8 rounded-full border border-primary/30 -ml-3"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      </div>
+                      {/* Big Symbol */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-normal font-mono text-foreground">
+                          {parsedSymbol.base}/{parsedSymbol.quote}
+                        </span>
+                        {/* Tags */}
+                        {parsedSymbol.tags.filter(tag => tag !== 'agg').map(tag => (
+                          <FeedTag key={tag}>{tag}</FeedTag>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-slate-400">Select Token Pair</span>
+                  )}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/50 shadow-2xl max-h-60 overflow-y-auto">
+                {feedsResponse?.success && feedsResponse.data?.map((feed: any) => {
+                  const feedParsed = parseFeedSymbol(feed.symbol);
+                  return (
+                    <SelectItem 
+                      key={feed.symbol} 
                       value={feed.symbol}
-                      className="bg-slate-900"
+                      className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
                     >
-                      {parseFeedSymbol(feed.symbol).main}
-                    </option>
-                  ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-            </div>
-            <AuthComponent />
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center relative">
+                          <img
+                            src={`/${feedParsed.base.toLowerCase()}.svg`}
+                            alt={feedParsed.base}
+                            className="w-5 h-5 rounded-full border border-primary/30"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                          <img
+                            src={`/${feedParsed.quote.toLowerCase()}.svg`}
+                            alt={feedParsed.quote}
+                            className="w-5 h-5 rounded-full border border-primary/30 -ml-2"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        </div>
+                        <span className="font-mono font-semibold">{feedParsed.base}/{feedParsed.quote}</span>
+                        {feedParsed.tags.filter(tag => tag !== 'agg').map(tag => (
+                          <Badge key={tag} variant="outline" className="text-xs h-4 px-1 bg-primary/20 border-primary/50 text-primary">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            <AuthComponent/>
           </div>
 
-          {/* Right: Controls */}
+          {/* Center: Current Price */}
+          {feedId && (
+            <div className="flex items-center">
+              <span className="text-xl font-mono font-bold text-foreground">
+                {latestPrice}
+              </span>
+            </div>
+          )}
+
+          {/* Right: Chart Type and Timeframe */}
           <div className="flex items-center gap-3">
+
             {/* Chart Type Selector */}
-            <Select
-              value={chartType}
-              onValueChange={(value) =>
-                setChartType(value as "candles" | "bars" | "line")
-              }
-            >
-              <SelectTrigger className="w-[100px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
+            <Select value={chartType} onValueChange={(value) => setChartType(value as 'candles' | 'bars' | 'line')}>
+              <SelectTrigger size="sm" className="w-[100px] bg-black/70 backdrop-blur-sm border-primary/50 text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 hover:bg-black/80">
                 <SelectValue>
                   <div className="flex items-center gap-2">
                     {(() => {
-                      const option = CHART_TYPE_OPTIONS.find(
-                        (opt) => opt.value === chartType,
-                      );
+                      const option = CHART_TYPE_OPTIONS.find(opt => opt.value === chartType);
                       const IconComponent = option?.icon;
                       return (
                         <>
-                          {IconComponent && (
-                            <IconComponent className="w-4 h-4" />
-                          )}
-                          <span className="hidden sm:inline">
-                            {option?.label}
-                          </span>
+                          {IconComponent && <IconComponent className="w-4 h-4" />}
+                          <span className="hidden sm:inline">{option?.label}</span>
                         </>
                       );
                     })()}
                   </div>
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-border shadow-2xl">
                 {CHART_TYPE_OPTIONS.map((option) => {
                   const IconComponent = option.icon;
                   return (
                     <SelectItem
                       key={option.value}
                       value={option.value}
-                      className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                      className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
                     >
                       <div className="flex items-center gap-2">
                         <IconComponent className="w-4 h-4" />
@@ -505,20 +605,17 @@ export default function ActiveFeedPanel({
                 tickBufferRef.current = {}; // Clear buffer on timeframe change
               }}
             >
-              <SelectTrigger className="w-[70px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
+              <SelectTrigger size="sm" className="w-[70px] bg-black/70 backdrop-blur-sm border-primary/50 text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 hover:bg-black/80">
                 <SelectValue>
-                  {
-                    TIMEFRAME_OPTIONS.find((opt) => opt.value === timeframe)
-                      ?.label
-                  }
+                  {TIMEFRAME_OPTIONS.find(opt => opt.value === timeframe)?.label}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-border shadow-2xl">
                 {TIMEFRAME_OPTIONS.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                    className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
                   >
                     {option.label}
                   </SelectItem>
@@ -527,56 +624,12 @@ export default function ActiveFeedPanel({
             </Select>
           </div>
         </div>
-
-        {/* Feed Info Bar */}
-        {feedId && (
-          <div className="flex items-center justify-between relative z-10">
-            <div className="flex items-center flex-wrap gap-3">
-              <h2 className="font-semibold text-lg text-white font-mono flex items-center gap-2">
-                {parsedSymbol.main}
-                <div className="w-1 h-1 bg-teal-400"></div>
-              </h2>
-              {parsedSymbol.tags.map((tag) => (
-                <FeedTag key={tag}>{tag}</FeedTag>
-              ))}
-              <span className="ml-2 font-mono text-lg font-semibold text-white">
-                {latestPrice}
-              </span>
-            </div>
-
-            {/* Feed Metrics */}
-            {indexMetrics && (
-              <div className="flex items-center gap-4 text-xs font-mono">
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-400">Velocity:</span>
-                  <span className="text-emerald-400 font-semibold">
-                    {indexMetrics.velocity}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-400">Spread:</span>
-                  <span className="text-yellow-400 font-semibold">
-                    {indexMetrics.dispersion}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className="text-slate-400">Vol:</span>
-                  <span className="text-emerald-400 font-semibold">
-                    {indexMetrics.vbid}/{indexMetrics.vask}
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      <div
-        className={`flex-grow w-full relative ${feedId ? "h-[calc(100%-64px)]" : "h-full"} min-h-[150px] bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl`}
-      >
+      <div className={`flex-1 w-full relative bg-background/95 backdrop-blur-xl`}>
         <div
           ref={chartContainerRef}
-          className="w-full min-h-[400px] h-full bg-gradient-to-b from-black/60 via-slate-950/40 to-black/60 backdrop-blur-sm"
+          className="w-full h-full bg-background/60 backdrop-blur-sm"
         >
           {feedId && error && (
             <div className="p-4">
@@ -589,6 +642,28 @@ export default function ActiveFeedPanel({
             </div>
           )}
         </div>
+
+        {/* Stats Overlay - Top Left */}
+        {feedId && (
+          <div className="absolute top-2 left-2 z-10 space-y-1 text-xs font-mono">
+            {/* OHLC Values */}
+            {realtimePrice && (
+              <div className="flex items-center gap-4">
+                <span className="text-slate-400">O: <span className="text-slate-300">{realtimePrice.open ? roundSig(realtimePrice.open, 6).toLocaleString() : '-'}</span></span>
+                <span className="text-slate-400">H: <span className="text-slate-300">{realtimePrice.high ? roundSig(realtimePrice.high, 6).toLocaleString() : '-'}</span></span>
+                <span className="text-slate-400">L: <span className="text-slate-300">{realtimePrice.low ? roundSig(realtimePrice.low, 6).toLocaleString() : '-'}</span></span>
+                <span className="text-slate-400">C: <span className="text-slate-300">{realtimePrice.close ? roundSig(realtimePrice.close, 6).toLocaleString() : '-'}</span></span>
+              </div>
+            )}
+            {/* Velocity and Spread */}
+            {indexMetrics && (
+              <div className="flex items-center gap-4">
+                <span className="text-slate-400">Velocity: <span className="text-slate-300">{indexMetrics.velocity}</span></span>
+                <span className="text-slate-400">Spread: <span className="text-yellow-500">{indexMetrics.dispersion}</span></span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Status indicator positioned at bottom right */}
         <div className="absolute bottom-4 right-4 z-10">

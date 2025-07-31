@@ -125,17 +125,17 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
       
       <TooltipContent 
         side="top" 
-        className="w-80 max-w-none bg-black/95 backdrop-blur-xl border-slate-700/50 text-slate-200 p-0"
+        className="w-80 max-w-none bg-card border border-primary/50 text-foreground p-0"
         sideOffset={8}
       >
-        <div className="p-3 border-b border-slate-700/50">
-          <h3 className="text-sm font-semibold text-teal-400">System Status</h3>
+        <div className="p-3 border-b border-primary/50">
+          <h3 className="text-sm font-semibold text-primary">System Status</h3>
         </div>
         
         <div className="max-h-64 overflow-y-auto">
           {/* Internal Services */}
-          <div className="p-2 bg-slate-800/30">
-            <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">
+          <div className="p-2 bg-card">
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
               Internal Services
             </div>
           </div>
@@ -143,8 +143,8 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
           {services
             .filter(s => s.pingUrl?.startsWith('internal:'))
             .map((service) => (
-              <div key={service.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-800/20">
-                <span className="text-sm text-slate-200">{service.name}</span>
+              <div key={service.id} className="flex items-center justify-between px-3 py-2 hover:bg-primary/10">
+                <span className="text-sm text-foreground">{service.name}</span>
                 <div className="flex items-center gap-2">
                   <span 
                     className="text-xs font-mono"
@@ -154,7 +154,7 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
                   </span>
                   {service.status === ServiceStatus.UP && (
                     <>
-                      <span className="text-xs text-slate-500">•</span>
+                      <span className="text-xs text-muted-foreground">•</span>
                       <span 
                         className="text-xs font-mono"
                         style={{ color: getLatencyColor(service) }}
@@ -170,8 +170,8 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
           {/* External Services */}
           {services.filter(s => !s.pingUrl?.startsWith('internal:')).length > 0 && (
             <>
-              <div className="p-2 bg-slate-800/30 border-t border-slate-700/50">
-                <div className="text-xs font-medium text-slate-400 uppercase tracking-wide mb-1">
+              <div className="p-2 bg-card border-t border-primary/50">
+                <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                   External Services
                 </div>
               </div>
@@ -179,8 +179,8 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
               {services
                 .filter(s => !s.pingUrl?.startsWith('internal:'))
                 .map((service) => (
-                  <div key={service.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-800/20">
-                    <span className="text-sm text-slate-200">{service.name}</span>
+                  <div key={service.id} className="flex items-center justify-between px-3 py-2 hover:bg-primary/10">
+                    <span className="text-sm text-foreground">{service.name}</span>
                     <div className="flex items-center gap-2">
                       <span 
                         className="text-xs font-mono"
@@ -190,7 +190,7 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
                       </span>
                       {service.status === ServiceStatus.UP && (
                         <>
-                          <span className="text-xs text-slate-500">•</span>
+                          <span className="text-xs text-muted-foreground">•</span>
                           <span 
                             className="text-xs font-mono"
                             style={{ color: getLatencyColor(service) }}
@@ -206,8 +206,8 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
           )}
         </div>
         
-        <div className="p-2 border-t border-slate-700/50 bg-slate-800/30">
-          <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="p-2 border-t border-primary/50 bg-card">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Updated: {new Date().toLocaleTimeString()}</span>
             <span>{services.filter(s => s.status === ServiceStatus.UP).length}/{services.length} UP</span>
           </div>

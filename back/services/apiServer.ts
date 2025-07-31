@@ -18,7 +18,6 @@ import { getTicker, getActiveTickers } from "./marketData";
 import { getActiveTickers as getActiveTickersFromMemory } from "./memoryStorage";
 import { orderbookReconstructor } from "./orderbookReconstructor";
 import { initOHLCStorage, getOHLCStorage } from "./ohlcStorage";
-import { orderRegistry } from "./orderRegistry";
 import { logger } from "@back/utils/logger";
 import type { ApiServerConfig, ApiResponse, Order } from "@common/types";
 import { services } from "@common/types";
@@ -112,32 +111,10 @@ class ApiServer {
         return this.handleGetTicker(path, headers);
       }
 
-      if (path === "/orders") {
-        switch (request.method) {
-          case "GET":
-            return this.handleGetOrders(url, headers);
-          case "POST":
-            return this.handleCreateOrder(request, headers);
-          default:
-            return this.methodNotAllowed(headers);
-        }
-      }
-
-      // Handle individual order operations: /orders/{orderId}
-      const orderIdMatch = path.match(/^\/orders\/([^\/]+)$/);
-      if (orderIdMatch) {
-        const orderId = orderIdMatch[1];
-        switch (request.method) {
-          case "GET":
-            return this.handleGetOrder(orderId, headers);
-          case "PUT":
-            return this.handleModifyOrder(orderId, request, headers);
-          case "DELETE":
-            return this.handleCancelOrder(orderId, headers);
-          default:
-            return this.methodNotAllowed(headers);
-        }
-      }
+        case path === "/orders":
+        case path.startsWith("/orders/"):
+          // Proxy all order requests to OrderRegistry service
+          return this.proxyToOrderRegistry(request, headers);
 
       if (path === "/positions") {
         return this.handleGetPositions(url, headers);
@@ -369,104 +346,39 @@ class ApiServer {
     return this.jsonResponse({ success: true, data: ticker }, headers);
   }
 
-  private async handleGetOrders(url: URL, headers: any): Promise<Response> {
-    const makerAddress = url.searchParams.get("maker");
-
-    if (makerAddress) {
-      const orders = await getOrdersByMaker(makerAddress);
-      return this.jsonResponse({ success: true, data: orders }, headers);
-    } else {
-      const orders = await getActiveOrders();
-      return this.jsonResponse({ success: true, data: orders }, headers);
-    }
-  }
-
-  private async handleCreateOrder(
-    request: Request,
-    headers: any,
-  ): Promise<Response> {
+  private async proxyToOrderRegistry(request: Request, headers: any): Promise<Response> {
     try {
-      const orderData = await request.json();
-      await orderRegistry.createOrder(orderData);
-      return this.jsonResponse(
-        { success: true, message: "Order created successfully" },
-        headers,
-      );
+      const url = new URL(request.url);
+      const orderRegistryUrl = `http://localhost:${SERVICE_PORTS.ORDER_REGISTRY}${url.pathname}${url.search}`;
+      
+      // Forward the request to OrderRegistry service
+      const response = await fetch(orderRegistryUrl, {
+        method: request.method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: request.method !== "GET" ? await request.text() : undefined,
+      });
+
+      const data = await response.text();
+      
+      return new Response(data, {
+        status: response.status,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      });
     } catch (error: any) {
-      logger.error("Failed to create order:", error);
+      logger.error("Error proxying to OrderRegistry:", error);
       return this.jsonResponse(
-        { success: false, error: error.message },
+        { success: false, error: "Order service unavailable" },
         headers,
-        400,
+        503
       );
     }
   }
 
-  private async handleGetOrder(
-    orderId: string,
-    headers: any,
-  ): Promise<Response> {
-    try {
-      const order = await getOrder(orderId);
-      if (!order) {
-        return this.jsonResponse(
-          { success: false, error: "Order not found" },
-          headers,
-          404,
-        );
-      }
-      return this.jsonResponse({ success: true, data: order }, headers);
-    } catch (error: any) {
-      logger.error("Failed to get order:", error);
-      return this.jsonResponse(
-        { success: false, error: error.message },
-        headers,
-        500,
-      );
-    }
-  }
-
-  private async handleModifyOrder(
-    orderId: string,
-    request: Request,
-    headers: any,
-  ): Promise<Response> {
-    try {
-      const updateData = await request.json();
-      const newOrderId = await orderRegistry.modifyOrder(orderId, updateData);
-      return this.jsonResponse(
-        { success: true, data: { newOrderId } },
-        headers,
-      );
-    } catch (error: any) {
-      logger.error("Failed to modify order:", error);
-      return this.jsonResponse(
-        { success: false, error: error.message },
-        headers,
-        400,
-      );
-    }
-  }
-
-  private async handleCancelOrder(
-    orderId: string,
-    headers: any,
-  ): Promise<Response> {
-    try {
-      await orderRegistry.cancelOrder(orderId);
-      return this.jsonResponse(
-        { success: true, message: "Order cancelled successfully" },
-        headers,
-      );
-    } catch (error: any) {
-      logger.error("Failed to cancel order:", error);
-      return this.jsonResponse(
-        { success: false, error: error.message },
-        headers,
-        400,
-      );
-    }
-  }
 
   private methodNotAllowed(headers: any): Response {
     return this.jsonResponse(

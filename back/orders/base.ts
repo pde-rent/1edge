@@ -33,9 +33,9 @@ export interface OrderWatcher {
  */
 export abstract class BaseOrderWatcher implements OrderWatcher {
   protected mockMode: boolean;
-  protected provider: ethers.Provider;
-  protected contractAddress: string;
-  protected chainId: number;
+  protected provider?: ethers.Provider;
+  protected contractAddress?: string;
+  protected chainId?: number;
 
   constructor(mockMode: boolean = false) {
     this.mockMode = mockMode;
@@ -75,7 +75,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       });
 
       // Get order hash for tracking
-      const orderHash = limitOrder.getOrderHash(this.chainId);
+      const orderHash = limitOrder.getOrderHash(this.chainId || 1);
 
       // In production, this would be signed by the user's wallet and submitted to 1inch
       logger.info(`Created 1inch limit order: ${makerAmount} -> ${takerAmount} tokens`);

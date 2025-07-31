@@ -136,7 +136,7 @@ docs/1inch/Spot Price API/
 
 ### Community
 - [Discord Server](https://discord.gg/1inch)
-- [Telegram Channel](https://t.me/OneInchNetwork)
+- [Telegram Channel](https://t.me/one_edge)
 - [GitHub Repositories](https://github.com/1inch)
 
 ### Support Channels

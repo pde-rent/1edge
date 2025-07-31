@@ -1,70 +1,178 @@
 # Supported Order Types
 
-Periods are in ms.
+> **Trading Strategy Arsenal**: Comprehensive order types supporting both one-off executions and recurring strategies for advanced trading automation.
 
-## One-off Orders
+ **Note**: All time periods are specified in milliseconds for precise control.
 
-### Stop-Limit Order
+##  One-off Orders
 
-Trigger: Order is created when the price level is reached; only one order at a time.
-Description: Creates a limit order as the price reaches a stop level.
-Params: amount, stopPrice, limitPrice, expiry
-Defaults: 0, now, spot - 0.5%, spot - 0.5%, 10
+> **Single Execution Orders**: Execute once when conditions are met, then complete.
 
-### Chase-Limit Order
+###  Stop-Limit Order
 
-Trigger: Cancellation and re-creation of the order when the price drifts away; only one order at a time.
-Description: Trails a limit order as the price moves away from it.
-Params: amount, distancePct, expiry, maxPrice
-Defaults: 0, now, spot - 0.5%, spot - 0.5%, 10
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Price level reached |  |
+| **Execution** | Single order at a time |  |
+| **Description** | Limit order at stop level |  |
 
-### Time Weighted Average Price (TWAP)
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Order size |
+| `stopPrice` | spot - 0.5% | Trigger price |
+| `limitPrice` | spot - 0.5% | Execution price |
+| `expiry` | 10 | Expiration time |
 
-Trigger: Creation of the next order every time a time interval has passed; only one order at a time.
-Description: Buys at fixed time intervals until the amount is reached, using closely placed chase-limit orders (stealth).
-Params: amount, startDate, endDate, interval, maxPrice
-Defaults: 0, now, in 1 month, 1 day (30 orders, recurring)
+###  Chase-Limit Order
 
-### Range Order
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Price drift cancellation/recreation |  |
+| **Execution** | Single order at a time |  |
+| **Description** | Trailing limit order |  |
 
-Trigger: Creation of the next order every time a step is reached (order is executed); only one order at a time.
-Description: Buys at fixed price intervals until the amount is reached (stealth).
-Params: amount, startPrice, endPrice, stepPct, expiry
-Defaults: 0, spot - 0.5%, spot - 2%, 0.3% (5 orders)
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Order size |
+| `distancePct` | spot - 0.5% | Trail distance |
+| `expiry` | 10 | Expiration time |
+| `maxPrice` | spot - 0.5% | Maximum price |
 
-### Iceberg Order
+###  Time Weighted Average Price (TWAP)
 
-Trigger: Creation of the next order every time an order is executed; only one order at a time.
-Description: Buys sequentially until the amount is reached (stealth).
-Params: amount, startPrice, endPrice, steps, expiry
-Defaults: 0, now, spot - 0.5%, spot - 0.5%, 10
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Time interval based |  |
+| **Execution** | Sequential until complete |  |
+| **Description** | Stealth execution via chase-limit |  |
 
-## Recurring Orders
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Total target size |
+| `startDate` | now | Execution start |
+| `endDate` | +1 month | Execution end |
+| `interval` | 1 day | Time between orders |
+| `maxPrice` | market | Maximum execution price |
 
-### Dollar-Cost Averaging (DCA)
+ **Strategy**: 30 orders recurring over time period
 
-Trigger: Creation of the next order every time a time interval has passed; only one order at a time.
-Description: Perpetually buys by creating timed, closely placed chase-limit orders.
-Params: amount, startDate, interval, maxPrice
-Defaults: 0, now, 1 day (30 orders, recurring)
+###  Range Order
 
-### Grid Trading
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Price step execution |  |
+| **Execution** | Single order at a time |  |
+| **Description** | Fixed price interval buying |  |
 
-Trigger: Creation of the next order every time a step is reached (order is executed); only one order at a time.
-Description: Naive market making using one or two range orders.
-Params: amount, startPrice, endPrice, stepPct, stepMultiplier, singleSide, tpPct
-Defaults: 0, spot - 0.5%, spot - 2%, false, 0.3% (5 orders)
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Total target size |
+| `startPrice` | spot - 0.5% | Starting price |
+| `endPrice` | spot - 2% | Ending price |
+| `stepPct` | 0.3% | Price step size |
+| `expiry` | - | Order expiration |
 
-### Momentum Reversal Trading
+ **Strategy**: 5 orders across price range
 
-Trigger: Order is created when price momentum changes: RSI crosses the RSI MA (up = long, down = short); only one order at a time.
-Description: Market making at times of mean reversal using RSI and chase-limit orders.
-Params: amount, rsiPeriod, rsimaPeriod, tpPct, slPct
-Defaults: 0, 12 (hours), 12 (hours), 2%, 1%
+###  Iceberg Order
 
-### Range Breakout Trading
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Order execution based |  |
+| **Execution** | Sequential until complete |  |
+| **Description** | Large order stealth execution |  |
 
-Trigger: Order is created when a trend starts: ADX crosses the ADX MA (up + bullish EMA = long, up + bearish EMA = short); only one order at a time.
-Description: Market making at times of range breakout using ADX and chase-limit orders.
-Params: adxPeriod, adxmaPeriod, emaPeriod, tpPct, slPct
-Defaults: 0, 12 (hours), 12 (hours), 12 (hours), 2%, 1%
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Total target size |
+| `startPrice` | spot - 0.5% | Starting price |
+| `endPrice` | spot - 0.5% | Ending price |
+| `steps` | 10 | Number of sub-orders |
+| `expiry` | - | Order expiration |
+
+##  Recurring Orders
+
+> **Perpetual Strategies**: Continuously executing orders that repeat based on time or market conditions.
+
+###  Dollar-Cost Averaging (DCA)
+
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Time interval recurring |  |
+| **Execution** | Perpetual until stopped |  |
+| **Description** | Regular chase-limit purchases |  |
+
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Per-order size |
+| `startDate` | now | Strategy start |
+| `interval` | 1 day | Time between orders |
+| `maxPrice` | market | Maximum execution price |
+
+ **Strategy**: 30 orders recurring indefinitely
+
+###  Grid Trading
+
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | Price step execution |  |
+| **Execution** | Recurring market making |  |
+| **Description** | Automated grid strategy |  |
+
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Per-order size |
+| `startPrice` | spot - 0.5% | Grid start price |
+| `endPrice` | spot - 2% | Grid end price |
+| `stepPct` | 0.3% | Grid step size |
+| `stepMultiplier` | - | Step scaling factor |
+| `singleSide` | false | One-directional grid |
+| `tpPct` | - | Take profit percentage |
+
+ **Strategy**: 5 orders in grid formation
+
+###  Momentum Reversal Trading
+
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | RSI momentum reversal |  |
+| **Execution** | Mean reversion timing |  |
+| **Description** | RSI-based chase-limit orders |  |
+
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Order size |
+| `rsiPeriod` | 12 hours | RSI calculation period |
+| `rsimaPeriod` | 12 hours | RSI moving average |
+| `tpPct` | 2% | Take profit percentage |
+| `slPct` | 1% | Stop loss percentage |
+
+ **Signal**: RSI crosses RSI MA (up = long, down = short)
+
+###  Range Breakout Trading
+
+| Property | Value | Status |
+|----------|-------|---------|
+| **Trigger** | ADX trend breakout |  |
+| **Execution** | Range breakout timing |  |
+| **Description** | ADX-based chase-limit orders |  |
+
+**Parameters:**
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `amount` | 0 | Order size |
+| `adxPeriod` | 12 hours | ADX calculation period |
+| `adxmaPeriod` | 12 hours | ADX moving average |
+| `emaPeriod` | 12 hours | EMA trend filter |
+| `tpPct` | 2% | Take profit percentage |
+| `slPct` | 1% | Stop loss percentage |
+
+ **Signal**: ADX crosses ADX MA + EMA direction (bullish EMA = long, bearish EMA = short)

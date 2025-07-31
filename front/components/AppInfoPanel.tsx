@@ -67,7 +67,7 @@ export default function AppInfoPanel({
                       "w-8 h-8 p-0 rounded-md transition-all duration-200",
                       "hover:bg-gray-700/60 hover:scale-105",
                       isLocked 
-                        ? "bg-green-600/20 text-green-400 border border-green-500/30" 
+                        ? "bg-primary/20 text-primary border border-primary/30" 
                         : "text-gray-400 hover:text-gray-200"
                     )}
                   >

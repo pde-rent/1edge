@@ -12,9 +12,9 @@ interface PanelWrapperProps {
  */
 export function PanelWrapper({ children, className = "" }: PanelWrapperProps) {
   return (
-    <div className={`bg-gradient-to-br from-teal-500/20 via-emerald-500/10 to-cyan-500/20 border border-teal-700 h-full ${className}`}>
-      <div className="bg-slate-800/30 backdrop-blur-sm h-full">
-        <Card className="h-full bg-black/80 backdrop-blur-xl border-0 overflow-hidden flex flex-col p-0 gap-0">
+    <div className={`border border-primary/50 h-full ${className}`}>
+      <div className="bg-background/80 backdrop-blur-sm h-full">
+        <Card className="h-full bg-transparent border-0 overflow-hidden flex flex-col p-0 gap-0">
           {children}
         </Card>
       </div>
