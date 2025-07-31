@@ -10,14 +10,12 @@ import { THEME, syncThemeWithCSSVars } from "@common/constants";
 import { useEffect } from "react";
 import { Toaster } from "sonner";
 import { WebSocketProvider } from "../contexts/WebSocketContext";
-import { usePrivy } from "@privy-io/react-auth";
 
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider, createConfig } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mainnet, sepolia, polygon, arbitrum, base } from "viem/chains";
 import { http } from "wagmi";
-import { useRouter } from "next/router";
 
 const config = createConfig({
   chains: [mainnet, sepolia, polygon, arbitrum, base],
@@ -141,39 +139,6 @@ const darkTheme = createTheme({
   },
 });
 
-const RouteProtection: FC<{ children: React.ReactNode }> = ({ children }) => {
-  const router = useRouter();
-  const { ready, authenticated, user } = usePrivy();
-
-  useEffect(() => {
-    if (ready) {
-      if (router.pathname === "/app") {
-        if (!authenticated || !user?.wallet) {
-          router.push("/");
-        }
-      }
-    }
-  }, [ready, authenticated, user, router.pathname]);
-
-  if (!ready) {
-    return (
-      <div className="min-h-screen bg-[#030303] flex items-center justify-center">
-        <div className="text-[#4fd1c5] text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (router.pathname === "/app" && (!authenticated || !user?.wallet)) {
-    return (
-      <div className="min-h-screen bg-[#030303] flex items-center justify-center">
-        <div className="text-[#4fd1c5] text-lg">Redirecting...</div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-};
-
 /**
  * Custom App component for Next.js with Privy + Wagmi integration.
  * Sets up the MUI theme, Privy authentication, and Wagmi for Web3 functionality.
@@ -207,9 +172,7 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
                   },
                 }}
               />
-              <RouteProtection>
-                <Component {...pageProps} />
-              </RouteProtection>
+              <Component {...pageProps} />
             </WebSocketProvider>
           </ThemeProvider>
         </WagmiProvider>

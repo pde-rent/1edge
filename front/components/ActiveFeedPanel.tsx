@@ -29,23 +29,8 @@ import { TrendingUp, BarChart3, Activity, ChevronDown } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import AuthComponent from "./AuthComponent";
 
-// Custom candlestick icon component
-function CandlestickIcon({ className }: { className?: string }) {
-  return (
-    <img
-      src="/candles.svg"
-      alt="Candles"
-      className={className}
-      style={{
-        filter:
-          "brightness(0) saturate(100%) invert(92%) sepia(4%) saturate(1033%) hue-rotate(169deg) brightness(78%) contrast(85%)",
-      }}
-    />
-  );
-}
-
 const CHART_TYPE_OPTIONS = [
-  { value: "candles", label: "Candles", icon: CandlestickIcon },
+  { value: "candles", label: "Candles", icon: Activity },
   { value: "bars", label: "Bars", icon: BarChart3 },
   { value: "line", label: "Line", icon: TrendingUp },
 ];
@@ -70,65 +55,22 @@ interface ActiveFeedPanelProps {
  * @returns An object with main and tags properties.
  */
 function parseFeedSymbol(symbol: string) {
-  if (!symbol) return { main: "N/A", tags: [], base: "", quote: "" };
-
+  if (!symbol) return { main: "N/A", tags: [] };
   const parts = symbol.split(":");
-  let main: string;
-  let tags: string[];
-
   if (parts.length === 3) {
     // e.g., agg:spot:BTCUSD -> main: BTCUSD, tags: [agg, spot]
-    main = parts[2];
-    tags = [parts[0], parts[1]];
-  } else if (parts.length === 2) {
+    return { main: parts[2], tags: [parts[0], parts[1]] };
+  }
+  if (parts.length === 2) {
     // e.g., binance:BTCUSDT -> main: BTCUSDT, tags: [binance]
-    main = parts[1];
-    tags = [parts[0]];
-  } else if (parts.length === 1 && parts[0].includes("-")) {
+    return { main: parts[1], tags: [parts[0]] };
+  }
+  if (parts.length === 1 && parts[0].includes("-")) {
     // e.g. BTC-USD -> main: BTC-USD, tags: [] (could be from coinbase, treat as main)
-    main = parts[0];
-    tags = [];
-  } else {
-    // Default fallback if parsing fails or format is unexpected
-    main = symbol;
-    tags = [];
+    return { main: parts[0], tags: [] };
   }
-
-  // Extract base and quote tokens from main symbol
-  let base = "";
-  let quote = "";
-
-  if (main.includes("-")) {
-    // Format: BTC-USD
-    const tokenParts = main.split("-");
-    base = tokenParts[0] || "";
-    quote = tokenParts[1] || "";
-  } else {
-    // Format: BTCUSDT, ETHUSDC, etc.
-    // Common quote currencies to try matching
-    const commonQuotes = ["USDT", "USDC", "USD", "BTC", "ETH"];
-    for (const commonQuote of commonQuotes) {
-      if (main.endsWith(commonQuote)) {
-        quote = commonQuote;
-        base = main.slice(0, -commonQuote.length);
-        break;
-      }
-    }
-
-    // Fallback if no common quote found
-    if (!base && !quote && main.length > 3) {
-      // Assume last 3-4 chars are quote
-      if (main.length > 6) {
-        quote = main.slice(-4);
-        base = main.slice(0, -4);
-      } else {
-        quote = main.slice(-3);
-        base = main.slice(0, -3);
-      }
-    }
-  }
-
-  return { main, tags, base, quote };
+  // Default fallback if parsing fails or format is unexpected
+  return { main: symbol, tags: [] };
 }
 
 /**
@@ -139,7 +81,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
   return (
     <Badge
       variant="outline"
-      className="text-xs font-medium uppercase h-5 px-2 bg-primary/20 border-primary/50 text-primary hover:bg-primary/30 transition-all duration-300"
+      className="text-xs font-medium uppercase h-5 px-2 bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300"
     >
       {children}
     </Badge>
@@ -163,7 +105,6 @@ export default function ActiveFeedPanel({
   const [realtimePrice, setRealtimePrice] = useState(null);
   const [timeframe, setTimeframe] = useState("20"); // Default 20 seconds as string for ToggleGroup
   const tickBufferRef = useRef({}); // Store ticks per candle period
-  const [isChartInitialized, setIsChartInitialized] = useState(false);
 
   const { data: apiResponse, error } = useSWR<ApiResponse<TickerFeed>>(
     feedId ? `/api/feeds/${feedId}` : null,
@@ -171,9 +112,10 @@ export default function ActiveFeedPanel({
     { refreshInterval: 5000 },
   );
 
-  const { data: historyResponse, error: historyError } = useSWR<
-    ApiResponse<TickerFeed>
-  >(feedId ? `/api/feeds/history/${feedId}` : null, fetcher);
+  const { data: historyResponse } = useSWR<ApiResponse<TickerFeed>>(
+    feedId ? `/api/feeds/history/${feedId}` : null,
+    fetcher,
+  );
 
   // Fetch all feeds for the dropdown
   const { data: feedsResponse } = useSWR<ApiResponse<any[]>>(
@@ -270,65 +212,54 @@ export default function ActiveFeedPanel({
     if (!chartContainerRef.current || chartRef.current) return;
 
     const container = chartContainerRef.current;
-
-    try {
-      const chart = createChart(container, {
-        width: container.clientWidth || 800,
-        height: container.clientHeight || 400,
-        layout: {
-          background: { type: ColorType.Solid, color: "transparent" },
-          textColor: THEME.chart.textColor,
-          fontFamily:
-            'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
-          fontSize: 12,
-          attributionLogo: false,
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: container.clientHeight,
+      layout: {
+        background: { type: ColorType.Solid, color: "transparent" },
+        textColor: "#e2e8f0", // slate-200
+        fontFamily:
+          'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+        fontSize: 12,
+        attributionLogo: false,
+      },
+      grid: {
+        vertLines: { color: "#334155" }, // slate-700
+        horzLines: { color: "#334155" }, // slate-700
+      },
+      timeScale: {
+        borderColor: "#64748b", // slate-500
+        timeVisible: true,
+        secondsVisible: true,
+        rightOffset: 5,
+      },
+      autoSize: true,
+      localization: {
+        priceFormatter: (price) => roundSig(price, 6).toLocaleString(undefined),
+      },
+      crosshair: {
+        vertLine: {
+          labelBackgroundColor: "#1e293b", // slate-800
         },
-        grid: {
-          vertLines: { color: THEME.chart.gridColor },
-          horzLines: { color: THEME.chart.gridColor },
+        horzLine: {
+          labelBackgroundColor: "#1e293b", // slate-800
         },
-        timeScale: {
-          borderColor: THEME.chart.borderColor,
-          timeVisible: true,
-          secondsVisible: true,
-          rightOffset: 5,
-        },
-        autoSize: true,
-        localization: {
-          priceFormatter: (price) =>
-            roundSig
-              ? roundSig(price, 6).toLocaleString(undefined)
-              : price.toFixed(6),
-        },
-        crosshair: {
-          vertLine: {
-            labelBackgroundColor: THEME.chart.labelBg,
-          },
-          horzLine: {
-            labelBackgroundColor: THEME.chart.labelBg,
-          },
-        },
-        watermark: {
-          visible: true,
-          color: "rgba(51, 65, 85, 0.3)",
-          text: "1edge",
-          fontSize: 18,
-          horzAlign: "right",
-          vertAlign: "bottom",
-        },
-      });
-
-      chartRef.current = chart;
-      setIsChartInitialized(true);
-    } catch (error) {
-      console.error("Error creating chart:", error);
-    }
+      },
+      watermark: {
+        visible: true,
+        color: "rgba(51, 65, 85, 0.3)", // slate-700 with opacity
+        text: "1edge",
+        fontSize: 18,
+        horzAlign: "right",
+        vertAlign: "bottom",
+      },
+    });
+    chartRef.current = chart;
 
     return () => {
       if (chartRef.current) {
         chartRef.current.remove();
         chartRef.current = null;
-        setIsChartInitialized(false);
       }
     };
   }, []);
@@ -336,120 +267,79 @@ export default function ActiveFeedPanel({
   // Series creation and historical data loading
   useEffect(() => {
     const chart = chartRef.current;
-    if (!chart || !feedId || !isChartInitialized) {
-      return;
-    }
+    if (!chart || !feedId) return;
 
     // Remove old series
     if (seriesRef.current) {
-      try {
-        chart.removeSeries(seriesRef.current);
-        seriesRef.current = null;
-      } catch (error) {
-        console.error("Error removing series:", error);
-      }
+      chart.removeSeries(seriesRef.current);
+      seriesRef.current = null;
     }
 
     // Create new series with proper colors
     let newSeries;
-    try {
-      if (chartType === "candles") {
-        newSeries = chart.addSeries(CandlestickSeries, {
-          upColor: THEME.chart.upColor,
-          downColor: THEME.chart.downColor,
-          borderDownColor: THEME.chart.downColor,
-          borderUpColor: THEME.chart.upColor,
-          wickDownColor: THEME.chart.downColor,
-          wickUpColor: THEME.chart.upColor,
-        });
-      } else if (chartType === "bars") {
-        newSeries = chart.addSeries(BarSeries, {
-          upColor: THEME.chart.upColor,
-          downColor: THEME.chart.downColor,
-          thinBars: false,
-        });
-      } else {
-        newSeries = chart.addSeries(LineSeries, {
-          color: THEME.chart.volumeColor,
-          lineWidth: 2,
-          crosshairMarkerVisible: true,
-          crosshairMarkerRadius: 4,
-          lastValueVisible: true,
-        });
-      }
-      seriesRef.current = newSeries;
-    } catch (error) {
-      return;
-    }
-
-    // Load historical data
-    if (historyResponse?.success && historyResponse.data?.history) {
-      const rawData = historyResponse.data.history;
-
-      // Validate that we have data
-      if (!rawData.ts || !rawData.o || !rawData.h || !rawData.l || !rawData.c) {
-        console.error("Invalid history data structure:", rawData);
-        return;
-      }
-
-      if (rawData.ts.length === 0) {
-        console.warn("No historical data available");
-        return;
-      }
-
-      try {
-        const formattedData = rawData.ts
-          .map((timestamp, index) => {
-            let time = timestamp;
-            if (typeof time === "string") time = parseInt(time, 10);
-            if (time > 1000000000000) time = Math.floor(time / 1000);
-
-            const now = Math.floor(Date.now() / 1000);
-            if (time > now || time < 1262304000) {
-              time = now - (rawData.ts.length - index) * 60;
-            }
-
-            return {
-              time,
-              open: rawData.o[index] || 0,
-              high: rawData.h[index] || 0,
-              low: rawData.l[index] || 0,
-              close: rawData.c[index] || 0,
-              value: rawData.c[index] || 0,
-            };
-          })
-          .filter(
-            (item) =>
-              item.open > 0 && item.high > 0 && item.low > 0 && item.close > 0,
-          )
-          .sort((a, b) => a.time - b.time);
-
-        if (formattedData.length > 0) {
-          if (chartType === "line") {
-            const lineData = formattedData.map((item) => ({
-              time: item.time,
-              value: item.close,
-            }));
-            newSeries.setData(lineData);
-          } else {
-            newSeries.setData(formattedData);
-          }
-          chart.timeScale().fitContent();
-        } else {
-        }
-      } catch (error) {
-        console.error("Error formatting historical data:", error);
-      }
+    if (chartType === "candles") {
+      newSeries = chart.addSeries(CandlestickSeries, {
+        upColor: "#10b981", // emerald-500
+        downColor: "#ef4444", // red-500
+        borderDownColor: "#ef4444",
+        borderUpColor: "#10b981",
+        wickDownColor: "#ef4444",
+        wickUpColor: "#10b981",
+      });
+    } else if (chartType === "bars") {
+      newSeries = chart.addSeries(BarSeries, {
+        upColor: "#10b981",
+        downColor: "#ef4444",
+        thinBars: false,
+      });
     } else {
-      console.log("No history response or data:", {
-        hasResponse: !!historyResponse,
-        success: historyResponse?.success,
-        hasData: !!historyResponse?.data,
-        hasHistory: !!historyResponse?.data?.history,
-        historyError,
+      newSeries = chart.addSeries(LineSeries, {
+        color: "#14b8a6", // teal-500
+        lineWidth: 2,
+        crosshairMarkerVisible: true,
+        crosshairMarkerRadius: 4,
+        lastValueVisible: true,
       });
     }
-  }, [feedId, chartType, historyResponse, isChartInitialized]);
+    seriesRef.current = newSeries;
+
+    // Load historical data
+    if (historyResponse?.success && historyResponse.data?.history?.ts) {
+      const rawData = historyResponse.data.history;
+      const formattedData = rawData.ts
+        .map((timestamp, index) => {
+          let time = timestamp;
+          if (typeof time === "string") time = parseInt(time, 10);
+          if (time > 1000000000000) time = Math.floor(time / 1000);
+
+          const now = Math.floor(Date.now() / 1000);
+          if (time > now || time < 1262304000) {
+            time = now - (rawData.ts.length - index) * 60;
+          }
+
+          return {
+            time,
+            open: rawData.o[index],
+            high: rawData.h[index],
+            low: rawData.l[index],
+            close: rawData.c[index],
+            value: rawData.c[index],
+          };
+        })
+        .sort((a, b) => a.time - b.time);
+
+      if (chartType === "line") {
+        const lineData = formattedData.map((item) => ({
+          time: item.time,
+          value: item.close,
+        }));
+        newSeries.setData(lineData);
+      } else {
+        newSeries.setData(formattedData);
+      }
+      chart.timeScale().fitContent();
+    }
+  }, [feedId, chartType, historyResponse]);
 
   // Resize handler
   useEffect(() => {
@@ -466,15 +356,16 @@ export default function ActiveFeedPanel({
     resizeObserver.observe(chartContainerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [isChartInitialized]);
+  }, []);
 
-  if (!feedId && !isChartInitialized) {
+  if (!feedId && !chartRef.current) {
     return (
       <PanelWrapper>
         <div className="flex-1 flex justify-center items-center">
           <div className="text-center">
             <div className="relative mb-4">
-              <Activity className="w-12 h-12 text-primary mx-auto relative z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 blur-xl"></div>
+              <Activity className="w-12 h-12 text-teal-400 mx-auto relative z-10" />
             </div>
             <p className="text-slate-200 font-medium">No feed selected</p>
             <p className="text-xs text-slate-400 mt-1">
@@ -489,159 +380,74 @@ export default function ActiveFeedPanel({
   // Parse feed symbol for display
   const parsedSymbol = feedId
     ? parseFeedSymbol(feedId)
-    : { main: "", tags: [], base: "", quote: "" };
+    : { main: "", tags: [] };
   const latestPrice = realtimePrice?.mid
-    ? roundSig
-      ? roundSig(realtimePrice.mid, 6).toLocaleString()
-      : realtimePrice.mid.toFixed(6)
+    ? roundSig(realtimePrice.mid, 6).toLocaleString()
     : apiResponse?.success && apiResponse.data?.last?.mid
-      ? roundSig
-        ? roundSig(apiResponse.data.last.mid, 6).toLocaleString()
-        : apiResponse.data.last.mid.toFixed(6)
+      ? roundSig(apiResponse.data.last.mid, 6).toLocaleString()
       : "-";
 
   // Display enhanced index data if available
   const indexMetrics = realtimePrice
     ? {
         velocity: realtimePrice.velocity
-          ? roundSig
-            ? roundSig(realtimePrice.velocity, 2).toLocaleString()
-            : realtimePrice.velocity.toFixed(2)
+          ? roundSig(realtimePrice.velocity, 2).toLocaleString()
           : "0",
         dispersion: realtimePrice.dispersion
-          ? `${roundSig ? roundSig(realtimePrice.dispersion, 2).toLocaleString() : realtimePrice.dispersion.toFixed(2)}%`
+          ? `${roundSig(realtimePrice.dispersion, 2).toLocaleString()}%`
           : "0%",
         vbid: realtimePrice.vbid
-          ? roundSig
-            ? roundSig(realtimePrice.vbid, 2).toLocaleString()
-            : realtimePrice.vbid.toFixed(2)
+          ? roundSig(realtimePrice.vbid, 2).toLocaleString()
           : "0",
         vask: realtimePrice.vask
-          ? roundSig
-            ? roundSig(realtimePrice.vask, 2).toLocaleString()
-            : realtimePrice.vask.toFixed(2)
+          ? roundSig(realtimePrice.vask, 2).toLocaleString()
           : "0",
       }
     : null;
 
   return (
     <PanelWrapper>
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="px-4 py-3 flex-shrink-0 bg-background/95 backdrop-blur-md relative h-[60px] flex items-center justify-between">
-          {/* Left: Logo and Token Pair Selector */}
-          <div className="flex items-center gap-2">
+      {/* Enhanced Header with Logo and Feed Selector */}
+      <div className="px-4 py-3 flex-shrink-0 border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md relative">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+
+        <div className="flex items-center justify-between mb-3">
+          {/* Left: Logo and Feed Selector */}
+          <div className="flex items-center gap-4">
             <img
               src="/logo.svg"
               alt="1edge"
-              className="h-[36px] w-[90px] object-contain brightness-110 contrast-125"
+              className="h-[32px] w-[80px] object-contain brightness-110 contrast-125"
             />
 
-            {/* Token Pair Selector with Icons */}
-            <Select value={feedId || ""} onValueChange={onFeedSelect}>
-              <SelectTrigger className="flex items-center gap-3 px-4 py-2 bg-primary/20  backdrop-blur-sm  rounded-lg text-foreground hover:bg-primary/30 transition-all duration-300 border border-primary w-auto cursor-pointer">
-                <SelectValue>
-                  {feedId ? (
-                    <div className="flex items-center gap-2">
-                      {/* Overlapping Token Icons */}
-                      <div className="flex items-center relative">
-                        <img
-                          src={`/${parsedSymbol.base.toLowerCase()}.svg`}
-                          alt={parsedSymbol.base}
-                          className="w-6 h-6 rounded-full border border-primary/30"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                        <img
-                          src={`/${parsedSymbol.quote.toLowerCase()}.svg`}
-                          alt={parsedSymbol.quote}
-                          className="w-6 h-6 rounded-full border border-primary/30 -ml-2"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                          }}
-                        />
-                      </div>
-                      {/* Big Symbol */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-md font-normal font-mono text-foreground">
-                          {parsedSymbol.base}/{parsedSymbol.quote}
-                        </span>
-                        {/* Tags */}
-                        {parsedSymbol.tags
-                          .filter((tag) => tag !== "agg")
-                          .map((tag) => (
-                            <FeedTag key={tag}>{tag}</FeedTag>
-                          ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="text-slate-400">Select Token Pair</span>
-                  )}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/50 shadow-2xl max-h-60 overflow-y-auto">
+            {/* Feed Selector Dropdown */}
+            <div className="relative">
+              <select
+                value={feedId || ""}
+                onChange={(e) => onFeedSelect(e.target.value)}
+                className="px-3 py-2 bg-black/70 backdrop-blur-sm border border-slate-600/50 rounded-lg text-white text-sm focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 appearance-none cursor-pointer pr-10 min-w-[180px] transition-all duration-300 hover:bg-black/80"
+              >
+                <option value="" disabled>
+                  Select a feed
+                </option>
                 {feedsResponse?.success &&
-                  feedsResponse.data?.map((feed: any) => {
-                    const feedParsed = parseFeedSymbol(feed.symbol);
-                    return (
-                      <SelectItem
-                        key={feed.symbol}
-                        value={feed.symbol}
-                        className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center relative">
-                            <img
-                              src={`/${feedParsed.base.toLowerCase()}.svg`}
-                              alt={feedParsed.base}
-                              className="w-5 h-5 rounded-full border border-primary/30"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                            <img
-                              src={`/${feedParsed.quote.toLowerCase()}.svg`}
-                              alt={feedParsed.quote}
-                              className="w-5 h-5 rounded-full border border-primary/30 -ml-2"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                              }}
-                            />
-                          </div>
-                          <span className="font-mono font-semibold">
-                            {feedParsed.base}/{feedParsed.quote}
-                          </span>
-                          {feedParsed.tags
-                            .filter((tag) => tag !== "agg")
-                            .map((tag) => (
-                              <Badge
-                                key={tag}
-                                variant="outline"
-                                className="text-xs h-4 px-1 bg-primary/20 border-primary/50 text-primary"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-              </SelectContent>
-            </Select>
-            <AuthComponent variant="compact" />
+                  feedsResponse.data?.map((feed: any) => (
+                    <option
+                      key={feed.symbol}
+                      value={feed.symbol}
+                      className="bg-slate-900"
+                    >
+                      {parseFeedSymbol(feed.symbol).main}
+                    </option>
+                  ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+            </div>
+            <AuthComponent />
           </div>
 
-          {/* Center: Current Price */}
-          {feedId && (
-            <div className="flex items-center">
-              <span className="text-xl font-mono font-bold text-primary">
-                {latestPrice}
-              </span>
-            </div>
-          )}
-
-          {/* Right: Chart Type and Timeframe */}
+          {/* Right: Controls */}
           <div className="flex items-center gap-3">
             {/* Chart Type Selector */}
             <Select
@@ -650,10 +456,7 @@ export default function ActiveFeedPanel({
                 setChartType(value as "candles" | "bars" | "line")
               }
             >
-              <SelectTrigger
-                size="sm"
-                className="w-[120px] bg-black/70 backdrop-blur-sm border-primary/50 text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 hover:bg-black/80"
-              >
+              <SelectTrigger className="w-[100px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
                 <SelectValue>
                   <div className="flex items-center gap-2">
                     {(() => {
@@ -664,7 +467,7 @@ export default function ActiveFeedPanel({
                       return (
                         <>
                           {IconComponent && (
-                            <IconComponent className="w-5 h-5" />
+                            <IconComponent className="w-4 h-4" />
                           )}
                           <span className="hidden sm:inline">
                             {option?.label}
@@ -675,14 +478,14 @@ export default function ActiveFeedPanel({
                   </div>
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-border shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {CHART_TYPE_OPTIONS.map((option) => {
                   const IconComponent = option.icon;
                   return (
                     <SelectItem
                       key={option.value}
                       value={option.value}
-                      className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
+                      className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
                     >
                       <div className="flex items-center gap-2">
                         <IconComponent className="w-4 h-4" />
@@ -702,10 +505,7 @@ export default function ActiveFeedPanel({
                 tickBufferRef.current = {}; // Clear buffer on timeframe change
               }}
             >
-              <SelectTrigger
-                size="sm"
-                className="w-[80px] bg-black/70 backdrop-blur-sm border-primary/50 text-white focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-300 hover:bg-black/80"
-              >
+              <SelectTrigger className="w-[70px] bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80">
                 <SelectValue>
                   {
                     TIMEFRAME_OPTIONS.find((opt) => opt.value === timeframe)
@@ -713,12 +513,12 @@ export default function ActiveFeedPanel({
                   }
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-border shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {TIMEFRAME_OPTIONS.map((option) => (
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
+                    className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
                   >
                     {option.label}
                   </SelectItem>
@@ -728,104 +528,71 @@ export default function ActiveFeedPanel({
           </div>
         </div>
 
-        {/* Chart Container */}
-        <div className="flex-1 w-full relative bg-background/95 backdrop-blur-xl">
-          <div
-            ref={chartContainerRef}
-            className="w-full h-full bg-background/60 backdrop-blur-sm"
-            style={{ minHeight: "400px", borderRadius: "0" }}
-          >
-            {feedId && (error || historyError) && (
-              <div className="p-4">
-                <div className="p-3 bg-red-500/10 border border-red-500/50 backdrop-blur-sm">
-                  <p className="text-red-400 text-sm flex items-center gap-2">
-                    <div className="w-1 h-1 bg-red-400"></div>
-                    Error loading chart:{" "}
-                    {error?.message || historyError?.message}
-                  </p>
-                </div>
-              </div>
-            )}
+        {/* Feed Info Bar */}
+        {feedId && (
+          <div className="flex items-center justify-between relative z-10">
+            <div className="flex items-center flex-wrap gap-3">
+              <h2 className="font-semibold text-lg text-white font-mono flex items-center gap-2">
+                {parsedSymbol.main}
+                <div className="w-1 h-1 bg-teal-400"></div>
+              </h2>
+              {parsedSymbol.tags.map((tag) => (
+                <FeedTag key={tag}>{tag}</FeedTag>
+              ))}
+              <span className="ml-2 font-mono text-lg font-semibold text-white">
+                {latestPrice}
+              </span>
+            </div>
 
-            {!isChartInitialized && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-slate-400 text-sm">
-                  Initializing chart...
+            {/* Feed Metrics */}
+            {indexMetrics && (
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-400">Velocity:</span>
+                  <span className="text-emerald-400 font-semibold">
+                    {indexMetrics.velocity}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-400">Spread:</span>
+                  <span className="text-yellow-400 font-semibold">
+                    {indexMetrics.dispersion}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-400">Vol:</span>
+                  <span className="text-emerald-400 font-semibold">
+                    {indexMetrics.vbid}/{indexMetrics.vask}
+                  </span>
                 </div>
               </div>
             )}
           </div>
+        )}
+      </div>
 
-          {/* Stats Overlay - Top Left */}
-          {feedId && realtimePrice && (
-            <div className="absolute top-2 left-2 z-10 space-y-1 text-xs font-mono">
-              {/* OHLC Values */}
-              <div className="flex items-center gap-4">
-                <span className="text-slate-400">
-                  O:{" "}
-                  <span className="text-slate-300">
-                    {realtimePrice.open
-                      ? roundSig
-                        ? roundSig(realtimePrice.open, 6).toLocaleString()
-                        : realtimePrice.open.toFixed(6)
-                      : "-"}
-                  </span>
-                </span>
-                <span className="text-slate-400">
-                  H:{" "}
-                  <span className="text-slate-300">
-                    {realtimePrice.high
-                      ? roundSig
-                        ? roundSig(realtimePrice.high, 6).toLocaleString()
-                        : realtimePrice.high.toFixed(6)
-                      : "-"}
-                  </span>
-                </span>
-                <span className="text-slate-400">
-                  L:{" "}
-                  <span className="text-slate-300">
-                    {realtimePrice.low
-                      ? roundSig
-                        ? roundSig(realtimePrice.low, 6).toLocaleString()
-                        : realtimePrice.low.toFixed(6)
-                      : "-"}
-                  </span>
-                </span>
-                <span className="text-slate-400">
-                  C:{" "}
-                  <span className="text-slate-300">
-                    {realtimePrice.close
-                      ? roundSig
-                        ? roundSig(realtimePrice.close, 6).toLocaleString()
-                        : realtimePrice.close.toFixed(6)
-                      : "-"}
-                  </span>
-                </span>
+      <div
+        className={`flex-grow w-full relative ${feedId ? "h-[calc(100%-64px)]" : "h-full"} min-h-[150px] bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl`}
+      >
+        <div
+          ref={chartContainerRef}
+          className="w-full min-h-[400px] h-full bg-gradient-to-b from-black/60 via-slate-950/40 to-black/60 backdrop-blur-sm"
+        >
+          {feedId && error && (
+            <div className="p-4">
+              <div className="p-3 bg-red-500/10 border border-red-500/50 backdrop-blur-sm">
+                <p className="text-red-400 text-sm flex items-center gap-2">
+                  <div className="w-1 h-1 bg-red-400"></div>
+                  Error loading chart: {error.message}
+                </p>
               </div>
-              {/* Velocity and Spread */}
-              {indexMetrics && (
-                <div className="flex items-center gap-4">
-                  <span className="text-slate-400">
-                    Velocity:{" "}
-                    <span className="text-slate-300">
-                      {indexMetrics.velocity}
-                    </span>
-                  </span>
-                  <span className="text-slate-400">
-                    Spread:{" "}
-                    <span className="text-yellow-500">
-                      {indexMetrics.dispersion}
-                    </span>
-                  </span>
-                </div>
-              )}
             </div>
           )}
+        </div>
 
-          {/* Status indicator positioned at bottom right */}
-          <div className="absolute bottom-4 right-4 z-10">
-            <StatusIndicator />
-          </div>
+        {/* Status indicator positioned at bottom right */}
+        <div className="absolute bottom-4 right-4 z-10">
+          <StatusIndicator />
         </div>
       </div>
     </PanelWrapper>
