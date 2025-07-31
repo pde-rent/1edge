@@ -38,7 +38,7 @@ export function getStatusColor(status: string): string {
     case "running":
     case "filled":
     case "up":
-      return "text-green-600 dark:text-green-400";
+      return "text-primary";
     case "pending":
     case "paused":
     case "partially_filled":
