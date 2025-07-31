@@ -5,6 +5,7 @@ pragma solidity 0.8.23;
 /// @title A helper contract to manage nonce with the series
 contract SeriesEpochManager {
     error AdvanceEpochFailed();
+
     event EpochIncreased(address indexed maker, uint256 series, uint256 newEpoch);
 
     // {
@@ -21,7 +22,7 @@ contract SeriesEpochManager {
     mapping(uint256 seriesId => uint256 epoch) private _epochs;
 
     /// @notice Returns nonce for `maker` and `series`
-    function epoch(address maker, uint96 series) public view returns(uint256) {
+    function epoch(address maker, uint96 series) public view returns (uint256) {
         return _epochs[uint160(maker) | (uint256(series) << 160)];
     }
 
@@ -43,7 +44,7 @@ contract SeriesEpochManager {
 
     /// @notice Checks if `maker` has specified `makerEpoch` for `series`
     /// @return Result True if `maker` has specified epoch. Otherwise, false
-    function epochEquals(address maker, uint256 series, uint256 makerEpoch) public view returns(bool) {
+    function epochEquals(address maker, uint256 series, uint256 makerEpoch) public view returns (bool) {
         return _epochs[uint160(maker) | (uint256(series) << 160)] == makerEpoch;
     }
 }

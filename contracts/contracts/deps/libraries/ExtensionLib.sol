@@ -30,7 +30,7 @@ library ExtensionLib {
      * @param extension The calldata from which the MakerAssetSuffix is to be retrieved.
      * @return calldata Bytes representing the MakerAssetSuffix.
      */
-    function makerAssetSuffix(bytes calldata extension) internal pure returns(bytes calldata) {
+    function makerAssetSuffix(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.MakerAssetSuffix);
     }
 
@@ -39,7 +39,7 @@ library ExtensionLib {
      * @param extension The calldata from which the TakerAssetSuffix is to be retrieved.
      * @return calldata Bytes representing the TakerAssetSuffix.
      */
-    function takerAssetSuffix(bytes calldata extension) internal pure returns(bytes calldata) {
+    function takerAssetSuffix(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.TakerAssetSuffix);
     }
 
@@ -48,7 +48,7 @@ library ExtensionLib {
      * @param extension The calldata from which the MakingAmountData is to be retrieved.
      * @return calldata Bytes representing the MakingAmountData.
      */
-    function makingAmountData(bytes calldata extension) internal pure returns(bytes calldata) {
+    function makingAmountData(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.MakingAmountData);
     }
 
@@ -57,7 +57,7 @@ library ExtensionLib {
      * @param extension The calldata from which the TakingAmountData is to be retrieved.
      * @return calldata Bytes representing the TakingAmountData.
      */
-    function takingAmountData(bytes calldata extension) internal pure returns(bytes calldata) {
+    function takingAmountData(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.TakingAmountData);
     }
 
@@ -66,7 +66,7 @@ library ExtensionLib {
      * @param extension The calldata from which the predicate is to be retrieved.
      * @return calldata Bytes representing the predicate.
      */
-    function predicate(bytes calldata extension) internal pure returns(bytes calldata) {
+    function predicate(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.Predicate);
     }
 
@@ -75,17 +75,16 @@ library ExtensionLib {
      * @param extension The calldata from which the maker's permit is to be retrieved.
      * @return calldata Bytes representing the maker's permit.
      */
-    function makerPermit(bytes calldata extension) internal pure returns(bytes calldata) {
+    function makerPermit(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.MakerPermit);
     }
-
 
     /**
      * @notice Returns the pre-interaction from the provided extension calldata.
      * @param extension The calldata from which the pre-interaction is to be retrieved.
      * @return calldata Bytes representing the pre-interaction.
      */
-    function preInteractionTargetAndData(bytes calldata extension) internal pure returns(bytes calldata) {
+    function preInteractionTargetAndData(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.PreInteractionData);
     }
 
@@ -94,7 +93,7 @@ library ExtensionLib {
      * @param extension The calldata from which the post-interaction is to be retrieved.
      * @return calldata Bytes representing the post-interaction.
      */
-    function postInteractionTargetAndData(bytes calldata extension) internal pure returns(bytes calldata) {
+    function postInteractionTargetAndData(bytes calldata extension) internal pure returns (bytes calldata) {
         return _get(extension, DynamicField.PostInteractionData);
     }
 
@@ -103,7 +102,7 @@ library ExtensionLib {
      * @param extension The calldata from which the extra suffix data is to be retrieved.
      * @return calldata Bytes representing the extra suffix data.
      */
-    function customData(bytes calldata extension) internal pure returns(bytes calldata) {
+    function customData(bytes calldata extension) internal pure returns (bytes calldata) {
         if (extension.length < 0x20) return msg.data[:0];
         uint256 offsets = uint256(bytes32(extension));
         unchecked {
@@ -118,12 +117,13 @@ library ExtensionLib {
      * @param field The specific dynamic field to retrieve from the extension.
      * @return calldata Bytes representing the requested field.
      */
-    function _get(bytes calldata extension, DynamicField field) private pure returns(bytes calldata) {
+    function _get(bytes calldata extension, DynamicField field) private pure returns (bytes calldata) {
         if (extension.length < 0x20) return msg.data[:0];
 
         Offsets offsets;
         bytes calldata concat;
-        assembly ("memory-safe") {  // solhint-disable-line no-inline-assembly
+        assembly ("memory-safe") {
+            // solhint-disable-line no-inline-assembly
             offsets := calldataload(extension.offset)
             concat.offset := add(extension.offset, 0x20)
             concat.length := sub(extension.length, 0x20)
