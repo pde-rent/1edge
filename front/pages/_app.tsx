@@ -1,23 +1,54 @@
 import type { AppProps } from "next/app";
-import "../styles/globals.css"; // Import flattened global CSS
+import "../styles/globals.css";
 import "@fontsource-variable/inter";
-import "../utils/fixEthereum"; // Fix ethereum object redefinition errors
+import "../utils/fixEthereum";
 import React from "react";
-import type { FC } from "react"; // Import FC for functional component typing
+import type { FC } from "react";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { THEME, syncThemeWithCSSVars } from "@common/constants";
 import { useEffect } from "react";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import { WebSocketProvider } from "../contexts/WebSocketContext";
 
-// Poppins font, adjust as needed
+import { PrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider, createConfig } from "@privy-io/wagmi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { mainnet, sepolia, polygon, arbitrum, base } from "viem/chains";
+import { http } from "wagmi";
 
-// Global styles can be imported here if not handled by styled-components GlobalStyle in index.tsx
-// For example, if you had a global.css:
-// import '../styles/globals.css';
+const config = createConfig({
+  chains: [mainnet, sepolia, polygon, arbitrum, base],
+  transports: {
+    [mainnet.id]: http(),
+    [sepolia.id]: http(),
+    [polygon.id]: http(),
+    [arbitrum.id]: http(),
+    [base.id]: http(),
+  },
+});
 
-// Create a dark theme instance for Material UI
+const queryClient = new QueryClient();
+
+const privyConfig = {
+  // Configure supported chains (should match wagmi chains)
+  supportedChains: [mainnet, sepolia, polygon, arbitrum, base],
+  // Configure login methods
+  loginMethods: ["email", "wallet", "google", "twitter", "discord"] as const,
+  // Configure embedded wallet
+  embeddedWallets: {
+    createOnLogin: "users-without-wallets" as const,
+    requireUserPasswordOnCreate: false,
+  },
+  // Configure external wallet connection
+  externalWallets: {
+    coinbaseWallet: {
+      // Replace with your app's URL
+      connectionOptions: "smartWalletOnly" as const,
+    },
+  },
+};
+
 const darkTheme = createTheme({
   palette: {
     mode: "dark",
@@ -109,8 +140,8 @@ const darkTheme = createTheme({
 });
 
 /**
- * Custom App component for Next.js.
- * Sets up the MUI theme and global styles for the application.
+ * Custom App component for Next.js with Privy + Wagmi integration.
+ * Sets up the MUI theme, Privy authentication, and Wagmi for Web3 functionality.
  * @param Component - The active page component
  * @param pageProps - Props for the active page
  */
@@ -121,13 +152,32 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
   }, []);
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <WebSocketProvider url="ws://localhost:40007/ws">
-        <Toaster />
-        <Component {...pageProps} />
-      </WebSocketProvider>
-    </ThemeProvider>
+    <PrivyProvider
+      appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID as string}
+      config={privyConfig as any}
+    >
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={config as any}>
+          <ThemeProvider theme={darkTheme}>
+            <CssBaseline />
+            <WebSocketProvider url="ws://localhost:40007/ws">
+              <Toaster
+                theme="dark"
+                position="top-right"
+                toastOptions={{
+                  style: {
+                    background: THEME.background.paper,
+                    color: THEME.text.primary,
+                    border: `1px solid ${THEME.border}`,
+                  },
+                }}
+              />
+              <Component {...pageProps} />
+            </WebSocketProvider>
+          </ThemeProvider>
+        </WagmiProvider>
+      </QueryClientProvider>
+    </PrivyProvider>
   );
 };
 

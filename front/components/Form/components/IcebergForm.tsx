@@ -35,7 +35,39 @@ const IcebergForm = ({ control, errors }: any) => {
 
   return (
     <div className="space-y-6">
-      
+          <div className="space-y-2">
+  <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+    <DollarSign className="w-4 h-4" />
+    Amount (USD)
+    <div className="w-1 h-1 bg-teal-400"></div>
+  </Label>
+  <Controller
+    name="amount"
+    control={control}
+    rules={{
+      required: "Amount is required",
+      min: { value: 0.01, message: "Must be greater than $0" },
+    }}
+    render={({ field }) => (
+      <div className="relative">
+        <Input
+          {...field}
+          type="number"
+          step="0.01"
+          className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+          placeholder="Enter total amount"
+        />
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+      </div>
+    )}
+  />
+  {errors.size && (
+    <span className="text-xs text-red-400 flex items-center gap-1">
+      <div className="w-1 h-1 bg-red-400"></div>
+      {errors.size.message}
+    </span>
+  )}
+</div>
       {/* Start Price */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
