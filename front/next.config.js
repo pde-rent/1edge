@@ -2,12 +2,14 @@ const path = require("path");
 
 /** @type {import('next').NextConfig} */
 module.exports = {
+  pageExtensions: ["js", "jsx", "ts", "tsx"],
   transpilePackages: ["../common"],
   webpack: (config, { isServer }) => {
-    // Add path alias for @common
+    // Add path alias for @common and docs
     config.resolve.alias = {
       ...config.resolve.alias,
       "@common": path.resolve(__dirname, "../common"),
+      "@docs": path.resolve(__dirname, "../docs"),
       // Commented out preact replacements
       // react: 'preact/compat',
       // 'react-dom/test-utils': 'preact/test-utils',

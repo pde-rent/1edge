@@ -4,7 +4,7 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import ActiveFeedPanel from '../components/ActiveFeedPanel';
 import OrderBookPanel from '../components/OrderBookPanel';
 import StatusPanel from '../components/StatusPanel';
-import PositionsPanel from '../components/PositionsPanel';
+import OrdersPanel from '../components/PositionsPanel';
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
 import type { ApiResponse } from '@common/types';
@@ -62,7 +62,7 @@ export default function Home() {
           .react-grid-layout {
             width: 100% !important;
             height: 100vh;
-            background-color: #0c0808;
+            background-color: var(--background-main);
           }
 
           /* Hide all resize handles for static layout */
@@ -106,7 +106,7 @@ export default function Home() {
         </div>
         <div key="positions" className="h-full w-full overflow-hidden">
           <div className="h-full w-full overflow-hidden flex flex-col">
-            <PositionsPanel />
+            <OrdersPanel />
           </div>
         </div>
       </ResponsiveGridLayout>
