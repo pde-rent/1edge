@@ -46,35 +46,37 @@ export default function DocPage({ doc, docStructure }: DocPageProps) {
   }
 
   return (
-    <DocsLayout 
-      docStructure={docStructure} 
-      currentSlug={doc.slug} 
+    <DocsLayout
+      docStructure={docStructure}
+      currentSlug={doc.slug}
       loading={isLoading}
       tocContent={doc.content}
     >
       <div className="space-y-6">
         {/* Document metadata */}
-        {(doc.category || doc.frontMatter.author || doc.frontMatter.date) && (
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border-b pb-4">
-            {doc.category && (
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary">{doc.category}</Badge>
-              </div>
-            )}
-            {doc.frontMatter.author && (
-              <div className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span>{doc.frontMatter.author}</span>
-              </div>
-            )}
-            {doc.frontMatter.date && (
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>{new Date(doc.frontMatter.date).toLocaleDateString()}</span>
-              </div>
-            )}
-          </div>
-        )}
+        {
+        // (doc.category || doc.frontMatter.author || doc.frontMatter.date) && (
+          // <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground border-b pb-4">
+          //   {doc.category && (
+          //     <div className="flex items-center gap-2">
+          //       <Badge variant="secondary">{doc.category}</Badge>
+          //     </div>
+          //   )}
+          //   {doc.frontMatter.author && (
+          //     <div className="flex items-center gap-2">
+          //       <User className="h-4 w-4" />
+          //       <span>{doc.frontMatter.author}</span>
+          //     </div>
+          //   )}
+          //   {doc.frontMatter.date && (
+          //     <div className="flex items-center gap-2">
+          //       <Calendar className="h-4 w-4" />
+          //       <span>{new Date(doc.frontMatter.date).toLocaleDateString()}</span>
+          //     </div>
+          //   )}
+          // </div>
+        // )
+        }
 
         {/* Document content */}
         <MarkdownRenderer
@@ -89,7 +91,7 @@ export default function DocPage({ doc, docStructure }: DocPageProps) {
 
 export const getStaticPaths: GetStaticPaths = async () => {
   const docs = getAllDocs();
-  
+
   const paths = docs.map((doc) => ({
     params: {
       slug: doc.slug.split('/'),
@@ -104,7 +106,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const slug = Array.isArray(params?.slug) ? params.slug.join('/') : params?.slug || '';
-  
+
   const doc = getDocBySlug(slug);
   const docStructure = getDocStructure();
 
