@@ -39,11 +39,10 @@ export const services: Service[] = [
     path: "back/services/websocketServer.ts",
   },
   {
-    id: "order-executor",
-    name: "Order Executor",
-    path: "back/services/orderExecutor.ts",
+    id: "order-registry",
+    name: "Order Registry",
+    path: "back/services/orderRegistry.ts",
   },
-  { id: "keeper", name: "Keeper", path: "back/services/keeper.ts" },
   {
     id: "status-checker",
     name: "Status Checker",
