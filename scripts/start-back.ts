@@ -68,7 +68,7 @@ async function startBackendServices() {
   console.log("Starting backend services...");
 
   // Kill processes on backend ports only (excluding 40006 which is frontend)
-  const ports = ["40005", "40007", "40008", "40009", "40042"];
+  const ports = ["40005", "40007", "40008", "40009", "40011", "40042"];
   console.log("Cleaning up existing processes...");
 
   for (const port of ports) {
@@ -82,7 +82,7 @@ async function startBackendServices() {
 
   // Start only essential backend services
   const essentialServices = services.filter((service) =>
-    ["collector", "api", "websocket", "status-checker"].includes(service.id),
+    ["collector", "api", "websocket", "order-registry", "status-checker"].includes(service.id),
   );
 
   for (const service of essentialServices) {
@@ -110,7 +110,7 @@ async function startBackendServices() {
       if (service.id === "collector") {
         console.log("Waiting for collector to initialize pub/sub server...");
         await new Promise((resolve) => setTimeout(resolve, 3000));
-      } else if (service.id === "api" || service.id === "websocket") {
+      } else if (service.id === "api" || service.id === "websocket" || service.id === "order-registry") {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }

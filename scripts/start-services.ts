@@ -19,15 +19,19 @@ const services = [
     description: "Real-time WebSocket server for client price updates",
   },
   {
+    name: "Order Registry",
+    script: "back/services/orderRegistry.ts",
+    description: "Standalone order management and execution service",
+  },
+  {
     name: "Status Checker",
     script: "back/services/statusChecker.ts",
     description: "Health monitoring for all services",
   },
-  // NOTE: Keeper & Order Executor excluded - focus on price tracking only
 ];
 
 async function startServices() {
-  console.log("🚀 Starting 1edge core services (price tracking + API)...\n");
+  console.log("🚀 Starting 1edge core services (price tracking + orders + API)...\n");
 
   const apiPort = process.env.API_PORT || "40005";
   const processes: any[] = [];
