@@ -140,10 +140,10 @@ const fetchCoins = async (useMockData = true) => {
 
   if (loading) {
     return (
-      <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+      <div className="bg-gradient-to-br from-background/20 via-background/10 to-background/20 backdrop-blur-xl rounded-2xl p-6 border border-primary/20 shadow-2xl shadow-primary/10">
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin square h-8 w-8 border-b-2 border-emerald-500"></div>
-          <span className="ml-3 text-emerald-200">Loading coins...</span>
+          <div className="animate-spin square h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-3 text-primary">Loading coins...</span>
         </div>
       </div>
     );
@@ -151,7 +151,7 @@ const fetchCoins = async (useMockData = true) => {
 
   if (error) {
     return (
-      <div className="bg-gradient-to-br from-emerald-900/20 via-green-800/10 to-emerald-700/20 backdrop-blur-xl rounded-2xl p-6 border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
+      <div className="bg-gradient-to-br from-background/20 via-background/10 to-background/20 backdrop-blur-xl rounded-2xl p-6 border border-primary/20 shadow-2xl shadow-primary/10">
         <div className="flex items-center justify-center py-8 text-red-400">
           <span>{error}</span>
         </div>
@@ -165,7 +165,7 @@ const fetchCoins = async (useMockData = true) => {
  <div className="w-full flex  flex-col items-center gap-2 sm:flex-nowrap">
   {/* FROM */}
   <div className="flex-1 min-w-full">
-    <label className="block text-sm font-medium text-emerald-200 mb-2">From</label>
+    <label className="block text-sm font-medium text-primary mb-2">From</label>
     <CoinDropdown
       selectedCoin={fromCoin}
       onSelect={onFromCoinChange}
@@ -179,7 +179,7 @@ const fetchCoins = async (useMockData = true) => {
     <button
       type="button"
       onClick={swapCoins}
-      className="p-2 bg-gradient-to-br from-emerald-500/30 via-green-400/25 to-emerald-600/30 square border border-emerald-400/40 backdrop-blur-sm shadow-lg shadow-emerald-500/20 hover:shadow-emerald-400/30 transition-all transform hover:scale-110 text-emerald-50"
+      className="p-2 bg-gradient-to-br from-primary/30 via-primary/25 to-primary/30 square border border-primary/40 backdrop-blur-sm shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all transform hover:scale-110 text-primary-foreground"
       title="Swap coins"
     >
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,7 +190,7 @@ const fetchCoins = async (useMockData = true) => {
 
   {/* TO */}
   <div className="flex-1 min-w-full">
-    <label className="block text-sm font-medium text-emerald-200 mb-2">To</label>
+    <label className="block text-sm font-medium text-primary mb-2">To</label>
     <CoinDropdown
       selectedCoin={toCoin}
       onSelect={onToCoinChange}
