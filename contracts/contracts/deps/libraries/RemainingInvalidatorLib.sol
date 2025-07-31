@@ -12,7 +12,6 @@ type RemainingInvalidator is uint256;
  * When order is filled, the remaining invalidator is the inverse of the remaining amount.
  */
 library RemainingInvalidatorLib {
-
     /// @dev The error is thrown when an attempt is made to invalidate an already invalidated entity.
     error RemainingInvalidatedOrder();
 
@@ -21,7 +20,7 @@ library RemainingInvalidatorLib {
      * @param invalidator The remaining invalidator of the order.
      * @return result Whether the order is new or not.
      */
-    function isNewOrder(RemainingInvalidator invalidator) internal pure returns(bool) {
+    function isNewOrder(RemainingInvalidator invalidator) internal pure returns (bool) {
         return RemainingInvalidator.unwrap(invalidator) == 0;
     }
 
@@ -31,7 +30,7 @@ library RemainingInvalidatorLib {
      * @param invalidator The remaining invalidator for the order.
      * @return result The remaining amount for the order.
      */
-    function remaining(RemainingInvalidator invalidator) internal pure returns(uint256) {
+    function remaining(RemainingInvalidator invalidator) internal pure returns (uint256) {
         uint256 value = RemainingInvalidator.unwrap(invalidator);
         if (value == 0) {
             revert RemainingInvalidatedOrder();
@@ -48,7 +47,7 @@ library RemainingInvalidatorLib {
      * @param orderMakerAmount The amount to return if the order is new.
      * @return result The remaining amount for the order.
      */
-    function remaining(RemainingInvalidator invalidator, uint256 orderMakerAmount) internal pure returns(uint256) {
+    function remaining(RemainingInvalidator invalidator, uint256 orderMakerAmount) internal pure returns (uint256) {
         uint256 value = RemainingInvalidator.unwrap(invalidator);
         if (value == 0) {
             return orderMakerAmount;
@@ -64,7 +63,11 @@ library RemainingInvalidatorLib {
      * @param makingAmount The making amount of the order.
      * @return result The remaining invalidator for the order.
      */
-    function remains(uint256 remainingMakingAmount, uint256 makingAmount) internal pure returns(RemainingInvalidator) {
+    function remains(uint256 remainingMakingAmount, uint256 makingAmount)
+        internal
+        pure
+        returns (RemainingInvalidator)
+    {
         unchecked {
             return RemainingInvalidator.wrap(~(remainingMakingAmount - makingAmount));
         }
@@ -74,7 +77,7 @@ library RemainingInvalidatorLib {
      * @notice Provides the remaining invalidator for a fully filled order.
      * @return result The remaining invalidator for a fully filled order.
      */
-    function fullyFilled() internal pure returns(RemainingInvalidator) {
+    function fullyFilled() internal pure returns (RemainingInvalidator) {
         return RemainingInvalidator.wrap(type(uint256).max);
     }
 }
