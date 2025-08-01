@@ -32,20 +32,31 @@ export function SearchDropdown({ query, onQueryChange, onClose, isOpen }: Search
 
   // Search with debouncing
   React.useEffect(() => {
+    const defaultResult = {
+      id: 'docs-home',
+      title: 'Documentation Home',
+      url: '/docs',
+      category: '1edge',
+      matchedText: 'Advanced orders and market making strategies for 1inch\'s order book',
+      score: 100
+    };
+
     if (!query.trim() || query.length < 2) {
-      setResults([]);
+      setResults([defaultResult]);
+      setSelectedIndex(0);
       return;
     }
 
     setIsLoading(true);
     const timeoutId = setTimeout(async () => {
       try {
-        const searchResults = await searchService.search(query, 8);
-        setResults(searchResults);
+        const searchResults = await searchService.search(query, 7);
+        // Always include the docs home as the first result
+        setResults([defaultResult, ...searchResults]);
         setSelectedIndex(0);
       } catch (error) {
         console.error('Search error:', error);
-        setResults([]);
+        setResults([defaultResult]);
       } finally {
         setIsLoading(false);
       }
@@ -57,20 +68,24 @@ export function SearchDropdown({ query, onQueryChange, onClose, isOpen }: Search
   // Handle keyboard navigation for dropdown
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen || !results.length) return;
+      if (!isOpen) return;
 
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev + 1) % results.length);
+          if (results.length > 0) {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev + 1) % results.length);
+          }
           break;
         case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev - 1 + results.length) % results.length);
+          if (results.length > 0) {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev - 1 + results.length) % results.length);
+          }
           break;
         case 'Enter':
-          e.preventDefault();
-          if (results[selectedIndex]) {
+          if (results.length > 0 && results[selectedIndex]) {
+            e.preventDefault();
             handleResultClick(results[selectedIndex]);
           }
           break;
@@ -90,7 +105,7 @@ export function SearchDropdown({ query, onQueryChange, onClose, isOpen }: Search
     onClose();
   };
 
-  const shouldShowDropdown = isOpen && query.length >= 2 && (isLoading || results.length > 0);
+  const shouldShowDropdown = isOpen && (isLoading || results.length > 0);
 
   if (!isOpen) return null;
 
@@ -128,9 +143,11 @@ export function SearchDropdown({ query, onQueryChange, onClose, isOpen }: Search
           ) : results.length > 0 ? (
             <ScrollArea className="h-full">
               <div className="p-2">
-                <div className="text-xs text-muted-foreground px-3 py-2">
-                  Found {results.length} result{results.length !== 1 ? 's' : ''}
-                </div>
+                {query.length >= 2 && (
+                  <div className="text-xs text-muted-foreground px-3 py-2">
+                    Found {results.length} result{results.length !== 1 ? 's' : ''}
+                  </div>
+                )}
                 <div className="space-y-1">
                   {results.map((result, index) => (
                     <SearchResultItem
@@ -145,12 +162,12 @@ export function SearchDropdown({ query, onQueryChange, onClose, isOpen }: Search
                 </div>
               </div>
             </ScrollArea>
-          ) : query.length >= 2 ? (
+          ) : (
             <div className="p-6 text-center text-muted-foreground">
               <Search className="h-10 w-10 mx-auto mb-3 opacity-40" />
-              <p className="text-base">No results found for "{query}"</p>
+              <p className="text-base">No results found</p>
             </div>
-          ) : null}
+          )}
         </div>
       </Card>
     </div>
