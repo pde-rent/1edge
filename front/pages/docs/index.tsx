@@ -36,7 +36,7 @@ export default function DocsIndex({ docStructure }: DocsIndexProps) {
               variant="outline"
               className="w-full h-32 flex flex-col items-center justify-center gap-4 text-lg font-semibold border-primary text-primary hover:bg-primary/10"
             >
-              <ArrowLeftRight className="h-24 w-24" style={{ width: '96px', height: '96px' }} />
+              <ArrowLeftRight className="h-8 w-8" />
               Order Types
             </Button>
           </Link>
@@ -47,7 +47,7 @@ export default function DocsIndex({ docStructure }: DocsIndexProps) {
               variant="outline"
               className="w-full h-32 flex flex-col items-center justify-center gap-4 text-lg font-semibold border-primary text-primary hover:bg-primary/10"
             >
-              <BookOpen className="h-24 w-24" style={{ width: '96px', height: '96px' }} />
+              <BookOpen className="h-8 w-8" />
               User Guides
             </Button>
           </Link>
@@ -63,7 +63,7 @@ export default function DocsIndex({ docStructure }: DocsIndexProps) {
               variant="outline"
               className="w-full h-32 flex flex-col items-center justify-center gap-4 text-lg font-semibold border-primary text-primary hover:bg-primary/10"
             >
-              <ExternalLink className="h-24 w-24" style={{ width: '96px', height: '96px' }} />
+              <ExternalLink className="h-8 w-8" />
               1inch Docs
             </Button>
           </a>
