@@ -1,4 +1,4 @@
-import { expect, assert } from "chai";
+import { expect } from "chai";
 import { ethers } from "hardhat";
 import { parseEther, ZeroAddress } from "ethers";
 import { Signer } from "ethers";
@@ -13,7 +13,6 @@ describe("DelegateProxy", function () {
   let alice: Signer;
   let delegateProxy: DelegateProxy;
   let weth: ERC20Mock;
-  let wbtc: ERC20Mock;
   let inch: ERC20Mock;
   let limitOrderProtocol: LimitOrderProtocol;
 
@@ -186,13 +185,13 @@ describe("DelegateProxy", function () {
         let orderHash = await limitOrderProtocol.hashOrder(oneInchOrder);
 
         let orderData = await delegateProxy.getOrderData([orderHash]);
-        assert.equal(orderData[0]._remainingMakerAmount, parseEther("1"));
+        expect(orderData[0]._remainingMakerAmount).to.equal(parseEther("1"));
 
         await inch.connect(alice).approve(limitOrderProtocol, inchAmount);
         await limitOrderProtocol.connect(alice).fillContractOrder(oneInchOrder, "0x", inchAmount, 0);
 
         orderData = await delegateProxy.getOrderData([orderHash]);
-        assert.equal(orderData[0]._remainingMakerAmount, 0n);
+        expect(orderData[0]._remainingMakerAmount).to.equal(0n);
       });
     });
 

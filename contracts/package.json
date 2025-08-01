@@ -4,9 +4,9 @@
   "description": "Smart contracts for 1edge",
   "private": true,
   "scripts": {
-    "compile": "hardhat compile",
-    "test": "hardhat test",
-    "deploy": "hardhat run scripts/deploy.ts"
+    "compile": "bunx hardhat compile",
+    "test": "bunx hardhat test",
+    "deploy": "bunx hardhat run scripts/deployDelegateProxy.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",

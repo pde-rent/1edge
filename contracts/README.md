@@ -4,8 +4,8 @@
 
 ```shell
 # compile contract
-npx hardhat compile
+bunx hardhat compile
 
 # run contract tests
-npx hardhat test
+bunx hardhat test
 ```

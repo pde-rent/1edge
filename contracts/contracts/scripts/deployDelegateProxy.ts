@@ -6,11 +6,11 @@ async function main() {
   console.log("Deploying with:", deployer.address);
 
   const limitOrderProtocol = ONE_INCH_LIMIT_ORDER_PROTOCOL;
-  const DelegateSafe = await ethers.getContractFactory("DelegateSafe");
-  const delegateSafe = await DelegateSafe.deploy(limitOrderProtocol);
+  const DelegateProxy = await ethers.getContractFactory("DelegateProxy");
+  const delegateProxy = await DelegateProxy.deploy(limitOrderProtocol);
 
-  await delegateSafe.waitForDeployment();
-  console.log("DelegateSafe deployed at:", await delegateSafe.getAddress());
+  await delegateProxy.waitForDeployment();
+  console.log("DelegateProxy deployed at:", await delegateProxy.getAddress());
 }
 
 main().catch((err) => {

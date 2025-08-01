@@ -15,7 +15,6 @@ import "./deps/libraries/AddressLib.sol";
 ///      approved keepers.
 contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
     using AddressLib for Address;
-    // using MakerTraitsLib for MakerTraits;
 
     mapping(address keepers => bool) internal approvedKeeper;
     mapping(bytes32 orderId => bool) internal isSignedOrder;
@@ -133,7 +132,7 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
         address,
         uint256 makingAmount,
         uint256,
-        uint256 ,
+        uint256,
         bytes calldata
     ) external override onlyLimitOrderProtocol {
         remainingMakerAmount[orderHash] -= makingAmount;
@@ -150,9 +149,6 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
     }
 
     /// APPROVALS & REVOKATIONS
-    function maxApproveToken(address token) internal onlyOwner {
-        _maxApproveToken(token);
-    }
 
     function _maxApproveToken(address token) internal {
         IERC20(token).approve(address(LIMIT_ORDER_PROTOCOL), type(uint256).max);
