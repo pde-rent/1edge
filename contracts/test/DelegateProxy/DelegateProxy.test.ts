@@ -59,9 +59,30 @@ describe("DelegateProxy", function () {
           makingAmount: wethAmount,
           takerAsset: await inch.getAddress(),
           takingAmount: parseEther("1"),
+          maker: await delegateProxy.getAddress()
         }), 
         orderCreator: bobTheCreator.getAddress() 
       }])
+    });
+
+    it("Should not create order with wrong maker", async function () {
+      await delegateProxy.connect(delegateOwner).approveKeeper(await approvedKeeper.getAddress());
+      const wethAmount = parseEther("1");
+      await weth.connect(bobTheCreator).approve(delegateProxy.getAddress(), wethAmount);
+      const oneInchOrder = buildMockOrder({
+        receiver: await bobTheCreator.getAddress(),
+        makerAsset: await weth.getAddress(),
+        makingAmount: wethAmount,
+        takerAsset: await inch.getAddress(),
+        takingAmount: parseEther("1"),
+      });
+
+      await expect(
+        delegateProxy.connect(approvedKeeper).createUserOrder([{
+          order: oneInchOrder,
+          orderCreator: await bobTheCreator.getAddress()
+        }])
+      ).to.be.revertedWithCustomError(delegateProxy, "CanNotMakeOrder");
     });
   });
 
@@ -136,6 +157,42 @@ describe("DelegateProxy", function () {
         await expect(
           delegateProxy.connect(alice).cancelOrder(oneInchOrder)
         ).to.be.revertedWithCustomError(delegateProxy,"CallerNotApprovedKeeper" )
+      });
+    });
+
+    describe("Accounting", function () {
+      it("Should properly keep track of remaining maker amount", async function () {
+        await delegateProxy.connect(delegateOwner).approveKeeper(await approvedKeeper.getAddress());
+        const wethAmount = parseEther("2");
+        await weth.connect(bobTheCreator).approve(delegateProxy.getAddress(), wethAmount);
+        const oneInchOrder = buildMockOrder({
+          maker: await delegateProxy.getAddress(),
+          receiver: await bobTheCreator.getAddress(),
+          makerAsset: await weth.getAddress(),
+          makingAmount: wethAmount,
+          takerAsset: await inch.getAddress(),
+          takingAmount: parseEther("2"),
+          makerTraits: (1n << 252n) | (1n << 254n)
+        });
+
+        await delegateProxy.connect(approvedKeeper).createUserOrder([{
+          order: oneInchOrder,
+          orderCreator: await bobTheCreator.getAddress()
+        }]);
+        const inchAmount = parseEther("1")
+        await inch.connect(alice).approve(limitOrderProtocol, inchAmount);
+        await limitOrderProtocol.connect(alice).fillContractOrder(oneInchOrder, "0x", inchAmount, 0);
+
+        let orderHash = await limitOrderProtocol.hashOrder(oneInchOrder);
+
+        let orderData = await delegateProxy.getOrderData([orderHash]);
+        assert.equal(orderData[0]._remainingMakerAmount, parseEther("1"));
+
+        await inch.connect(alice).approve(limitOrderProtocol, inchAmount);
+        await limitOrderProtocol.connect(alice).fillContractOrder(oneInchOrder, "0x", inchAmount, 0);
+
+        orderData = await delegateProxy.getOrderData([orderHash]);
+        assert.equal(orderData[0]._remainingMakerAmount, 0n);
       });
     });
 
