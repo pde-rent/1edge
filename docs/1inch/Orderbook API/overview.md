@@ -1,9 +1,10 @@
 # 1inch Orderbook API Overview
 
-> **🏗️ Your gateway to decentralized limit order trading**  
+> ** Your gateway to decentralized limit order trading**  
 > The 1inch Orderbook API provides RESTful access to limit orders, enabling efficient discovery and execution while maintaining the decentralized nature of the protocol.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph TD
     subgraph "Orderbook API Architecture"
         CLIENT[Client Application] --> API[Orderbook API]
@@ -101,7 +102,7 @@ The Orderbook API bridges the gap between off-chain order creation and on-chain 
 
 ### API Key Setup
 
-> **🚀 Get started in minutes**  
+> ** Get started in minutes**  
 > Obtain your API key from the [1inch Developer Portal](https://portal.1inch.dev/)
 
 ```bash
@@ -111,7 +112,7 @@ Authorization: Bearer YOUR_API_KEY
 
 ### Security Best Practices
 
-> **⚠️ Security Guidelines**
+> ** Security Guidelines**
 >
 > - Never expose API keys in client-side code
 > - Use environment variables for key storage
@@ -133,7 +134,7 @@ Authorization: Bearer YOUR_API_KEY
 
 ### Optimization Tips
 
-> **💡 Pro Tips for Better Performance**
+> ** Pro Tips for Better Performance**
 >
 > - Use appropriate filters to reduce response size
 > - Implement client-side caching for static data
@@ -175,11 +176,11 @@ Authorization: Bearer YOUR_API_KEY
 
 | Code  | Status          | Meaning               |
 | ----- | --------------- | --------------------- |
-| `200` | ✅ OK           | Request successful    |
-| `400` | ❌ Bad Request  | Invalid parameters    |
+| `200` |  OK           | Request successful    |
+| `400` |  Bad Request  | Invalid parameters    |
 | `401` | 🔒 Unauthorized | Invalid API key       |
-| `404` | 🔍 Not Found    | Resource not found    |
-| `429` | ⏸️ Rate Limited | Too many requests     |
+| `404` |  Not Found    | Resource not found    |
+| `429` | ⏸ Rate Limited | Too many requests     |
 | `500` | 🔥 Server Error | Internal server issue |
 
 ---
@@ -190,13 +191,13 @@ Authorization: Bearer YOUR_API_KEY
 
 | Network       | Chain ID | Status    | Features        |
 | ------------- | -------- | --------- | --------------- |
-| **Ethereum**  | `1`      | 🟢 Active | Full support    |
-| **Polygon**   | `137`    | 🟢 Active | Full support    |
-| **BSC**       | `56`     | 🟢 Active | Full support    |
-| **Arbitrum**  | `42161`  | 🟢 Active | Full support    |
-| **Optimism**  | `10`     | 🟢 Active | Full support    |
-| **Avalanche** | `43114`  | 🟢 Active | Full support    |
-| **Base**      | `8453`   | 🟡 Beta   | Limited support |
+| **Ethereum**  | `1`      |  Active | Full support    |
+| **Polygon**   | `137`    |  Active | Full support    |
+| **BSC**       | `56`     |  Active | Full support    |
+| **Arbitrum**  | `42161`  |  Active | Full support    |
+| **Optimism**  | `10`     |  Active | Full support    |
+| **Avalanche** | `43114`  |  Active | Full support    |
+| **Base**      | `8453`   |  Beta   | Limited support |
 
 ### Network Configuration
 
@@ -247,19 +248,19 @@ console.log(`Found ${orders.length} active orders`);
 
 ### Quick Links
 
-- [🚀 **Quickstart Guide**](./quickstart.md) - Get up and running in 5 minutes
-- [📖 **API Reference**](./api-reference/) - Comprehensive endpoint documentation
-- [🛠️ **SDK Integration**](../1inch%20LOP/Limit%20Order%20SDK/install.md) - JavaScript/TypeScript SDK
-- [🏗️ **Contract Integration**](../1inch%20LOP/limit-order-maker-contract.md) - Direct contract interaction
+- [ **Quickstart Guide**](./quickstart.md) - Get up and running in 5 minutes
+- [ **API Reference**](./api-reference/) - Comprehensive endpoint documentation
+- [🛠 **SDK Integration**](../1inch%20LOP/Limit%20Order%20SDK/install.md) - JavaScript/TypeScript SDK
+- [ **Contract Integration**](../1inch%20LOP/limit-order-maker-contract.md) - Direct contract interaction
 
 ### Support & Community
 
-- 📚 [**Documentation Portal**](https://docs.1inch.io/) - Complete documentation
-- 💬 [**Developer Discord**](https://discord.gg/1inch) - Community support
+-  [**Documentation Portal**](https://docs.1inch.io/) - Complete documentation
+-  [**Developer Discord**](https://discord.gg/1inch) - Community support
 - 🐛 [**GitHub Issues**](https://github.com/1inch/limit-order-protocol) - Bug reports
 - 📧 [**Developer Support**](mailto:dev-support@1inch.io) - Direct assistance
 
 ---
 
-> **🎯 Ready to build?**  
+> ** Ready to build?**  
 > Start with our [Quickstart Guide](./quickstart.md) and have your first order running in minutes!

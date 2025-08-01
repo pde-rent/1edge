@@ -8,6 +8,7 @@ import {
   getActiveOrders,
   getPendingOrders,
   saveOrderEvent,
+  getOrdersByMaker,
 } from "./storage";
 import { logger } from "@back/utils/logger";
 import type { Order, KeeperConfig } from "@common/types";
@@ -16,12 +17,14 @@ import { sleep, generateId } from "@common/utils";
 import { getOrderWatcher } from "@back/orders";
 import { ethers } from "ethers";
 import type { TwapParams, RangeOrderParams } from "@common/types";
+import { SERVICE_PORTS } from "@common/constants";
 
 class OrderRegistryService {
   private config: KeeperConfig;
   private isRunning: boolean = false;
   private watchers: Map<string, boolean> = new Map();
   private mockMode: boolean = false;
+  private server?: any;
 
   constructor(mockMode: boolean = false) {
     this.config = getServiceConfig("keeper");
@@ -33,52 +36,111 @@ class OrderRegistryService {
     logger.info("Starting Order Registry service...");
     this.isRunning = true;
 
+    // Start HTTP server
+    await this.startHttpServer();
+
     // Reliability: Load pending orders from database to restart watchers
     // This ensures watchers are restored after server shutdown/restart
     const pendingOrders = await getPendingOrders();
-    logger.info(`Restoring ${pendingOrders.length} pending orders from database`);
+    logger.info(
+      `Restoring ${pendingOrders.length} pending orders from database`,
+    );
 
     for (const order of pendingOrders) {
       this.startWatcher(order);
       logger.debug(`Restored watcher for order ${order.id}`);
     }
 
-    logger.info(`Order Registry service started with ${pendingOrders.length} active watchers`);
+    logger.info(
+      `Order Registry service started with ${pendingOrders.length} active watchers`,
+    );
   }
 
   async stop() {
     logger.info("Stopping Order Registry service...");
     this.isRunning = false;
     this.watchers.clear();
+
+    // Stop HTTP server
+    if (this.server) {
+      this.server.stop();
+      logger.info("Order Registry HTTP server stopped");
+    }
+
     logger.info("Order Registry service stopped");
   }
 
   async createOrder(order: Order) {
-    // Validate order signature (EVM signature verification)
     if (!this.validateOrderSignature(order)) {
       throw new Error("Invalid order signature");
     }
+    if (!order.makingAmount && order.params?.amount) {
+      // For TWAP orders, use the total amount from params
+      if (order.type === OrderType.TWAP) {
+        order.makingAmount = order.params.amount;
+      } else {
+        // For other order types, use size as fallback
+        order.makingAmount = order.size.toString();
+      }
+    } else if (!order.makingAmount) {
+      // Fallback to size if no params.amount
+      order.makingAmount = order.size.toString();
+    }
 
-    // Initialize order fields
+    if (!order.takingAmount) {
+      // Calculate taking amount based on maxPrice if available
+      if (order.params?.maxPrice) {
+        const makingAmountNum = parseFloat(order.makingAmount);
+        const maxPrice = order.params.maxPrice;
+        order.takingAmount = (makingAmountNum * maxPrice * 1e6).toString();
+      } else {
+        // Fallback calculation - assume 1:2000 ratio (1 ETH = 2000 USDT)
+        const makingAmountNum = parseFloat(order.makingAmount);
+        const estimatedTakingAmount = makingAmountNum * 2000;
+        // Convert to proper decimal places (USDT has 6 decimals)
+        order.takingAmount = (estimatedTakingAmount * 1e6).toString();
+      }
+    }
+
+    // Initialize order fields with proper defaults
     order.status = OrderStatus.PENDING;
     order.triggerCount = 0;
-    order.remainingSize = order.size;
+    order.remainingSize = order.size.toString();
     order.createdAt = Date.now();
 
+    // Set other required fields to null if not provided
+    order.orderHash = order.orderHash || null;
+    order.strategyId = order.strategyId || null;
+    order.receiver = order.receiver || null;
+    order.salt = order.salt || null;
+    order.nextTriggerValue = order.nextTriggerValue || null;
+    order.triggerPrice = order.triggerPrice || null;
+    order.filledAmount = order.filledAmount || "0";
+    order.executedAt = order.executedAt || null;
+    order.cancelledAt = order.cancelledAt || null;
+    order.txHash = order.txHash || null;
+    order.expiry = order.expiry || null;
+    order.oneInchOrderHashes = order.oneInchOrderHashes || null;
+
+    // Clean up extra fields that shouldn't be stored
+    const { pair, validateOnly, ...cleanOrder } = order as any;
+
+    console.log("Order after processing:", cleanOrder);
+
     // Save the order to the database
-    await saveOrder(order);
+    await saveOrder(cleanOrder);
 
     // Create order event
     await saveOrderEvent({
-      orderId: order.id,
+      orderId: cleanOrder.id,
       status: OrderStatus.PENDING,
       timestamp: Date.now(),
     });
 
     // Start a watcher for the new order
-    this.startWatcher(order);
+    this.startWatcher(cleanOrder);
 
-    logger.info(`Order ${order.id} registered successfully`);
+    logger.info(`Order ${cleanOrder.id} registered successfully`);
   }
 
   async cancelOrder(orderId: string): Promise<void> {
@@ -105,7 +167,10 @@ class OrderRegistryService {
     logger.info(`Order ${orderId} cancelled successfully`);
   }
 
-  async modifyOrder(orderId: string, newOrderData: Partial<Order>): Promise<string> {
+  async modifyOrder(
+    orderId: string,
+    newOrderData: Partial<Order>,
+  ): Promise<string> {
     // Cancel existing order
     await this.cancelOrder(orderId);
 
@@ -128,7 +193,9 @@ class OrderRegistryService {
 
     await this.createOrder(newOrder);
 
-    logger.info(`Order ${orderId} modified successfully, new order: ${newOrder.id}`);
+    logger.info(
+      `Order ${orderId} modified successfully, new order: ${newOrder.id}`,
+    );
     return newOrder.id;
   }
 
@@ -145,7 +212,11 @@ class OrderRegistryService {
     while (this.isRunning && this.watchers.has(order.id)) {
       try {
         const currentOrder = await getOrder(order.id);
-        if (!currentOrder || (currentOrder.status !== OrderStatus.PENDING && currentOrder.status !== OrderStatus.ACTIVE)) {
+        if (
+          !currentOrder ||
+          (currentOrder.status !== OrderStatus.PENDING &&
+            currentOrder.status !== OrderStatus.ACTIVE)
+        ) {
           this.watchers.delete(order.id);
           break;
         }
@@ -161,7 +232,9 @@ class OrderRegistryService {
             const shouldComplete = this.shouldCompleteOrder(updatedOrder);
             if (shouldComplete) {
               // Mark order as completed and stop watcher
-              logger.info(`Order ${updatedOrder.id} completed, marking as finished`);
+              logger.info(
+                `Order ${updatedOrder.id} completed, marking as finished`,
+              );
               updatedOrder.status = OrderStatus.COMPLETED;
               await saveOrder(updatedOrder);
               this.watchers.delete(order.id);
@@ -262,20 +335,21 @@ class OrderRegistryService {
     // For Range orders, check if we've completed all steps or reached expiry
     if (order.type === OrderType.RANGE && order.params) {
       const params = order.params as RangeOrderParams;
-      
+
       // Check expiry
       if (params.expiry) {
-        const expiryTime = order.createdAt + (params.expiry * 24 * 60 * 60 * 1000);
+        const expiryTime =
+          order.createdAt + params.expiry * 24 * 60 * 60 * 1000;
         if (now >= expiryTime) {
           return true; // Past expiry
         }
       }
-      
+
       // Check if all steps completed
       const priceRange = Math.abs(params.endPrice - params.startPrice);
       const stepSize = priceRange * (params.stepPct / 100);
       const totalSteps = Math.ceil(priceRange / stepSize);
-      
+
       if ((order.triggerCount || 0) >= totalSteps) {
         return true; // Completed all steps
       }
@@ -285,7 +359,10 @@ class OrderRegistryService {
     return false; // Continue watching by default
   }
 
-  private calculateOrderAmounts(order: Order): { makerAmount: string; takerAmount: string } {
+  private calculateOrderAmounts(order: Order): {
+    makerAmount: string;
+    takerAmount: string;
+  } {
     // Calculate amounts based on order type
     switch (order.type) {
       case OrderType.TWAP: {
@@ -303,11 +380,13 @@ class OrderRegistryService {
         // Calculate taking amount based on making amount ratio
         const originalMaking = parseFloat(order.makingAmount);
         const ratio = amountPerInterval / parseFloat(params.amount);
-        const takerAmountForInterval = (parseFloat(order.takingAmount) * ratio).toString();
+        const takerAmountForInterval = (
+          parseFloat(order.takingAmount) * ratio
+        ).toString();
 
         return {
           makerAmount: amountPerInterval.toString(),
-          takerAmount: takerAmountForInterval
+          takerAmount: takerAmountForInterval,
         };
       }
 
@@ -325,11 +404,13 @@ class OrderRegistryService {
 
         // Calculate taking amount based on making amount ratio
         const ratio = amountPerStep / parseFloat(params.amount);
-        const takerAmountForStep = (parseFloat(order.takingAmount) * ratio).toString();
+        const takerAmountForStep = (
+          parseFloat(order.takingAmount) * ratio
+        ).toString();
 
         return {
           makerAmount: amountPerStep.toString(),
-          takerAmount: takerAmountForStep
+          takerAmount: takerAmountForStep,
         };
       }
 
@@ -338,10 +419,120 @@ class OrderRegistryService {
         // For stop-limit and other orders, use the full amounts
         return {
           makerAmount: order.size,
-          takerAmount: order.takingAmount
+          takerAmount: order.takingAmount,
         };
       }
     }
+  }
+
+  private async startHttpServer() {
+    const port = SERVICE_PORTS.ORDER_REGISTRY;
+    
+    this.server = Bun.serve({
+      port,
+      fetch: async (request: Request): Promise<Response> => {
+        const url = new URL(request.url);
+        const path = url.pathname;
+        const method = request.method;
+
+        // CORS headers
+        const corsHeaders = {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        };
+
+        // Handle preflight requests
+        if (method === "OPTIONS") {
+          return new Response(null, { status: 200, headers: corsHeaders });
+        }
+
+        try {
+          // Health check endpoint
+          if (path === "/ping" && method === "GET") {
+            return new Response(JSON.stringify({ status: "ok", service: "order-registry" }), {
+              headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+          }
+
+          // Create order
+          if (path === "/orders" && method === "POST") {
+            const order = await request.json() as Order;
+            await this.createOrder(order);
+            return new Response(JSON.stringify({ success: true, orderId: order.id }), {
+              headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+          }
+
+          // Get orders (with optional maker filter)
+          if (path === "/orders" && method === "GET") {
+            const makerAddress = url.searchParams.get("maker");
+            let orders;
+            
+            if (makerAddress) {
+              orders = await getOrdersByMaker(makerAddress);
+            } else {
+              orders = await getActiveOrders();
+            }
+            
+            return new Response(JSON.stringify({ success: true, data: orders }), {
+              headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+          }
+
+          // Get specific order
+          if (path.startsWith("/orders/") && method === "GET") {
+            const orderId = path.split("/")[2];
+            const order = await getOrder(orderId);
+            
+            if (!order) {
+              return new Response(JSON.stringify({ success: false, error: "Order not found" }), {
+                status: 404,
+                headers: { "Content-Type": "application/json", ...corsHeaders }
+              });
+            }
+            
+            return new Response(JSON.stringify({ success: true, data: order }), {
+              headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+          }
+
+          // Cancel order
+          if (path.startsWith("/orders/") && path.endsWith("/cancel") && method === "POST") {
+            const orderId = path.split("/")[2];
+            await this.cancelOrder(orderId);
+            return new Response(JSON.stringify({ success: true }), {
+              headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+          }
+
+          // Modify order
+          if (path.startsWith("/orders/") && method === "PUT") {
+            const orderId = path.split("/")[2];
+            const newOrderData = await request.json() as Partial<Order>;
+            const newOrderId = await this.modifyOrder(orderId, newOrderData);
+            return new Response(JSON.stringify({ success: true, newOrderId }), {
+              headers: { "Content-Type": "application/json", ...corsHeaders }
+            });
+          }
+
+          // 404 for unknown endpoints
+          return new Response(JSON.stringify({ success: false, error: "Not found" }), {
+            status: 404,
+            headers: { "Content-Type": "application/json", ...corsHeaders }
+          });
+
+        } catch (error: any) {
+          logger.error("Order Registry HTTP error:", error);
+          return new Response(JSON.stringify({ success: false, error: error.message }), {
+            status: 500,
+            headers: { "Content-Type": "application/json", ...corsHeaders }
+          });
+        }
+      },
+    });
+
+    logger.info(`Order Registry HTTP server started on port ${port}`);
   }
 
   private validateOrderSignature(order: Order): boolean {
@@ -351,24 +542,32 @@ class OrderRegistryService {
     }
 
     try {
-      // Reconstruct the message that was signed
-      const message = JSON.stringify({
-        type: order.type,
-        size: order.size,
-        params: order.params,
-        maker: order.maker,
-        makerAsset: order.makerAsset,
-        takerAsset: order.takerAsset,
-      });
+      let messageToSign: string;
 
-      // Recover signer address from signature
-      const signerAddress = ethers.verifyMessage(message, order.signature);
+      if (typeof order.userSignedPayload === "string") {
+        messageToSign = order.userSignedPayload;
+      } else {
+        messageToSign = JSON.stringify(order.userSignedPayload);
+      }
 
-      // Verify signer matches order maker
+      logger.debug(`Message to verify: ${messageToSign}`);
+      const signerAddress = ethers.verifyMessage(
+        messageToSign,
+        order.signature,
+      );
+
+      logger.debug(
+        `Recovered signer: ${signerAddress}, Expected maker: ${order.maker}`,
+      );
+
       const isValid = signerAddress.toLowerCase() === order.maker.toLowerCase();
 
       if (!isValid) {
-        logger.warn(`Invalid signature: expected ${order.maker}, got ${signerAddress}`);
+        logger.warn(
+          `Invalid signature: expected ${order.maker}, got ${signerAddress}`,
+        );
+      } else {
+        logger.info(`✅ Valid signature for order ${order.id}`);
       }
 
       return isValid;
@@ -383,7 +582,9 @@ class OrderRegistryService {
 export const orderRegistry = new OrderRegistryService();
 
 // Export function to create instance with mock mode
-export function createOrderRegistry(mockMode: boolean = false): OrderRegistryService {
+export function createOrderRegistry(
+  mockMode: boolean = false,
+): OrderRegistryService {
   return new OrderRegistryService(mockMode);
 }
 

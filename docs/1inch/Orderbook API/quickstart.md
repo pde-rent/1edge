@@ -4,6 +4,7 @@
 > This comprehensive guide walks you through creating, signing, and submitting your first Limit Order v4.
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 flowchart TD
     START[Start] --> SETUP[Setup Environment]
     SETUP --> APPROVE[Approve Tokens]
@@ -75,7 +76,7 @@ import {
   getLimitOrderV4Domain,
 } from "@1inch/limit-order-sdk";
 
-// 🔧 Standard ERC-20 ABI fragment (used for token approval)
+//  Standard ERC-20 ABI fragment (used for token approval)
 const erc20AbiFragment = [
   "function approve(address spender, uint256 amount) external returns (bool)",
   "function allowance(address owner, address spender) external view returns (uint256)",
@@ -84,7 +85,7 @@ const erc20AbiFragment = [
 
 ### Secure Wallet Setup
 
-> **⚠️ Security Warning**  
+> ** Security Warning**  
 > Never hardcode private keys in your code. Always use environment variables or secure key management systems.
 
 ```javascript
@@ -123,7 +124,7 @@ const expiration = BigInt(Math.floor(Date.now() / 1000)) + expiresIn;
 
 ## Step 3: Check Allowance and Approve Token
 
-> **💡 Important Note**  
+> ** Important Note**  
 > The 1inch Limit Order smart contract must be authorized to transfer your tokens. This requires an ERC-20 approval transaction.
 
 ### Approval Process
@@ -154,7 +155,7 @@ if (currentAllowance < makingAmount) {
   );
 
   await approveTx.wait();
-  console.log("✅ Token approval confirmed!");
+  console.log(" Token approval confirmed!");
 }
 ```
 
@@ -225,14 +226,14 @@ const domainForSignature = {
 };
 
 // Sign the order
-console.log("✍️ Signing order...");
+console.log(" Signing order...");
 const signature = await wallet.signTypedData(
   domainForSignature,
   { Order: typedData.types.Order },
   typedData.message,
 );
 
-console.log("✅ Order signed successfully!");
+console.log(" Order signed successfully!");
 ```
 
 ### What's Being Signed
@@ -252,7 +253,7 @@ Submit your order to the 1inch Orderbook to make it discoverable by resolvers:
 
 ### API Setup
 
-> **📝 Get Your API Key**  
+> ** Get Your API Key**  
 > Register at the [1inch Developer Portal](https://portal.1inch.dev/) to obtain your API key.
 
 ```javascript
@@ -273,17 +274,17 @@ try {
 
   const result = await api.submitOrder(order, signature);
 
-  console.log("🎉 Order submitted successfully!");
+  console.log(" Order submitted successfully!");
   console.log("Order Hash:", result.orderHash);
   console.log("Status:", result.success ? "Active" : "Failed");
 } catch (error) {
-  console.error("❌ Failed to submit order:", error.message);
+  console.error(" Failed to submit order:", error.message);
 
   // Handle common errors
   if (error.message.includes("insufficient allowance")) {
-    console.log("💡 Tip: Check your token approval");
+    console.log(" Tip: Check your token approval");
   } else if (error.message.includes("invalid signature")) {
-    console.log("💡 Tip: Verify your order signing process");
+    console.log(" Tip: Verify your order signing process");
   }
 }
 ```
@@ -301,12 +302,12 @@ The 1inch Limit Order Protocol supports multiple networks:
 
 | Network   | Chain ID | Status    |
 | --------- | -------- | --------- |
-| Ethereum  | 1        | ✅ Active |
-| Polygon   | 137      | ✅ Active |
-| BSC       | 56       | ✅ Active |
-| Arbitrum  | 42161    | ✅ Active |
-| Optimism  | 10       | ✅ Active |
-| Avalanche | 43114    | ✅ Active |
+| Ethereum  | 1        |  Active |
+| Polygon   | 137      |  Active |
+| BSC       | 56       |  Active |
+| Arbitrum  | 42161    |  Active |
+| Optimism  | 10       |  Active |
+| Avalanche | 43114    |  Active |
 
 ---
 
@@ -314,27 +315,27 @@ The 1inch Limit Order Protocol supports multiple networks:
 
 Congratulations! You've successfully:
 
-- ✅ Set up the development environment
-- ✅ Configured wallet and tokens
-- ✅ Approved token transfers
-- ✅ Created and signed a limit order
-- ✅ Submitted the order to the 1inch Orderbook
+-  Set up the development environment
+-  Configured wallet and tokens
+-  Approved token transfers
+-  Created and signed a limit order
+-  Submitted the order to the 1inch Orderbook
 
 Your order is now live and discoverable by resolvers across the network!
 
 ### Next Steps
 
-- [📖 API Reference](./api-reference/) - Explore all available endpoints
-- [🏗️ Advanced Integration](../1inch%20LOP/limit-order-maker-contract.md) - Learn about contract interactions
-- [🔧 SDK Documentation](../1inch%20LOP/Limit%20Order%20SDK/) - Dive deeper into the SDK features
+- [ API Reference](./api-reference/) - Explore all available endpoints
+- [ Advanced Integration](../1inch%20LOP/limit-order-maker-contract.md) - Learn about contract interactions
+- [ SDK Documentation](../1inch%20LOP/Limit%20Order%20SDK/) - Dive deeper into the SDK features
 
 ### Need Help?
 
-- 📚 [Documentation Portal](https://docs.1inch.io/)
-- 💬 [Developer Community](https://discord.gg/1inch)
+-  [Documentation Portal](https://docs.1inch.io/)
+-  [Developer Community](https://discord.gg/1inch)
 - 🐛 [Report Issues](https://github.com/1inch/limit-order-protocol-utils)
 
 ---
 
-> **💡 Pro Tip**  
+> ** Pro Tip**  
 > For production applications, implement proper error handling, logging, and monitoring to ensure reliable order management.

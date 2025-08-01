@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Zap, BarChart3, Clock, TrendingUp, Target, Shield } from "lucide-react";
+import { Zap, BarChart3, Clock, TrendingUp, Target, Shield, DollarSign } from "lucide-react";
 
 const RangeBreakoutForm = ({ control, errors }: any) => {
   const adxPeriodOptions = [
@@ -51,7 +51,39 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
 
   return (
     <div className="space-y-6">
-      
+          <div className="space-y-2">
+  <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+    <DollarSign className="w-4 h-4" />
+    Amount (USD)
+    <div className="w-1 h-1 bg-teal-400"></div>
+  </Label>
+  <Controller
+    name="amount"
+    control={control}
+    rules={{
+      required: "Amount is required",
+      min: { value: 0.01, message: "Must be greater than $0" },
+    }}
+    render={({ field }) => (
+      <div className="relative">
+        <Input
+          {...field}
+          type="number"
+          step="0.01"
+          className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+          placeholder="Enter total amount"
+        />
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+      </div>
+    )}
+  />
+  {errors.size && (
+    <span className="text-xs text-red-400 flex items-center gap-1">
+      <div className="w-1 h-1 bg-red-400"></div>
+      {errors.size.message}
+    </span>
+  )}
+</div>
       {/* ADX Period */}
       <div className="space-y-2">
         <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
@@ -72,8 +104,8 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
               </SelectTrigger>
               <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {adxPeriodOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
+                  <SelectItem
+                    key={option.value}
                     value={option.value}
                     className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200 py-3"
                   >
@@ -115,8 +147,8 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
               </SelectTrigger>
               <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {adxmaPeriodOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
+                  <SelectItem
+                    key={option.value}
                     value={option.value}
                     className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200 py-3"
                   >
@@ -158,8 +190,8 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
               </SelectTrigger>
               <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {emaPeriodOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
+                  <SelectItem
+                    key={option.value}
                     value={option.value}
                     className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200 py-3"
                   >
@@ -191,7 +223,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
         <Controller
           name="tpPct"
           control={control}
-          rules={{ 
+          rules={{
             required: 'Take profit percentage is required',
             min: { value: 0.1, message: 'Must be at least 0.1%' }
           }}
@@ -204,8 +236,8 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
               </SelectTrigger>
               <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {takeProfitOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
+                  <SelectItem
+                    key={option.value}
                     value={option.value}
                     className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200 py-3"
                   >
@@ -237,7 +269,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
         <Controller
           name="slPct"
           control={control}
-          rules={{ 
+          rules={{
             required: 'Stop loss percentage is required',
             min: { value: 0.1, message: 'Must be at least 0.1%' }
           }}
@@ -250,8 +282,8 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
               </SelectTrigger>
               <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {stopLossOptions.map((option) => (
-                  <SelectItem 
-                    key={option.value} 
+                  <SelectItem
+                    key={option.value}
                     value={option.value}
                     className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200 py-3"
                   >
@@ -272,16 +304,15 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
           </span>
         )}
       </div>
-      
-      {/* Range Breakout Summary */}
+
+      {/* Breakout Summary */}
       <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 border border-teal-500/20 shadow-inner relative">
         <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 bg-teal-400"></div>
             <div className="text-xs font-medium text-teal-300 flex items-center gap-1">
-              <Zap className="w-3 h-3" />
-              Range Breakout Summary
+              Breakout Summary
             </div>
           </div>
           <div className="text-sm text-slate-300 space-y-1">
@@ -291,7 +322,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
             </div>
             <div className="flex justify-between">
               <span>Signal Type:</span>
-              <span className="text-emerald-400">Range breakout confirmation</span>
+              <span className="text-emerald-400">Breakout confirmation</span>
             </div>
             <div className="flex justify-between">
               <span>Risk Management:</span>

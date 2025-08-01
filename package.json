@@ -33,7 +33,7 @@
     "test:contracts": "cd contracts && npx hardhat test",
     "compile:contracts": "cd contracts && npx hardhat compile",
     "deploy:contracts": "cd contracts && npx hardhat run scripts/deploy.ts",
-    "install:all": "bun install && cd front && bun install && cd ../contracts && npm install && cd ..",
+    "install:all": "bun install && cd front && bun install && cd ../contracts && bun install && cd ..",
     "test:websocket": "bun run scripts/test-websocket.ts",
     "test:ohlc": "bun run scripts/test-ohlc.ts"
   },
@@ -51,7 +51,9 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/flexsearch": "^0.7.42",
     "@types/node": "^22.16.5",
+    "@types/prismjs": "^1.26.5",
     "bun-plugin-dts": "^0.3.0",
     "oxlint": "^0.2.18",
     "playwright": "^1.54.1",

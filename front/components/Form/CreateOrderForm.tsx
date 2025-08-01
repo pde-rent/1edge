@@ -24,94 +24,128 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import TWAPForm from "./components/TWAPForm";
-import RangeForm, { getDefaultExpiry } from "./components/RangeForm";
+import RangeForm from "./components/RangeForm";
 import IcebergForm from "./components/IcebergForm";
 import DCAForm from "./components/DSAForm";
 import GridMarketMakingForm from "./components/GridMarketMakingForm";
 import MomentumReversalForm from "./components/MomentumReversalForm";
 import RangeBreakoutForm from "./components/RangeBreakoutForm";
-import { toast } from "sonner";
 import StopLimitForm from "./components/StopLimitForm";
 import ChaseLimitForm from "./components/ChaseLimitForm";
+import { toast } from "sonner";
 import { useOrderStore } from "@/stores/orderStore";
+import {
+  FormData,
+  OrderType,
+  getDefaultFormValues,
+  getRelevantParams,
+  applyOrderDefaults,
+} from "./helpers";
+import {
+  useAccount,
+  useSignMessage,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
+import { v4 as uuidv4 } from "uuid";
 
-export interface FormData {
-  // TWAP fields
-  startDate: string;
-  endDate: string;
-  interval: string;
-  maxPrice: string;
-  // Legacy fields (you can remove these if not needed)
-
-  // Range fields
-  startPrice: string;
-  endPrice: string;
-  stepPct: string;
-  expiry: string;
-  steps: string;
-
-  tpPct: string;
-  singleSide: boolean;
-  stepMultiplier: string;
-  rsiPeriod: string;
-  rsimaPeriod: string;
-  slPct: string;
-  adxPeriod: string;
-  adxmaPeriod: string;
-  emaPeriod: string;
-  stopPrice: string;
-  limitPrice: string;
-  distancePct: string;
-
-  twapDuration: string;
-  twapInterval: string;
-  minBuyPrice: string;
-  maxSellPrice: string;
-  totalSize: string;
-  hiddenSize: string;
-  dcaAmount: string;
-  dcaFrequency: string;
-  gridLower: string;
-  gridUpper: string;
-  gridLevels: string;
-  rsiThreshold: string;
-  stopLoss: string;
-  takeProfit: string;
-  breakoutThreshold: string;
-  fastEMA: string;
-  slowEMA: string;
-  amount?: string;
-  fromCoin: string;
-  toCoin: string;
+// Order Type Enum to match API
+export enum APIOrderType {
+  // One-off Orders
+  STOP_LIMIT = "STOP_LIMIT",
+  CHASE_LIMIT = "CHASE_LIMIT",
+  TWAP = "TWAP",
+  RANGE = "RANGE",
+  ICEBERG = "ICEBERG",
+  // Recurring Orders
+  DCA = "DCA", // Dollar-Cost Averaging
+  GRID_TRADING = "GRID_TRADING",
+  MOMENTUM_REVERSAL = "MOMENTUM_REVERSAL",
+  RANGE_BREAKOUT = "RANGE_BREAKOUT",
 }
 
-export interface OrderType {
-  id: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  description: string;
-}
+// Map internal order types to API order types
+const ORDER_TYPE_MAPPING: Record<string, APIOrderType> = {
+  TWAP: APIOrderType.TWAP,
+  Range: APIOrderType.RANGE,
+  Iceberg: APIOrderType.ICEBERG,
+  StopLimit: APIOrderType.STOP_LIMIT,
+  ChaseLimit: APIOrderType.CHASE_LIMIT,
+  DCA: APIOrderType.DCA,
+  GridMarketMaking: APIOrderType.GRID_TRADING,
+  MomentumReversal: APIOrderType.MOMENTUM_REVERSAL,
+  RangeBreakout: APIOrderType.RANGE_BREAKOUT,
+};
 
-export interface Coin {
-  symbol: string;
-  name: string;
-  icon: string;
-}
+// Environment variables
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:40005";
+const CONTRACT_ADDRESS =
+  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
+  "0x0000000000000000000000000000000000000000";
+
+// ERC20 ABI for allowance
+const ERC20_ABI = [
+  {
+    constant: false,
+    inputs: [
+      {
+        name: "_spender",
+        type: "address",
+      },
+      {
+        name: "_value",
+        type: "uint256",
+      },
+    ],
+    name: "approve",
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+      },
+    ],
+    payable: false,
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+];
 
 const CreateOrderForm = () => {
   const [orderCategory, setOrderCategory] = useState<"Order" | "Strategy">(
     "Order",
   );
   const [orderType, setOrderType] = useState<string>("TWAP");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderCreated, setOrderCreated] = useState(false);
+  const [pendingAllowance, setPendingAllowance] = useState(false);
 
-  // Zustand store integration
-  const { orderDefaults, clearOrderDefaults, orderSettings, setOrderFormOpen } =
-    useOrderStore();
+  const { address } = useAccount();
+  const { signMessageAsync } = useSignMessage();
+  const { writeContractAsync } = useWriteContract();
+
+  const {
+    orderDefaults,
+    clearOrderDefaults,
+    orderSettings,
+    setOrderFormOpen,
+    updateFormData,
+    setCurrentOrderType,
+    clearFormData,
+    currentFormData,
+    currentPair,
+    makerAsset,
+    takerAsset,
+    setPairInfo,
+  } = useOrderStore();
 
   const {
     control,
@@ -121,59 +155,8 @@ const CreateOrderForm = () => {
     setValue,
     reset,
   } = useForm<FormData>({
-    defaultValues: {
-      // TWAP defaults
-      startDate: new Date().toISOString().slice(0, 16),
-      endDate: (() => {
-        const date = new Date();
-        date.setMonth(date.getMonth() + 1);
-        return date.toISOString().slice(0, 16);
-      })(),
-      interval: "24",
-      maxPrice: "",
-      startPrice: "",
-      endPrice: "",
-      stepPct: "0.3",
-      expiry: getDefaultExpiry(),
-      steps: "",
-
-      tpPct: "",
-      singleSide: true,
-      stepMultiplier: "1.0",
-      rsiPeriod: "",
-      rsimaPeriod: "",
-      slPct: "",
-      adxPeriod: "",
-      adxmaPeriod: "",
-      emaPeriod: "",
-      stopPrice: "",
-      limitPrice: "",
-      distancePct: "",
-
-      twapDuration: "60",
-      twapInterval: "5",
-      minBuyPrice: "3739.17",
-      maxSellPrice: "3814.71",
-      totalSize: "",
-      hiddenSize: "",
-      dcaAmount: "",
-      dcaFrequency: "",
-      gridLower: "",
-      gridUpper: "",
-      gridLevels: "10",
-      rsiThreshold: "30",
-      stopLoss: "",
-      takeProfit: "",
-      breakoutThreshold: "25",
-      fastEMA: "12",
-      slowEMA: "26",
-      amount: "",
-      fromCoin: "ETH",
-      toCoin: "USDC",
-    },
+    defaultValues: getDefaultFormValues(),
   });
-
-  // Replace the existing useEffect in your CreateOrderForm component
 
   useEffect(() => {
     if (orderDefaults) {
@@ -181,93 +164,14 @@ const CreateOrderForm = () => {
       if (orderDefaults.orderType) {
         setOrderType(orderDefaults.orderType);
 
-        // Set the category based on order type
-        const orderTypes = {
-          Order: ["TWAP", "Range", "Iceberg", "StopLimit", "ChaseLimit"],
-          Strategy: [
-            "DCA",
-            "GridMarketMaking",
-            "MomentumReversal",
-            "RangeBreakout",
-            "TrendFollowing",
-          ],
-        };
-
-        const category = orderTypes.Order.includes(orderDefaults.orderType)
-          ? "Order"
-          : "Strategy";
-        setOrderCategory(category);
       }
 
       // Pre-fill form values from orderbook click
-      const updates: Partial<FormData> = {};
-
-      // Common price fields
-      if (orderDefaults.price) {
-        updates.maxPrice = orderDefaults.price;
-        updates.stopPrice = orderDefaults.price;
-        updates.limitPrice = orderDefaults.price;
-      }
-
-      // Iceberg specific fields
-      if (orderDefaults.startPrice) {
-        updates.startPrice = orderDefaults.startPrice;
-      }
-
-      if (orderDefaults.endPrice) {
-        updates.endPrice = orderDefaults.endPrice;
-      }
-
-      if (orderDefaults.steps) {
-        updates.steps = orderDefaults.steps;
-      }
-
-      if (orderDefaults.expiry) {
-        updates.expiry = orderDefaults.expiry;
-      }
-
-      // Other order type fields
-      if (orderDefaults.distancePct) {
-        updates.distancePct = orderDefaults.distancePct;
-      }
-
-      if (orderDefaults.startDate) {
-        updates.startDate = orderDefaults.startDate;
-      }
-
-      if (orderDefaults.endDate) {
-        updates.endDate = orderDefaults.endDate;
-      }
-
-      if (orderDefaults.interval) {
-        updates.interval = orderDefaults.interval;
-      }
-
-      if (orderDefaults.stepPct) {
-        updates.stepPct = orderDefaults.stepPct;
-      }
-
-      // Coin pair
-      if (orderDefaults.fromCoin) {
-        updates.fromCoin = orderDefaults.fromCoin;
-      }
-
-      if (orderDefaults.toCoin) {
-        updates.toCoin = orderDefaults.toCoin;
-      }
-
-      if (orderDefaults.amount) {
-        updates.amount = orderDefaults.amount;
-      }
-
-      // Apply updates to form
-      Object.entries(updates).forEach(([key, value]) => {
-        setValue(key as keyof FormData, value);
-      });
+      applyOrderDefaults(orderDefaults, setValue);
 
       // Show notification
       toast.success(
-        `Pre-filled  ${orderDefaults.orderType} order at $${orderDefaults.price}`,
+        `Pre-filled ${orderDefaults.orderType} order at $${orderDefaults.price}`,
         {
           action: {
             label: "Clear",
@@ -277,6 +181,26 @@ const CreateOrderForm = () => {
       );
     }
   }, [orderDefaults, setValue, clearOrderDefaults]);
+
+  useEffect(() => {
+    setCurrentOrderType(orderType);
+  }, [orderType, setCurrentOrderType]);
+
+  useEffect(() => {
+    const subscription = watch((data) => {
+      // Only sync non-empty values to avoid unnecessary updates
+      const filteredData = Object.entries(data).reduce((acc, [key, value]) => {
+        if (value !== "" && value !== undefined && value !== null) {
+          acc[key as keyof FormData] = value;
+        }
+        return acc;
+      }, {} as Partial<FormData>);
+
+      updateFormData(filteredData);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch, updateFormData]);
 
   const orderTypes: Record<"Order" | "Strategy", OrderType[]> = {
     Order: [
@@ -334,7 +258,7 @@ const CreateOrderForm = () => {
         id: "RangeBreakout",
         name: "Breakout",
         icon: Zap,
-        description: "Range breakouts",
+        description: "Breakouts",
       },
       {
         id: "TrendFollowing",
@@ -370,158 +294,233 @@ const CreateOrderForm = () => {
     }
   };
 
-  const onSubmit = async (data: FormData) => {
-    // Define which fields belong to each order type
-    const getRelevantParams = (orderType: string, formData: FormData) => {
-      switch (orderType) {
-        case "TWAP":
-          return {
-            amount: formData.amount,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
-            interval: formData.interval,
-            maxPrice: formData.maxPrice,
-          };
+  const createOrderPayload = (data: FormData, relevantParams: any) => {
+    const orderId = uuidv4();
+    const apiOrderType = ORDER_TYPE_MAPPING[orderType];
 
-        case "Range":
-          return {
-            amount: formData.amount,
-            startPrice: formData.startPrice,
-            endPrice: formData.endPrice,
-            stepPct: formData.stepPct,
-            expiry: formData.expiry,
-          };
-
-        case "Iceberg":
-          return {
-            amount: formData.amount,
-            startPrice: formData.startPrice,
-            endPrice: formData.endPrice,
-            steps: formData.steps,
-            expiry: formData.expiry,
-          };
-
-        case "DCA":
-          return {
-            amount: formData.amount,
-            interval: formData.interval,
-            maxPrice: formData.maxPrice,
-            startDate: formData.startDate,
-          };
-
-        case "GridMarketMaking":
-          return {
-            amount: formData.amount,
-            startPrice: formData.startPrice,
-            endPrice: formData.endPrice,
-            stepPct: formData.stepPct,
-            stepMultiplier: formData.stepMultiplier,
-            singleSide: formData.singleSide,
-            tpPct: formData.tpPct,
-          };
-
-        case "MomentumReversal":
-          return {
-            amount: formData.amount,
-            rsiPeriod: formData.rsiPeriod,
-            rsimaPeriod: formData.rsimaPeriod,
-            slPct: formData.slPct,
-            tpPct: formData.tpPct,
-          };
-
-        case "RangeBreakout":
-          return {
-            amount: formData.amount,
-            adxPeriod: formData.adxPeriod,
-            adxmaPeriod: formData.adxmaPeriod,
-            emaPeriod: formData.emaPeriod,
-            slPct: formData.slPct,
-            tpPct: formData.tpPct,
-          };
-        case "StopLimit":
-          return {
-            amount: formData.amount,
-            stopPrice: formData.stopPrice,
-            limitPrice: formData.limitPrice,
-            expiry: formData.expiry,
-          };
-        case "ChaseLimit":
-          return {
-            amount: formData.amount,
-            distancePct: formData.distancePct,
-            expiry: formData.expiry,
-            maxPrice: formData.maxPrice,
-          };
-
-        default:
-          return {
-            amount: formData.amount,
-          };
-      }
+    return {
+      id: orderId,
+      type: apiOrderType,
+      pair: currentPair || `${data.fromCoin}/${data.toCoin}`,
+      size: parseFloat(data.size),
+      maker: address,
+      makerAsset: makerAsset,
+      takerAsset: takerAsset,
+      params: relevantParams,
     };
+  };
 
-    const relevantParams = getRelevantParams(orderType, data);
-
-    const strategy = {
-      id: new Date().toISOString(),
-      name: orderType,
-      type: orderType,
-      config: relevantParams,
-      // Include orderbook context if available
-      context: orderDefaults
-        ? {
-            triggeredFromOrderbook: true,
-            originalPrice: orderDefaults.price,
-            isBuy: orderDefaults.isBuy,
-            timestamp: orderDefaults.timestamp,
-          }
-        : null,
-    };
-
+  const createAndValidateOrder = async (
+    orderPayload: any,
+    signature: string,
+    userSignedPayload: string,
+  ) => {
     try {
-      const response = await fetch("http://localhost:40005/strategies", {
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(strategy),
+        body: JSON.stringify({
+          ...orderPayload,
+          signature,
+          userSignedPayload,
+        }),
       });
 
-      if (response.ok) {
-        toast.success("Strategy saved successfully");
-        console.log("Strategy saved successfully");
-        console.log("Submitted params:", relevantParams); // Debug log
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Order creation failed");
+      }
 
-        // Clear orderbook defaults after successful submission
+      return await response.json();
+    } catch (error) {
+      console.error("Order creation error:", error);
+      throw error;
+    }
+  };
+
+  const handleAllowance = async (tokenAddress: string, amount: string) => {
+    try {
+      setPendingAllowance(true);
+      toast.info("Please approve token allowance in your wallet...");
+
+      const txHash = await writeContractAsync({
+        address: tokenAddress as `0x${string}`,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [CONTRACT_ADDRESS, BigInt(amount)],
+      });
+
+      toast.success("Allowance approved! Transaction submitted.");
+      return txHash;
+    } catch (error) {
+      console.error("Allowance error:", error);
+      toast.error("Failed to approve allowance");
+      throw error;
+    } finally {
+      setPendingAllowance(false);
+    }
+  };
+
+  const onSubmit = async (data: FormData) => {
+    if (!address) {
+      toast.error("Please connect your wallet");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setOrderCreated(false);
+
+    try {
+      const relevantParams = getRelevantParams(orderType, data);
+      const orderPayload = createOrderPayload(data, relevantParams);
+
+      // Step 1: Sign the order payload (free signature)
+      toast.info("Please sign the order...");
+      const messageToSign = JSON.stringify(orderPayload);
+      const signature = await signMessageAsync({
+        message: messageToSign,
+      });
+
+      // Step 2: Create and validate order in one API call
+      toast.info("Creating order...");
+      const result = await createAndValidateOrder(
+        orderPayload,
+        signature,
+        messageToSign,
+      );
+
+      if (result.success) {
+        setOrderCreated(true);
+        toast.success("Order created successfully!");
+
+        // Step 3: Now handle allowance after successful order creation
+        toast.info("Order created! Now please approve token allowance...");
+        const allowanceTxHash = await handleAllowance(
+          makerAsset || "0x0000000000000000000000000000000000000000",
+          (parseFloat(data.size) * 1e18).toString(), // Convert to wei equivalent
+        );
+
+        toast.success("Complete! Order is now active and allowance approved.");
+
+        // Clear orderbook defaults and form data after successful submission
         clearOrderDefaults();
+        clearFormData();
 
-        // Optionally reset form
-        // reset();
+        // Reset form state and form fields
+        setOrderCreated(false);
+        reset(); // Reset react-hook-form to default values
+
+        console.log("Order created successfully:", result);
+        console.log("Submitted params:", relevantParams);
+        console.log("Pair info:", { currentPair, makerAsset, takerAsset });
+        console.log("Allowance tx hash:", allowanceTxHash);
       } else {
-        toast.error("Failed to save strategy");
-        console.error("Failed to save strategy");
+        toast.error(result.message || "Order creation failed");
       }
     } catch (error) {
-      toast.error("An error occurred while saving the strategy");
-      console.error("An error occurred while saving the strategy:", error);
+      toast.error(error.message || "Failed to submit order");
+      console.error("Order submission error:", error);
+      setOrderCreated(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleClearOrderbookData = () => {
     clearOrderDefaults();
+    clearFormData();
+    setOrderCreated(false);
     toast.success("Cleared orderbook data");
+  };
+
+  const getButtonText = () => {
+    if (!address) return "Connect Wallet";
+    if (isSubmitting) {
+      if (orderCreated && pendingAllowance) {
+        return "Approving Allowance...";
+      }
+      return "Creating Order...";
+    }
+    const orderTypeName = orderTypes[orderCategory].find(
+      (t) => t.id === orderType,
+    )?.name;
+    return `Create ${orderTypeName} ${orderCategory}`;
   };
 
   return (
     <PanelWrapper>
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold pl-4 pt-3 relative z-10 text-teal-600">
-          Create Order
+      <div className="flex items-center gap-4 px-4 py-3 h-[60px] bg-background backdrop-blur-xl">
+        <h2 className="text-lg font-bold relative z-10 text-primary">
+          Create
         </h2>
+
+        {/* Order Type Selector */}
+        <Select value={orderType} onValueChange={setOrderType}>
+          <SelectTrigger className="flex items-center gap-2 px-4 py-3 bg-primary/20 backdrop-blur-sm rounded-lg text-foreground hover:bg-primary/30 transition-all duration-300 border-0 w-auto cursor-pointer">
+            <SelectValue>
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
+                  const selectedType = allOrderTypes.find(t => t.id === orderType);
+                  const IconComponent = selectedType?.icon;
+                  return (
+                    <>
+                      {IconComponent && <IconComponent className="w-4 h-4" />}
+                      <span className="font-medium">{selectedType?.name} Order</span>
+                    </>
+                  );
+                })()}
+              </div>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/50 shadow-2xl">
+            <SelectGroup>
+              <SelectLabel className="text-primary font-medium">Orders</SelectLabel>
+              {orderTypes.Order.map((type) => {
+                const IconComponent = type.icon;
+                return (
+                  <SelectItem
+                    key={type.id}
+                    value={type.id}
+                    className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComponent className="w-4 h-4" />
+                      <span>{type.name} - {type.description}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+            <SelectSeparator className="bg-primary/30" />
+            <SelectGroup>
+              <SelectLabel className="text-primary font-medium">Strategies</SelectLabel>
+              {orderTypes.Strategy.map((type) => {
+                const IconComponent = type.icon;
+                return (
+                  <SelectItem
+                    key={type.id}
+                    value={type.id}
+                    className="text-white hover:bg-primary/20 focus:bg-primary/30 hover:text-white focus:text-white cursor-pointer transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-2">
+                      <IconComponent className="w-4 h-4" />
+                      <span>{type.name} - {type.description}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
+        <div className="flex-1" />
 
         {/* Show indicator if order was triggered from orderbook */}
         {orderDefaults && (
-          <div className="flex items-center gap-2 pr-4 pt-3">
+          <div className="flex items-center gap-2">
             <div className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full border border-yellow-500/30">
               From Orderbook
             </div>
@@ -537,94 +536,22 @@ const CreateOrderForm = () => {
         )}
       </div>
 
-      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
+      <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-background backdrop-blur-xl">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="h-full flex flex-col"
         >
           {/* Order Configuration - Scrollable */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* Order Type & Category Selection */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-teal-200">
-                  Type & Parameters
-                </span>
-                <div className="h-px flex-1 bg-gradient-to-r from-teal-500/30 to-transparent"></div>
-              </div>
-
-              {/* Category Toggle */}
-              <div className="flex bg-black/60 backdrop-blur-sm p-1 border border-slate-700/50">
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setOrderCategory("Order");
-                    setOrderType("TWAP");
-                  }}
-                  variant={orderCategory === "Order" ? "default" : "ghost"}
-                  className={`flex-1 py-2 px-3 text-sm font-medium transition-all duration-300 ${
-                    orderCategory === "Order"
-                      ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-300/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
-                  }`}
-                >
-                  Orders
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setOrderCategory("Strategy");
-                    setOrderType("DCA");
-                  }}
-                  variant={orderCategory === "Strategy" ? "default" : "ghost"}
-                  className={`flex-1 py-2 px-3 text-sm font-medium transition-all duration-300 ${
-                    orderCategory === "Strategy"
-                      ? "bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 text-white shadow-lg shadow-teal-500/25 border border-teal-400/30 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500"
-                      : "text-slate-300 hover:text-white hover:bg-slate-800/60 backdrop-blur-sm"
-                  }`}
-                >
-                  Strategies
-                </Button>
-              </div>
-
-              {/* Type Selection using shadcn Select */}
-              <div className="relative">
-                <Select value={orderType} onValueChange={setOrderType}>
-                  <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80">
-                    <SelectValue placeholder="Select order type" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-900 border-slate-700">
-                    {orderTypes[orderCategory].map((type) => {
-                      const IconComponent = type.icon;
-                      return (
-                        <SelectItem
-                          key={type.id}
-                          value={type.id}
-                          className="text-white hover:bg-slate-800 focus:bg-slate-800"
-                        >
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-4 h-4" />
-                            <span>
-                              {type.name} - {type.description}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
             {/* Size in USD */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+              <label className="text-sm font-medium text-primary flex items-center gap-2">
                 Size (USD)
-                <div className="w-1 h-1 bg-teal-400"></div>
+                <div className="w-1 h-1 bg-primary"></div>
               </label>
               <Controller
-                name="amount"
+                name="size"
                 control={control}
                 rules={{ required: "Size is required" }}
                 render={({ field }) => (
@@ -632,31 +559,31 @@ const CreateOrderForm = () => {
                     {...field}
                     type="number"
                     step="0.01"
-                    className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400/50 transition-all duration-300 hover:bg-black/80"
+                    className="w-full bg-card backdrop-blur-sm border-primary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 hover:bg-card/80"
                     placeholder="Enter amount in USD"
                   />
                 )}
               />
-              {errors.amount && (
+              {errors.size && (
                 <span className="text-xs text-red-400 flex items-center gap-1">
                   <div className="w-1 h-1 bg-red-400"></div>
-                  {errors.amount.message}
+                  {errors.size.message}
                 </span>
               )}
             </div>
 
             {/* Dynamic Form Fields Based on Order Type */}
             <div className="space-y-3">
-              <div className="border-t border-teal-500/20 pt-3 relative">
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+              <div className="border-t border-primary/50 pt-3 relative">
+                <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-teal-100 flex items-center gap-2">
-                    {
-                      orderTypes[orderCategory].find((t) => t.id === orderType)
-                        ?.name
-                    }{" "}
-                    Parameters
-                    <div className="w-1 h-1 bg-emerald-400"></div>
+                  <span className="text-sm font-medium text-primary flex items-center gap-2">
+                    {(() => {
+                      const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
+                      const selectedType = allOrderTypes.find(t => t.id === orderType);
+                      return selectedType?.name;
+                    })()} Parameters
+                    <div className="w-1 h-1 bg-success"></div>
                   </span>
                 </div>
 
@@ -666,33 +593,29 @@ const CreateOrderForm = () => {
           </div>
 
           {/* Footer with Submit Button */}
-          <div className="border-t border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md p-4 flex-shrink-0 relative">
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+          <div className="border-t border-primary/50 bg-background backdrop-blur-md p-4 flex-shrink-0 relative">
+            <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
 
             <Button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group"
+              disabled={isSubmitting || !address}
+              className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-              <span className="relative z-10">
-                Create{" "}
-                {
-                  orderTypes[orderCategory].find((t) => t.id === orderType)
-                    ?.name
-                }{" "}
-                {orderCategory}
-              </span>
+              <span className="relative z-10">{getButtonText()}</span>
             </Button>
 
             {/* Info Footer */}
             <div className="mt-3 p-3 bg-black/40 backdrop-blur-sm border border-slate-600/30 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
+              <div className="absolute inset-0 bg-primary/5"></div>
               <div className="flex items-center gap-2 relative z-10">
-                <Info className="w-3 h-3 text-teal-400 flex-shrink-0" />
+                <Info className="w-3 h-3 text-primary flex-shrink-0" />
                 <div className="text-xs text-slate-300">
-                  {orderCategory === "Order"
-                    ? "Executed based on market conditions and parameters"
-                    : "Runs continuously with automated strategy execution"}
+                  {orderCreated
+                    ? "Order created successfully! Please approve allowance to activate."
+                    : orderCategory === "Order"
+                      ? "Executed based on market conditions and parameters"
+                      : "Runs continuously with automated strategy execution"}
                 </div>
               </div>
             </div>

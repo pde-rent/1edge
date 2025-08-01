@@ -44,13 +44,47 @@ const RangeForm = ({ control, errors, watch }: any) => {
 
   return (
     <div className="space-y-6">
+
+          <div className="space-y-2">
+  <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+    <DollarSign className="w-4 h-4" />
+    Amount (USD)
+    <div className="w-1 h-1 bg-teal-400"></div>
+  </Label>
+  <Controller
+    name="amount"
+    control={control}
+    rules={{
+      required: "Amount is required",
+      min: { value: 0.01, message: "Must be greater than $0" },
+    }}
+    render={({ field }) => (
+      <div className="relative">
+        <Input
+          {...field}
+          type="number"
+          step="0.01"
+          className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+          placeholder="Enter total amount"
+        />
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+      </div>
+    )}
+  />
+  {errors.size && (
+    <span className="text-xs text-red-400 flex items-center gap-1">
+      <div className="w-1 h-1 bg-red-400"></div>
+      {errors.size.message}
+    </span>
+  )}
+</div>
       
       {/* Start Price */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+        <Label className="text-sm font-medium text-primary flex items-center gap-2">
           <TrendingDown className="w-4 h-4" />
           Start Price (Lower Bound)
-          <div className="w-1 h-1 bg-teal-400"></div>
+          <div className="w-1 h-1 bg-primary"></div>
         </Label>
         <Controller
           name="startPrice"
@@ -66,10 +100,10 @@ const RangeForm = ({ control, errors, watch }: any) => {
                 {...field}
                 type="number"
                 step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
                 placeholder={'0.00'}
               />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-400">
                 USD
               </div>
@@ -86,10 +120,10 @@ const RangeForm = ({ control, errors, watch }: any) => {
 
       {/* End Price */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+        <Label className="text-sm font-medium text-primary flex items-center gap-2">
           <TrendingUp className="w-4 h-4" />
           End Price (Upper Bound)
-          <div className="w-1 h-1 bg-teal-400"></div>
+          <div className="w-1 h-1 bg-primary"></div>
         </Label>
         <Controller
           name="endPrice"
@@ -105,10 +139,10 @@ const RangeForm = ({ control, errors, watch }: any) => {
                 {...field}
                 type="number"
                 step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
                 placeholder={'0.00'}
               />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-slate-400">
                 USD
               </div>
@@ -125,10 +159,10 @@ const RangeForm = ({ control, errors, watch }: any) => {
 
       {/* Quick Range Selection */}
       <div className="space-y-3">
-        <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+        <Label className="text-sm font-medium text-primary flex items-center gap-2">
           <Percent className="w-4 h-4" />
           Quick Range Selection
-          <div className="w-1 h-1 bg-teal-400"></div>
+          <div className="w-1 h-1 bg-primary"></div>
         </Label>
         <div className="grid grid-cols-5 gap-2">
           {priceRangeOptions.map((option) => (
@@ -144,13 +178,13 @@ const RangeForm = ({ control, errors, watch }: any) => {
               {/* Background with gradient and glow effect */}
               <div className={`relative p-3 rounded-xl backdrop-blur-sm border transition-all duration-300 ${
                 priceRange === option.value
-                  ? 'bg-gradient-to-br from-teal-600/80 via-emerald-600/70 to-cyan-600/80 border-teal-400/50 shadow-lg shadow-teal-500/25'
+                  ? 'bg-gradient-to-br from-primary/80 via-primary/70 to-primary/80 border-primary/50 shadow-lg shadow-primary/25'
                   : 'bg-black/60 border-slate-600/40 hover:bg-black/80 hover:border-slate-500/60'
               }`}>
                 
                 {/* Selection indicator */}
                 {priceRange === option.value && (
-                  <div className="absolute top-1 right-1 w-2 h-2 bg-teal-300 square shadow-lg"></div>
+                  <div className="absolute top-1 right-1 w-2 h-2 bg-primary square shadow-lg"></div>
                 )}
                 
                 {/* Content */}
@@ -166,7 +200,7 @@ const RangeForm = ({ control, errors, watch }: any) => {
                 </div>
                 
                 {/* Hover effect overlay */}
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-primary/5 via-primary/5 to-primary/5 opacity-0 hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
               </div>
             </div>
           ))}
@@ -175,10 +209,10 @@ const RangeForm = ({ control, errors, watch }: any) => {
 
       {/* Step Percentage */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+        <Label className="text-sm font-medium text-primary flex items-center gap-2">
           <Percent className="w-4 h-4" />
           Step Percentage
-          <div className="w-1 h-1 bg-teal-400"></div>
+          <div className="w-1 h-1 bg-primary"></div>
         </Label>
         <Controller
           name="stepPct"
@@ -187,20 +221,20 @@ const RangeForm = ({ control, errors, watch }: any) => {
           defaultValue="0.3"
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select step percentage" />
-                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
               <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
                 {stepOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 
                     value={option.value}
-                    className="text-white hover:bg-teal-900/30 focus:bg-teal-900/40 hover:text-teal-100 focus:text-teal-100 cursor-pointer transition-all duration-200"
+                    className="text-white hover:bg-primary/30 focus:bg-primary/40 hover:text-primary-foreground focus:text-primary-foreground cursor-pointer transition-all duration-200"
                   >
                     <div className="flex justify-between items-center w-full">
                       <span>{option.label}</span>
-                      <span className="text-xs text-teal-400 ml-2">{option.description}</span>
+                      <span className="text-xs text-primary ml-2">{option.description}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -218,10 +252,10 @@ const RangeForm = ({ control, errors, watch }: any) => {
 
       {/* Expiry Date */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
+        <Label className="text-sm font-medium text-primary flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           Expiry Date
-          <div className="w-1 h-1 bg-teal-400"></div>
+          <div className="w-1 h-1 bg-primary"></div>
         </Label>
         <Controller
           name="expiry"
@@ -233,9 +267,9 @@ const RangeForm = ({ control, errors, watch }: any) => {
               <Input
                 {...field}
                 type="datetime-local"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-teal-500/50 focus-visible:border-teal-400/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
               />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
             </div>
           )}
         />
@@ -248,25 +282,25 @@ const RangeForm = ({ control, errors, watch }: any) => {
       </div>
       
       {/* Range Summary */}
-      <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 border border-teal-500/20 shadow-inner relative">
-        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
+      <div className="bg-black/20 backdrop-blur-sm rounded-lg p-4 border border-primary/20 shadow-inner relative">
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 via-primary/5 to-primary/5"></div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-2 h-2 bg-teal-400"></div>
-            <div className="text-xs font-medium text-teal-300">Range Strategy Summary</div>
+            <div className="w-2 h-2 bg-primary"></div>
+            <div className="text-xs font-medium text-primary">Range Strategy Summary</div>
           </div>
           <div className="text-sm text-slate-300 space-y-1">
             <div className="flex justify-between">
               <span>Strategy:</span>
-              <span className="text-teal-400">Liquidity Range Position</span>
+              <span className="text-primary">Liquidity Range Position</span>
             </div>
             <div className="flex justify-between">
               <span>Execution:</span>
-              <span className="text-emerald-400">Automated market making</span>
+              <span className="text-primary">Automated market making</span>
             </div>
             <div className="flex justify-between">
               <span>Price Range:</span>
-              <span className="text-cyan-400">{priceRange} from current price</span>
+              <span className="text-primary">{priceRange} from current price</span>
             </div>
             <div className="flex justify-between">
               <span>Orders:</span>

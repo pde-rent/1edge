@@ -1,281 +1,400 @@
-// @ts-nocheck
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { PanelWrapper } from "./common/Panel";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { OrderDetailsModal } from "./OrderDetailsModal";
+import { Order, OrderStatus, OrderType } from "@common/types";
 import { roundSig } from "@common/utils";
-import { TrendingUp, BarChart3 } from "lucide-react";
+import { Settings, BarChart3, Edit2, X } from "lucide-react";
 
 /**
- * PositionsPanel displays a table of strategy positions across the platform.
- * Currently shows a placeholder until real positions are available.
+ * OrdersPanel displays a table of orders and strategies across the platform.
+ * Shows order management interface with detailed tooltips and modal views.
  */
-export default function PositionsPanel() {
-  const [strategies, setStrategies] = useState([]);
+export default function OrdersPanel() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchStrategies = async () => {
+    const fetchOrders = async () => {
       try {
-        const response = await fetch("http://localhost:40005/strategies");
+        const response = await fetch("http://localhost:40005/orders");
         if (response.ok) {
           const data = await response.json();
-          setStrategies(data.data);
+          setOrders(data.data || []);
+        } else {
+          // Mock data for development
+          setOrders(generateMockOrders());
         }
       } catch (error) {
-        console.error("Failed to fetch strategies:", error);
+        console.error("Failed to fetch orders:", error);
+        // Fallback to mock data
+        setOrders(generateMockOrders());
       }
     };
 
-    fetchStrategies();
-    const interval = setInterval(fetchStrategies, 5000);
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 5000);
 
     return () => clearInterval(interval);
   }, []);
 
-  /**
-   * Formats a timestamp for display.
-   * @param timestamp - The timestamp to format.
-   * @returns The formatted time string.
-   */
-  const formatTimestamp = (timestamp) => {
+  const generateMockOrders = (): Order[] => [
+    {
+      id: "ord_1",
+      type: OrderType.TWAP,
+      status: OrderStatus.ACTIVE,
+      size: "1000.0",
+      remainingSize: "750.0",
+      createdAt: Date.now() - 3600000,
+      triggerCount: 3,
+      nextTriggerValue: "42500.0",
+      makerAsset: "0x...",
+      takerAsset: "0x...",
+      makingAmount: "1000",
+      takingAmount: "42000000",
+      maker: "0x...",
+      params: {
+        amount: "1000.0",
+        startDate: Date.now() - 3600000,
+        endDate: Date.now() + 86400000,
+        interval: 1800000,
+        maxPrice: 43000
+      }
+    },
+    {
+      id: "ord_2",
+      type: OrderType.STOP_LIMIT,
+      status: OrderStatus.PENDING,
+      size: "500.0",
+      remainingSize: "500.0",
+      createdAt: Date.now() - 1800000,
+      triggerCount: 0,
+      nextTriggerValue: "41000.0",
+      makerAsset: "0x...",
+      takerAsset: "0x...",
+      makingAmount: "500",
+      takingAmount: "20500000",
+      maker: "0x...",
+      params: {
+        amount: "500.0",
+        stopPrice: 41000,
+        limitPrice: 40800,
+        expiry: 7
+      }
+    },
+    {
+      id: "ord_3",
+      type: OrderType.GRID_TRADING,
+      status: OrderStatus.PARTIALLY_FILLED,
+      size: "2000.0",
+      remainingSize: "1200.0",
+      createdAt: Date.now() - 7200000,
+      triggerCount: 8,
+      nextTriggerValue: "42200.0",
+      makerAsset: "0x...",
+      takerAsset: "0x...",
+      makingAmount: "2000",
+      takingAmount: "84000000",
+      maker: "0x...",
+      params: {
+        amount: "2000.0",
+        startPrice: 41000,
+        endPrice: 44000,
+        stepPct: 0.5,
+        singleSide: false,
+        tpPct: 2.0
+      }
+    }
+  ];
+
+  const formatTimestamp = (timestamp?: number) => {
     if (!timestamp) return "N/A";
     return new Date(timestamp).toLocaleTimeString("en-US", {
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
       hour12: true,
     });
   };
 
-  /**
-   * Formats the size value for display.
-   * @param value - The size value.
-   * @returns The formatted string.
-   */
-  const formatSize = (value) => {
-    if (value === undefined || value === null) return "-";
-    return roundSig(value, 5).toLocaleString();
+  const formatFullTimestamp = (timestamp?: number) => {
+    if (!timestamp) return "N/A";
+    return new Date(timestamp).toLocaleString();
   };
 
-  /**
-   * Formats the entry value for display, using scientific notation for small values.
-   * @param value - The entry value.
-   * @returns The formatted string.
-   */
-  const formatEntry = (value) => {
-    if (value === undefined || value === null) return "-";
-
-    // Use scientific notation for values less than 0.001
-    if (Math.abs(value) < 0.001 && value !== 0) {
-      return roundSig(value, 6).toExponential();
-    }
-
-    return roundSig(value, 6).toLocaleString(undefined, {
+  const formatSize = (value?: string) => {
+    if (!value) return "-";
+    const num = parseFloat(value);
+    if (isNaN(num)) return "-";
+    return num.toLocaleString(undefined, {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 8,
+      maximumFractionDigits: 6,
     });
   };
 
-  /**
-   * Formats the PnL value for display.
-   * @param value - The PnL value.
-   * @returns The formatted string.
-   */
-  const formatPnL = (value) => {
-    if (value === undefined || value === null) return "-";
-    return roundSig(value, 6).toLocaleString();
+  const getStatusBadgeStyle = (status: OrderStatus) => {
+    switch (status) {
+      case OrderStatus.ACTIVE:
+        return "bg-primary/20 border-primary text-primary";
+      case OrderStatus.FILLED:
+      case OrderStatus.COMPLETED:
+        return "bg-success/20 border-success text-success";
+      case OrderStatus.CANCELLED:
+      case OrderStatus.EXPIRED:
+        return "bg-muted border-muted-foreground text-muted-foreground";
+      case OrderStatus.FAILED:
+        return "bg-destructive/20 border-destructive text-destructive";
+      case OrderStatus.PARTIALLY_FILLED:
+        return "bg-warning/20 border-warning text-warning";
+      default:
+        return "bg-muted border-muted-foreground text-muted-foreground";
+    }
   };
 
-  /**
-   * Gets the badge variant and styling for the type chip based on order type.
-   * @param type - The order type.
-   * @returns The badge styling object.
-   */
-  const getTypeBadgeStyle = (type) => {
-    if (!type)
-      return {
-        variant: "outline",
-        className: "bg-black/60 border-slate-600/50 text-slate-300",
-      };
-
-    const buyTypes = ["buy", "buy_limit", "buy_stop"];
-    const shortTypes = ["short", "short_limit", "short_stop"];
-
-    if (buyTypes.includes(type.toLowerCase())) {
-      return {
-        variant: "outline",
-        className:
-          "bg-emerald-500/10 border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/20",
-      };
+  const getTypeBadgeStyle = (type: OrderType) => {
+    const oneOffTypes = [OrderType.STOP_LIMIT, OrderType.CHASE_LIMIT, OrderType.TWAP, OrderType.RANGE, OrderType.ICEBERG];
+    if (oneOffTypes.includes(type)) {
+      return "bg-primary/10 border-primary/50 text-primary";
     }
-    if (shortTypes.includes(type.toLowerCase())) {
-      return {
-        variant: "outline",
-        className:
-          "bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20",
-      };
-    }
-
-    return {
-      variant: "outline",
-      className: "bg-black/60 border-slate-600/50 text-slate-300",
-    };
+    return "bg-secondary/10 border-secondary/50 text-secondary";
   };
 
-  /**
-   * Gets the PnL text color based on value.
-   * @param value - The PnL value.
-   * @returns The color class string.
-   */
-  const getPnLColor = (value) => {
-    if (value === undefined || value === null || value === 0)
-      return "text-slate-400";
-    return value > 0 ? "text-emerald-400" : "text-red-400";
+  const handleOrderClick = (order: Order) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
+  const handleCancel = async (orderId: string) => {
+    try {
+      const response = await fetch(`http://localhost:40005/orders/${orderId}/cancel`, {
+        method: 'POST',
+      });
+      if (response.ok) {
+        // Refresh orders
+        const updatedOrders = orders.map(order =>
+          order.id === orderId
+            ? { ...order, status: OrderStatus.CANCELLED }
+            : order
+        );
+        setOrders(updatedOrders);
+      }
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleModify = async (orderId: string) => {
+    // In a real implementation, this would open a modify dialog
+    console.log('Modify order:', orderId);
+    setIsModalOpen(false);
   };
 
   return (
-    <PanelWrapper>
-          {/* Header */}
-          <CardHeader className="pb-0 border-b border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md flex-shrink-0 relative">
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+    <TooltipProvider>
+      <PanelWrapper>
+          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-background backdrop-blur-xl">
+        {/* Table Header */}
+        <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-primary/50 bg-card backdrop-blur-sm flex-shrink-0 text-xs font-medium text-primary uppercase tracking-wide relative">
+          <div className="absolute inset-0 bg-primary/5"></div>
+          <div className="absolute inset-x-0 bottom-0 h-px bg-primary/30"></div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 mt-4">
-                <BarChart3 className="w-4 h-4 text-teal-400" />
-                <h2 className="text-lg font-bold text-teal-600">Positions</h2>
-              </div>
+          <div className="col-span-2 relative z-10 flex items-center gap-2">
+            Order Id
+            <div className="w-1 h-1 bg-primary"></div>
+          </div>
+          <div className="col-span-1 relative z-10">Type</div>
+          <div className="col-span-1 relative z-10">Status</div>
+          <div className="col-span-1 text-right relative z-10">Size</div>
+          <div className="col-span-1 text-right relative z-10">Remaining</div>
+          <div className="col-span-2 text-right relative z-10">Created</div>
+          <div className="col-span-1 text-center relative z-10">Triggers</div>
+          <div className="col-span-1 text-right relative z-10">Next</div>
+          <div className="col-span-2 text-center relative z-10">Actions</div>
+        </div>
 
-              {/* Status indicator */}
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 bg-teal-400" />
-                <span className="text-xs font-medium text-teal-200 uppercase tracking-wide">
-                  {strategies.length > 0
-                    ? `${strategies.length} Active`
-                    : "No Active"}
-                </span>
-              </div>
-            </div>
-
-            {/* Subtitle */}
-            <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Monitoring aggregated strategy positions across platform.
-              Positions can be ordered, open, or closed.
-            </p>
-          </CardHeader>
-
-          <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95 backdrop-blur-xl">
-            {/* Table Header */}
-            <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-teal-500/20 bg-black/60 backdrop-blur-sm flex-shrink-0 text-xs font-medium text-teal-200 uppercase tracking-wide relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-emerald-500/5 to-cyan-500/5"></div>
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
-
-              <div className="col-span-3 relative z-10 flex items-center gap-2">
-                Name
-                <div className="w-1 h-1 bg-teal-400"></div>
-              </div>
-              <div className="col-span-2 relative z-10">Type</div>
-              <div className="col-span-2 relative z-10">Status</div>
-              <div className="col-span-2 text-right relative z-10">Started</div>
-              <div className="col-span-3 text-right relative z-10">
-                Last Update
-              </div>
-            </div>
-
-            {/* Table Body - Scrollable */}
-            <div className="flex-1 overflow-y-auto bg-gradient-to-b from-black/95 via-slate-950/90 to-black/95">
-              {strategies.length > 0 ? (
-                strategies.map((strategy, index) => {
-                  return (
+        {/* Table Body - Scrollable */}
+        <div className="flex-1 overflow-y-auto bg-background">
+          {orders.length > 0 ? (
+            orders.map((order) => {
+              return (
+                <Tooltip key={order.id}>
+                  <TooltipTrigger asChild>
                     <div
-                      key={strategy.id}
-                      className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 border-b border-slate-800/30 relative group"
+                      className="grid grid-cols-12 gap-2 px-4 py-3 hover:bg-black/60 backdrop-blur-sm transition-all duration-300 border-b border-slate-800/30 relative group cursor-pointer"
+                      onClick={() => handleOrderClick(order)}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                      <div className="col-span-3 flex items-center relative z-10">
-                        <span className="text-sm text-white truncate font-medium">
-                          {strategy.name}
+                      {/* ID */}
+                      <div className="col-span-2 flex items-center relative z-10">
+                        <span className="text-sm text-white truncate font-mono">
+                          {order.id}
                         </span>
                       </div>
 
-                      <div className="col-span-2 flex items-center relative z-10">
-                        <span className="text-sm text-slate-200 truncate font-mono">
-                          {strategy.type}
-                        </span>
-                      </div>
-
-                      <div className="col-span-2 flex items-center relative z-10">
+                      {/* Type */}
+                      <div className="col-span-1 flex items-center relative z-10">
                         <Badge
-                          variant={
-                            strategy.status === "Running"
-                              ? "default"
-                              : "outline"
-                          }
-                          className={`text-xs h-5 px-2 ${
-                            strategy.status === "Running"
-                              ? "bg-gradient-to-r from-teal-600/20 to-emerald-600/20 border-teal-400/50 text-teal-200"
-                              : "bg-black/60 border-slate-600/50 text-slate-300"
-                          }`}
+                          variant="outline"
+                          className={`text-xs h-5 px-2 ${getTypeBadgeStyle(order.type)}`}
                         >
-                          {strategy.status}
+                          {order.type}
                         </Badge>
                       </div>
 
+                      {/* Status */}
+                      <div className="col-span-1 flex items-center relative z-10">
+                        <Badge
+                          variant="outline"
+                          className={`text-xs h-5 px-2 ${getStatusBadgeStyle(order.status)}`}
+                        >
+                          {order.status}
+                        </Badge>
+                      </div>
+
+                      {/* Size */}
+                      <div className="col-span-1 flex items-center justify-end relative z-10">
+                        <span className="text-xs font-mono text-slate-300 tabular-nums">
+                          {formatSize(order.size)}
+                        </span>
+                      </div>
+
+                      {/* Remaining Size */}
+                      <div className="col-span-1 flex items-center justify-end relative z-10">
+                        <span className="text-xs font-mono text-slate-300 tabular-nums">
+                          {formatSize(order.remainingSize)}
+                        </span>
+                      </div>
+
+                      {/* Created At */}
                       <div className="col-span-2 flex items-center justify-end relative z-10">
                         <span className="text-xs font-mono text-slate-300 tabular-nums">
-                          {formatTimestamp(strategy.startedAt)}
+                          {formatTimestamp(order.createdAt)}
                         </span>
                       </div>
 
-                      <div className="col-span-3 flex items-center justify-end relative z-10">
+                      {/* Trigger Count */}
+                      <div className="col-span-1 flex items-center justify-center relative z-10">
                         <span className="text-xs font-mono text-slate-300 tabular-nums">
-                          {formatTimestamp(strategy.updatedAt)}
+                          {order.triggerCount}
                         </span>
                       </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="flex-1 flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="relative mb-4">
-                      <div className="absolute inset-0 bg-gradient-to-r from-teal-500/20 to-emerald-500/20 blur-xl"></div>
-                      <BarChart3 className="w-12 h-12 text-teal-400 mx-auto relative z-10" />
-                    </div>
-                    <p className="text-slate-200 font-medium">
-                      No positions available
-                    </p>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Positions will appear here when strategies are active
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Footer */}
-            <div className="px-4 py-3 border-t border-teal-500/20 bg-gradient-to-r from-black/95 via-slate-950/90 to-black/95 backdrop-blur-md flex-shrink-0 relative">
-              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal-500/30 to-transparent"></div>
+                      {/* Next Trigger Value */}
+                      <div className="col-span-1 flex items-center justify-end relative z-10">
+                        <span className="text-xs font-mono text-slate-300 tabular-nums">
+                          {order.nextTriggerValue || '-'}
+                        </span>
+                      </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-300 relative z-10">
-                <span className="font-mono flex items-center gap-2">
-                  {strategies.length} position
-                  {strategies.length !== 1 ? "s" : ""} shown
-                  <div className="w-1 h-1 bg-emerald-400"></div>
-                </span>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-emerald-500/80"></div>
-                    <span className="font-mono text-emerald-300">Long</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-red-500/80"></div>
-                    <span className="font-mono text-red-300">Short</span>
-                  </div>
+                      {/* Actions */}
+                      <div className="col-span-2 flex items-center justify-center gap-1 relative z-10">
+                        {order.status === OrderStatus.ACTIVE && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 border-warning/50 text-warning hover:bg-warning/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleModify(order.id);
+                              }}
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 border-destructive/50 text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCancel(order.id);
+                              }}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-sm">
+                    <div className="space-y-2">
+                      <div className="font-semibold text-primary">{order.type} Order</div>
+                      <div className="text-xs space-y-1">
+                        <div>Created: {formatFullTimestamp(order.createdAt)}</div>
+                        <div>Progress: {formatSize(order.remainingSize)} / {formatSize(order.size)} remaining</div>
+                        <div>Triggers: {order.triggerCount} times</div>
+                        {order.nextTriggerValue && (
+                          <div>Next: {order.nextTriggerValue}</div>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Click for full details
+                      </div>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })
+          ) : (
+            <div className="flex-1 flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="relative mb-4">
+                  <div className="absolute inset-0 bg-primary/20 blur-xl"></div>
+                  <Settings className="w-12 h-12 text-primary mx-auto relative z-10" />
                 </div>
+                <p className="text-slate-200 font-medium">
+                  No orders available
+                </p>
+                <p className="text-xs text-slate-400 mt-1">
+                  Orders will appear here when created
+                </p>
               </div>
             </div>
-          </CardContent>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-4 py-3 border-t border-primary/50 bg-background backdrop-blur-md flex-shrink-0 relative">
+          <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
+
+          <div className="flex items-center justify-between text-xs text-slate-300 relative z-10">
+            <span className="font-mono flex items-center gap-2">
+              {orders.length} order
+              {orders.length !== 1 ? "s" : ""} shown
+              <div className="w-1 h-1 bg-primary"></div>
+            </span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-primary/80"></div>
+                <span className="font-mono text-primary">Active</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-success/80"></div>
+                <span className="font-mono text-success">Filled</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-muted-foreground/80"></div>
+                <span className="font-mono text-muted-foreground">Cancelled</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+
+      <OrderDetailsModal
+        order={selectedOrder}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onCancel={handleCancel}
+        onModify={handleModify}
+      />
     </PanelWrapper>
+    </TooltipProvider>
   );
 }

@@ -1,39 +1,65 @@
-import type { Order } from "@common/types";
 import { OrderType } from "@common/types";
+import type { Order, DCAParams } from "@common/types";
 import { logger } from "@back/utils/logger";
-import { registerOrderWatcher, type OrderWatcher } from "./base";
+import { TimeBasedOrderWatcher, registerOrderWatcher, MS_PER_DAY } from "./base";
 
-class DCAWatcher implements OrderWatcher {
+/**
+ * Dollar Cost Averaging (DCA) order watcher
+ * Executes trades at fixed time intervals
+ */
+class DCAOrderWatcher extends TimeBasedOrderWatcher {
   async shouldTrigger(order: Order): Promise<boolean> {
-    if (!order.nextTriggerValue) {
+    const params = this.validateParams<DCAParams>(order);
+    if (!params) return false;
+
+    // Check if we have a valid next trigger time
+    if (!order.nextTriggerValue || typeof order.nextTriggerValue !== 'number') {
       return false;
     }
 
-    return Date.now() >= Number(order.nextTriggerValue);
-  }
-
-  async execute(order: Order): Promise<void> {
-    if (!order.params || !('amount' in order.params)) {
-      throw new Error("Invalid DCA order params");
+    // Check max price constraint
+    if (this.exceedsMaxPrice(order, params.maxPrice)) {
+      logger.debug(`DCA order ${order.id} skipped - price exceeds max price ${params.maxPrice}`);
+      return false;
     }
 
-    logger.info(`Executing DCA order ${order.id} for amount ${order.params.amount}`);
+    // Check time interval
+    return this.checkTimeInterval(order.nextTriggerValue, 0);
+  }
 
-    // Create chase-limit order close to market price
-    const priceOffset = 0.005; // 0.5% below market
-    // TODO: Create 1inch order with chase behavior
+  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
+    const params = this.validateParams<DCAParams>(order);
+    if (!params) throw new Error("Invalid DCA parameters");
+
+    // Get price info for logging
+    const priceInfo = this.getPriceInfo(order);
+    if (!priceInfo) throw new Error("Failed to get price info");
+
+    // Log execution
+    this.logExecution({
+      order,
+      currentPrice: priceInfo.price,
+      symbol: priceInfo.symbol,
+      triggerAmount: makerAmount
+    });
+
+    // Execute the order
+    await super.trigger(order, makerAmount, takerAmount);
   }
 
   updateNextTrigger(order: Order): void {
-    if (!order.params || !('interval' in order.params)) {
-      return;
-    }
+    const params = this.validateParams<DCAParams>(order);
+    if (!params) return;
 
-    // interval is in ms
-    const intervalMs = order.params.interval;
-    order.nextTriggerValue = Date.now() + intervalMs;
+    // Calculate next trigger time
+    const intervalMs = params.interval * MS_PER_DAY;
+    const lastTriggerTime = order.nextTriggerValue as number || Date.now();
+    
+    order.nextTriggerValue = this.getNextTriggerTime(lastTriggerTime, intervalMs);
+    
+    logger.debug(`DCA order ${order.id} next trigger scheduled for ${new Date(order.nextTriggerValue).toISOString()}`);
   }
 }
 
-// Register watcher
-registerOrderWatcher(OrderType.DCA, new DCAWatcher());
+// Register the watcher
+registerOrderWatcher(OrderType.DCA, new DCAOrderWatcher());

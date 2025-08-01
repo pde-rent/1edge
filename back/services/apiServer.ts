@@ -18,7 +18,6 @@ import { getTicker, getActiveTickers } from "./marketData";
 import { getActiveTickers as getActiveTickersFromMemory } from "./memoryStorage";
 import { orderbookReconstructor } from "./orderbookReconstructor";
 import { initOHLCStorage, getOHLCStorage } from "./ohlcStorage";
-import { orderRegistry } from "./orderRegistry";
 import { logger } from "@back/utils/logger";
 import type { ApiServerConfig, ApiResponse, Order } from "@common/types";
 import { services } from "@common/types";
@@ -84,86 +83,72 @@ class ApiServer {
     }
 
     try {
-      // Route handling
-      switch (true) {
-        case path === "/health":
-          return this.jsonResponse(
-            { success: true, data: { status: "healthy" } },
-            headers,
-          );
-
-        case path === "/config":
-          return this.jsonResponse(
-            { success: true, data: getConfig() },
-            headers,
-          );
-
-        case path === "/services/status":
-        case path === "/api/status":
-          return this.handleServicesStatus(headers);
-
-        case path === "/tickers":
-        case path === "/api/feeds":
-          return this.handleGetTickers(headers);
-
-        case path.startsWith("/api/feeds/history/"):
-          return this.handleGetTickerHistory(path, headers);
-
-        case path.startsWith("/ticker/"):
-        case path.startsWith("/api/feeds/"):
-          return this.handleGetTicker(path, headers);
-
-        case path === "/orders":
-          switch (request.method) {
-            case "GET":
-              return this.handleGetOrders(url, headers);
-            case "POST":
-              return this.handleCreateOrder(request, headers);
-            default:
-              return this.methodNotAllowed(headers);
-          }
-
-        case path.match(/^\/orders\/[^\/]+$/)?.input:
-          const orderId = path.split("/")[2];
-          switch (request.method) {
-            case "GET":
-              return this.handleGetOrder(orderId, headers);
-            case "PUT":
-              return this.handleModifyOrder(orderId, request, headers);
-            case "DELETE":
-              return this.handleCancelOrder(orderId, headers);
-            default:
-              return this.methodNotAllowed(headers);
-          }
-
-        case path === "/positions":
-          return this.handleGetPositions(url, headers);
-
-        case path === "/ping":
-          return this.jsonResponse(
-            { success: true, data: { pong: Date.now() } },
-            headers,
-          );
-
-        case path.startsWith("/orderbook/"):
-          return this.handleOrderbook(path, url, headers);
-
-        case path.startsWith("/orderbook-symbol/"):
-          return this.handleOrderbookSymbol(path, url, headers);
-
-        case path.startsWith("/ohlc/"):
-          return this.handleOHLC(path, url, headers);
-
-        case path.startsWith("/ohlc-stats/"):
-          return this.handleOHLCStats(path, url, headers);
-
-        default:
-          return this.jsonResponse(
-            { success: false, error: "Not found" },
-            headers,
-            404,
-          );
+      // Simple route handling with if/else - more readable and less error-prone
+      if (path === "/health") {
+        return this.jsonResponse(
+          { success: true, data: { status: "healthy" } },
+          headers,
+        );
       }
+
+      if (path === "/config") {
+        return this.jsonResponse({ success: true, data: getConfig() }, headers);
+      }
+
+      if (path === "/services/status" || path === "/api/status") {
+        return this.handleServicesStatus(headers);
+      }
+
+      if (path === "/tickers" || path === "/api/feeds") {
+        return this.handleGetTickers(headers);
+      }
+
+      if (path.startsWith("/api/feeds/history/")) {
+        return this.handleGetTickerHistory(path, headers);
+      }
+
+      if (path.startsWith("/ticker/") || path.startsWith("/api/feeds/")) {
+        return this.handleGetTicker(path, headers);
+      }
+
+      if (path === "/orders" || path.startsWith("/orders/")) {
+        // Proxy all order requests to OrderRegistry service
+        return this.proxyToOrderRegistry(request, headers);
+      }
+
+      if (path === "/positions") {
+        return this.handleGetPositions(url, headers);
+      }
+
+      if (path === "/ping") {
+        return this.jsonResponse(
+          { success: true, data: { pong: Date.now() } },
+          headers,
+        );
+      }
+
+      if (path.startsWith("/orderbook/")) {
+        return this.handleOrderbook(path, url, headers);
+      }
+
+      if (path.startsWith("/orderbook-symbol/")) {
+        return this.handleOrderbookSymbol(path, url, headers);
+      }
+
+      if (path.startsWith("/ohlc/")) {
+        return this.handleOHLC(path, url, headers);
+      }
+
+      if (path.startsWith("/ohlc-stats/")) {
+        return this.handleOHLCStats(path, url, headers);
+      }
+
+      // Default 404
+      return this.jsonResponse(
+        { success: false, error: "Not found" },
+        headers,
+        404,
+      );
     } catch (error: any) {
       logger.error("API error:", error);
       return this.jsonResponse(
@@ -173,7 +158,6 @@ class ApiServer {
       );
     }
   }
-
   private jsonResponse(
     data: ApiResponse,
     headers: any,
@@ -281,13 +265,13 @@ class ApiServer {
         last:
           priceData.last || priceData.mid
             ? {
-              bid: priceData.bid || 0,
-              ask: priceData.ask || 0,
-              mid: priceData.mid || 0,
-              last: priceData.last || priceData.mid || 0,
-              volume: priceData.volume || 0,
-              timestamp: priceData.timestamp || Date.now(),
-            }
+                bid: priceData.bid || 0,
+                ask: priceData.ask || 0,
+                mid: priceData.mid || 0,
+                last: priceData.last || priceData.mid || 0,
+                volume: priceData.volume || 0,
+                timestamp: priceData.timestamp || Date.now(),
+              }
             : null,
         history: priceData.history || {
           ts: [],
@@ -340,13 +324,13 @@ class ApiServer {
       last:
         priceData.last || priceData.mid
           ? {
-            bid: priceData.bid || 0,
-            ask: priceData.ask || 0,
-            mid: priceData.mid || 0,
-            last: priceData.last || priceData.mid || 0,
-            volume: priceData.volume || 0,
-            timestamp: priceData.timestamp || Date.now(),
-          }
+              bid: priceData.bid || 0,
+              ask: priceData.ask || 0,
+              mid: priceData.mid || 0,
+              last: priceData.last || priceData.mid || 0,
+              volume: priceData.volume || 0,
+              timestamp: priceData.timestamp || Date.now(),
+            }
           : null,
       history: priceData.history || {
         ts: [],
@@ -362,65 +346,46 @@ class ApiServer {
     return this.jsonResponse({ success: true, data: ticker }, headers);
   }
 
-  private async handleGetOrders(url: URL, headers: any): Promise<Response> {
-    const makerAddress = url.searchParams.get("maker");
-    
-    if (makerAddress) {
-      const orders = await getOrdersByMaker(makerAddress);
-      return this.jsonResponse({ success: true, data: orders }, headers);
-    } else {
-      const orders = await getActiveOrders();
-      return this.jsonResponse({ success: true, data: orders }, headers);
+  private async proxyToOrderRegistry(request: Request, headers: any): Promise<Response> {
+    try {
+      const url = new URL(request.url);
+      const orderRegistryUrl = `http://localhost:${SERVICE_PORTS.ORDER_REGISTRY}${url.pathname}${url.search}`;
+      
+      // Forward the request to OrderRegistry service
+      const response = await fetch(orderRegistryUrl, {
+        method: request.method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: request.method !== "GET" ? await request.text() : undefined,
+      });
+
+      const data = await response.text();
+      
+      return new Response(data, {
+        status: response.status,
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error: any) {
+      logger.error("Error proxying to OrderRegistry:", error);
+      return this.jsonResponse(
+        { success: false, error: "Order service unavailable" },
+        headers,
+        503
+      );
     }
   }
 
-  private async handleCreateOrder(request: Request, headers: any): Promise<Response> {
-    try {
-      const orderData = await request.json();
-      await orderRegistry.createOrder(orderData);
-      return this.jsonResponse({ success: true, message: "Order created successfully" }, headers);
-    } catch (error: any) {
-      logger.error("Failed to create order:", error);
-      return this.jsonResponse({ success: false, error: error.message }, headers, 400);
-    }
-  }
-
-  private async handleGetOrder(orderId: string, headers: any): Promise<Response> {
-    try {
-      const order = await getOrder(orderId);
-      if (!order) {
-        return this.jsonResponse({ success: false, error: "Order not found" }, headers, 404);
-      }
-      return this.jsonResponse({ success: true, data: order }, headers);
-    } catch (error: any) {
-      logger.error("Failed to get order:", error);
-      return this.jsonResponse({ success: false, error: error.message }, headers, 500);
-    }
-  }
-
-  private async handleModifyOrder(orderId: string, request: Request, headers: any): Promise<Response> {
-    try {
-      const updateData = await request.json();
-      const newOrderId = await orderRegistry.modifyOrder(orderId, updateData);
-      return this.jsonResponse({ success: true, data: { newOrderId } }, headers);
-    } catch (error: any) {
-      logger.error("Failed to modify order:", error);
-      return this.jsonResponse({ success: false, error: error.message }, headers, 400);
-    }
-  }
-
-  private async handleCancelOrder(orderId: string, headers: any): Promise<Response> {
-    try {
-      await orderRegistry.cancelOrder(orderId);
-      return this.jsonResponse({ success: true, message: "Order cancelled successfully" }, headers);
-    } catch (error: any) {
-      logger.error("Failed to cancel order:", error);
-      return this.jsonResponse({ success: false, error: error.message }, headers, 400);
-    }
-  }
 
   private methodNotAllowed(headers: any): Response {
-    return this.jsonResponse({ success: false, error: "Method not allowed" }, headers, 405);
+    return this.jsonResponse(
+      { success: false, error: "Method not allowed" },
+      headers,
+      405,
+    );
   }
 
   private async handleGetOrdersByStrategy(
@@ -437,14 +402,24 @@ class ApiServer {
     return this.jsonResponse({ success: true, data: strategies }, headers);
   }
 
-  private async handleSaveStrategy(request: Request, headers: any): Promise<Response> {
+  private async handleSaveStrategy(
+    request: Request,
+    headers: any,
+  ): Promise<Response> {
     try {
       const strategy = await request.json();
       await saveStrategy(strategy);
-      return this.jsonResponse({ success: true, message: "Strategy saved" }, headers);
+      return this.jsonResponse(
+        { success: true, message: "Strategy saved" },
+        headers,
+      );
     } catch (error) {
       logger.error("Failed to save strategy:", error);
-      return this.jsonResponse({ success: false, error: "Failed to save strategy" }, headers, 500);
+      return this.jsonResponse(
+        { success: false, error: "Failed to save strategy" },
+        headers,
+        500,
+      );
     }
   }
 
@@ -528,13 +503,13 @@ class ApiServer {
       last:
         priceData.last || priceData.mid
           ? {
-            bid: priceData.bid || 0,
-            ask: priceData.ask || 0,
-            mid: priceData.mid || 0,
-            last: priceData.last || priceData.mid || 0,
-            volume: priceData.volume || 0,
-            timestamp: priceData.timestamp || Date.now(),
-          }
+              bid: priceData.bid || 0,
+              ask: priceData.ask || 0,
+              mid: priceData.mid || 0,
+              last: priceData.last || priceData.mid || 0,
+              volume: priceData.volume || 0,
+              timestamp: priceData.timestamp || Date.now(),
+            }
           : null,
       history: filteredHistory,
       analysis: priceData.analysis || null,
@@ -597,7 +572,9 @@ class ApiServer {
           limit,
         );
 
-        logger.info(`🔍 Orderbook result summary: bids=${orderbook.bids.length}, asks=${orderbook.asks.length}, spotPrice=${orderbook.summary.spotPrice}`);
+        logger.info(
+          `🔍 Orderbook result summary: bids=${orderbook.bids.length}, asks=${orderbook.asks.length}, spotPrice=${orderbook.summary.spotPrice}`,
+        );
       } else if (pathParts.length === 2) {
         // Market overview: /orderbook/{chain}
         logger.info(
@@ -754,14 +731,14 @@ class ApiServer {
     try {
       const symbol = decodeURIComponent(path.replace("/ohlc/", ""));
       const timeframeSec = parseInt(url.searchParams.get("timeframe") || "60");
-      const startTime = url.searchParams.get("startTime") 
-        ? parseInt(url.searchParams.get("startTime")!) 
+      const startTime = url.searchParams.get("startTime")
+        ? parseInt(url.searchParams.get("startTime")!)
         : undefined;
-      const endTime = url.searchParams.get("endTime") 
-        ? parseInt(url.searchParams.get("endTime")!) 
+      const endTime = url.searchParams.get("endTime")
+        ? parseInt(url.searchParams.get("endTime")!)
         : undefined;
-      const limit = url.searchParams.get("limit") 
-        ? parseInt(url.searchParams.get("limit")!) 
+      const limit = url.searchParams.get("limit")
+        ? parseInt(url.searchParams.get("limit")!)
         : undefined;
 
       if (!symbol) {
@@ -776,9 +753,9 @@ class ApiServer {
       const validTimeframes = [5, 20, 60, 300, 1800]; // 5s, 20s, 1m, 5m, 30m
       if (!validTimeframes.includes(timeframeSec)) {
         return this.jsonResponse(
-          { 
-            success: false, 
-            error: `Invalid timeframe. Supported: ${validTimeframes.join(', ')} seconds` 
+          {
+            success: false,
+            error: `Invalid timeframe. Supported: ${validTimeframes.join(", ")} seconds`,
           },
           headers,
           400,
@@ -790,22 +767,21 @@ class ApiServer {
         timeframeSec as any,
         startTime,
         endTime,
-        limit
+        limit,
       );
 
       return this.jsonResponse(
-        { 
-          success: true, 
+        {
+          success: true,
           data: {
             symbol,
             timeframe: timeframeSec,
             candles,
-            count: candles.length
-          }
+            count: candles.length,
+          },
         },
         headers,
       );
-
     } catch (error: any) {
       logger.error("OHLC API error:", error);
       return this.jsonResponse(
@@ -839,16 +815,15 @@ class ApiServer {
       const stats = await getOHLCStorage().getDataStats(symbol as any);
 
       return this.jsonResponse(
-        { 
-          success: true, 
+        {
+          success: true,
           data: {
             symbol,
-            statistics: stats
-          }
+            statistics: stats,
+          },
         },
         headers,
       );
-
     } catch (error: any) {
       logger.error("OHLC Stats API error:", error);
       return this.jsonResponse(

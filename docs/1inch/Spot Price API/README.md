@@ -35,12 +35,12 @@ Welcome to the 1inch Spot Price API documentation. This API provides real-time c
 
 | Network | Chain ID | Native Token | Status |
 |---------|----------|--------------|--------|
-| Ethereum | 1 | ETH | ✅ Active |
-| Polygon | 137 | MATIC | ✅ Active |
-| BSC | 56 | BNB | ✅ Active |
-| Arbitrum | 42161 | ETH | ✅ Active |
-| Optimism | 10 | ETH | ✅ Active |
-| Avalanche | 43114 | AVAX | ✅ Active |
+| Ethereum | 1 | ETH |  Active |
+| Polygon | 137 | MATIC |  Active |
+| BSC | 56 | BNB |  Active |
+| Arbitrum | 42161 | ETH |  Active |
+| Optimism | 10 | ETH |  Active |
+| Avalanche | 43114 | AVAX |  Active |
 
 ## Quick Start
 
@@ -136,7 +136,7 @@ docs/1inch/Spot Price API/
 
 ### Community
 - [Discord Server](https://discord.gg/1inch)
-- [Telegram Channel](https://t.me/OneInchNetwork)
+- [Telegram Channel](https://t.me/one_edge)
 - [GitHub Repositories](https://github.com/1inch)
 
 ### Support Channels

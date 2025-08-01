@@ -13,6 +13,7 @@ The 1inch Spot Price API provides real-time price data for whitelisted tokens ac
 ## Architecture
 
 ```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
 graph TD
     subgraph "Price Sources"
         DEX1[Uniswap V2/V3]

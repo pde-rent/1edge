@@ -2,7 +2,8 @@
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
-/* Simple reset and base styles */
+
+/* Base styles */
 * {
   font-family: sans-serif;
 }
@@ -11,26 +12,27 @@
   height: 100%;
 }
 
-/* CSS variables - updated for black theme */
+/* CSS Variables */
 :root {
-  /* Black theme colors */
+  /* Core theme colors */
   --background-main: #000000;
   --background-secondary: #0a0a0a;
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
-  --primary-color: #22c55e;
-  --secondary-color: #ef4444;
-  --border-color: #1a1a1a;
-  --success-color: #22c55e;
-  --error-color: #ef4444;
+  --primary-color: #00B8D4;
+  --secondary-color: #F0B90B;
+  --border-color: rgba(0, 184, 212, 0.5);
+  --success-color: #0ECB81;
+  --error-color: #F6465D;
 
-  /* Shadow fallbacks */
-  --shadow-light: rgba(0, 0, 0, 0.3);
-  --shadow-medium: rgba(0, 0, 0, 0.5);
-  --shadow-dark: rgba(0, 0, 0, 0.7);
+  /* Shadows */
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --shadow-medium: rgba(0, 0, 0, 0.2);
+  --shadow-dark: rgba(0, 0, 0, 0.3);
 
-  /* Font fallbacks */
+  /* Typography */
   --font-family: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
   --font-size-xs: 0.75rem;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
@@ -43,276 +45,82 @@
   /* Border radius */
   --radius: 0.5rem;
 
-  /* Custom variables for MUI components consistency */
-  --mui-tooltip-bg: #000000;
-  --mui-shadow-opacity: 0.5;
-  --mui-shadow: 0px 4px 6px rgba(0, 0, 0, var(--mui-shadow-opacity));
+  /* Scrollbar */
+  --scrollbar-track: #0a0a0a;
+  --scrollbar-thumb: #22d3ee40;
+  --scrollbar-thumb-hover: #22d3ee60;
+  --scrollbar-thumb-active: #22d3ee80;
+  --scrollbar-width: 8px;
 
-  /* Force dark mode at the HTML level using direct CSS - updated for pure black */
+  /* Force dark mode */
   color-scheme: dark;
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.05 0 0);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.05 0 0);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.65 0.18 142);
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.1 0 0);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.1 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.1 0 0);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.62 0.25 29);
-  --border: oklch(0.1 0 0);
-  --input: oklch(0.1 0 0);
-  --ring: oklch(0.65 0.18 142);
-  --chart-1: oklch(0.65 0.18 142);
+  
+  /* Shadcn/UI variables */
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #00B8D4;
+  --primary-foreground: #000000;
+  --secondary: #0a0a0a;
+  --secondary-foreground: #ffffff;
+  --muted: #0a0a0a;
+  --muted-foreground: #a0a0a0;
+  --accent: #0a0a0a;
+  --accent-foreground: #ffffff;
+  --destructive: #F6465D;
+  --border: #00B8D480;
+  --input: #00B8D480;
+  --ring: #00B8D4;
+  --chart-1: oklch(0.76 0.196 198.3);
   --chart-2: oklch(0.62 0.25 29);
   --chart-3: oklch(0.55 0.15 60);
   --chart-4: oklch(0.7 0.2 200);
   --chart-5: oklch(0.6 0.2 280);
   --sidebar: oklch(0 0 0);
   --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.65 0.18 142);
+  --sidebar-primary: oklch(0.76 0.196 198.3);
   --sidebar-primary-foreground: oklch(0 0 0);
   --sidebar-accent: oklch(0.1 0 0);
   --sidebar-accent-foreground: oklch(1 0 0);
   --sidebar-border: oklch(0.1 0 0);
-  --sidebar-ring: oklch(0.65 0.18 142);
-  --color-1: hsl(0 100% 63%);
-  --color-2: hsl(270 100% 63%);
-  --color-3: hsl(210 100% 63%);
-  --color-4: hsl(195 100% 63%);
-  --color-5: hsl(90 100% 63%);
+  --sidebar-ring: oklch(0.76 0.196 198.3);
 
-  /* Scrollbar theming variables */
-  --scrollbar-track: #0a0a0a;
-  --scrollbar-thumb: #2a2a2a;
-  --scrollbar-thumb-hover: #3a3a3a;
-  --scrollbar-thumb-active: #4a4a4a;
-  --scrollbar-width: 8px;
+  /* MUI compatibility */
+  --mui-tooltip-bg: #000000;
+  --mui-shadow-opacity: 0.3;
+  --mui-shadow: 0px 4px 6px rgba(0,0,0,var(--mui-shadow-opacity));
 }
 
-/* For the grid layout container */
+.dark {
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #0a0a0a;
+  --card-foreground: #ffffff;
+  --popover: #0a0a0a;
+  --popover-foreground: #ffffff;
+  --primary: #00B8D4;
+  --primary-foreground: #000000;
+  --secondary: #0a0a0a;
+  --secondary-foreground: #ffffff;
+  --muted: #0a0a0a;
+  --muted-foreground: #a0a0a0;
+  --accent: #0a0a0a;
+  --accent-foreground: #ffffff;
+  --destructive: #F6465D;
+  --border: #00B8D480;
+  --input: #00B8D480;
+  --ring: #00B8D4;
+}
+
+/* Layout helpers */
 .layout {
   min-height: 100%;
 }
 
-/* Layout helpers */
-.h-full {
-  height: 100%;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.overflow-hidden {
-  overflow: hidden;
-}
-
-/* Table styling */
-.table {
-  width: 100%;
-}
-
-.table th {
-  background-color: var(--background-secondary) !important;
-  color: var(--text-secondary) !important;
-  font-weight: 500;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.table td {
-  border-top: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  font-size: 0.875rem;
-  padding: 0.5rem;
-}
-
-/* Status colors */
-.status-up {
-  color: #22c55e; /* Green */
-}
-
-.status-down {
-  color: #ef4444; /* Red */
-}
-
-.status-unknown {
-  color: #f59e0b; /* Amber */
-}
-
-/* Custom MUI overrides for consistent styling */
-.MuiTooltip-tooltip {
-  background-color: var(--mui-tooltip-bg) !important;
-  border: 1px solid #1a1a1a !important;
-  box-shadow: var(--mui-shadow) !important;
-  font-size: var(--font-size-xs) !important;
-  color: var(--text-primary) !important;
-}
-
-/* Target all MUI menu and popover components using more specific selectors */
-.MuiPaper-root.MuiMenu-paper,
-.MuiPaper-root.MuiPopover-paper,
-div.MuiMenu-paper,
-div.MuiPopover-paper,
-.MuiPaper-elevation,
-.MuiPaper-elevation1,
-.MuiPaper-rounded,
-.MuiPopover-paper,
-.MuiMenu-paper {
-  background-color: var(--mui-tooltip-bg) !important;
-  border: 1px solid #1a1a1a !important;
-  color: var(--text-primary) !important;
-}
-
-/* Target menu list and items */
-.MuiMenu-list,
-.MuiList-root,
-.MuiMenuItem-root,
-.MuiListItem-root,
-ul.MuiList-padding {
-  background-color: var(--mui-tooltip-bg) !important;
-  border: none !important;
-}
-
-/* Ensure menu items hover state is consistent */
-.MuiMenuItem-root:hover,
-.MuiListItem-root:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-/* Override MUI TableCell horizontal padding */
-.MuiTableCell-root {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
-}
-
-/* Section header titles: slightly bigger and less grey */
-.MuiTypography-subtitle1 {
-  font-size: var(--font-size-sm) !important;
-  color: var(--text-primary) !important;
-  font-weight: 600 !important;
-}
-
-/* Table styling: applied via className="table" on MUI Table components */
-.table {
-  width: 100%;
-}
-.table th {
-  /* Uniform header background and text style */
-  background-color: var(--background-secondary) !important;
-  color: var(--text-secondary) !important;
-}
-.table td {
-  /* Uniform cell borders and text */
-  border-top: 1px solid var(--border) !important;
-  color: var(--text-primary) !important;
-}
-
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --animate-rainbow: rainbow var(--speed, 2s) infinite linear;
-  --color-color-5: var(----color-5);
-  --color-color-4: var(----color-4);
-  --color-color-3: var(----color-3);
-  --color-color-2: var(----color-2);
-  --color-color-1: var(----color-1);
-
-  @keyframes rainbow {
-    0% {
-      background-position: 0%;
-    }
-    100% {
-      background-position: 200%;
-    }
-  }
-  @keyframes rainbow {
-    0% {
-      background-position: 0%;
-    }
-    100% {
-      background-position: 200%;
-    }
-  }
-}
-
-.dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.05 0 0);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.05 0 0);
-  --popover-foreground: oklch(1 0 0);
-  --primary: oklch(0.65 0.18 142);
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.1 0 0);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.1 0 0);
-  --muted-foreground: oklch(0.6 0 0);
-  --accent: oklch(0.1 0 0);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.62 0.25 29);
-  --border: oklch(0.1 0 0);
-  --input: oklch(0.1 0 0);
-  --ring: oklch(0.65 0.18 142);
-  --chart-1: oklch(0.65 0.18 142);
-  --chart-2: oklch(0.62 0.25 29);
-  --chart-3: oklch(0.55 0.15 60);
-  --chart-4: oklch(0.7 0.2 200);
-  --chart-5: oklch(0.6 0.2 280);
-  --sidebar: oklch(0 0 0);
-  --sidebar-foreground: oklch(1 0 0);
-  --sidebar-primary: oklch(0.65 0.18 142);
-  --sidebar-primary-foreground: oklch(0 0 0);
-  --sidebar-accent: oklch(0.1 0 0);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.1 0 0);
-  --sidebar-ring: oklch(0.65 0.18 142);
-}
-
-/* Custom Scrollbar Styling - Cross-browser support */
-
-/* WebKit browsers (Chrome, Safari, Edge) */
+/* Scrollbar styling */
 ::-webkit-scrollbar {
   width: var(--scrollbar-width);
   height: var(--scrollbar-width);
@@ -342,69 +150,324 @@ ul.MuiList-padding {
   background: var(--scrollbar-track);
 }
 
-/* Firefox */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Enhanced scrollbar styling for specific elements */
-.scrollbar-themed {
-  /* WebKit */
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+/* Code block styling */
+pre,
+code,
+.token {
+  font-family: var(--font-mono) !important;
 }
 
-.scrollbar-themed::-webkit-scrollbar {
-  width: var(--scrollbar-width);
-  height: var(--scrollbar-width);
+pre,
+pre[class*="language-"],
+.prose pre {
+  background: var(--primary-light-20) !important;
+  color: var(--text-primary) !important;
+  padding: 1.5rem !important;
+  border-radius: 0.5rem !important;
+  border: none !important;
+  overflow-x: auto;
+  margin: 0.5rem 0 !important;
+  font-size: var(--font-size-sm) !important;
+  line-height: 1.5 !important;
 }
 
-.scrollbar-themed::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
-  border-radius: 4px;
+pre code,
+pre[class*="language-"] code {
+  background: transparent !important;
+  padding: 0 !important;
+  border: none !important;
+  font-size: inherit !important;
+  color: inherit !important;
 }
 
-.scrollbar-themed::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 4px;
-  border: 1px solid var(--scrollbar-track);
-  transition: all 0.2s ease;
+code:not(pre code) {
+  background: var(--background-secondary) !important;
+  color: var(--text-primary) !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 0.25rem !important;
+  border: none !important;
+  font-size: var(--font-size-sm) !important;
 }
 
-.scrollbar-themed::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
-  transform: scale(1.1);
+/* Prism.js syntax highlighting */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--syntax-comment) !important;
+  font-style: italic;
 }
 
-.scrollbar-themed::-webkit-scrollbar-thumb:active {
-  background: var(--scrollbar-thumb-active);
+.token.punctuation {
+  color: var(--syntax-punctuation) !important;
 }
 
-/* Teal accent scrollbar variant */
-.scrollbar-teal {
-  scrollbar-color: #14b8a6 var(--scrollbar-track);
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.bigint,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: var(--syntax-number) !important;
 }
 
-.scrollbar-teal::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #0d9488, #14b8a6);
-  border: 1px solid rgba(20, 184, 166, 0.2);
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: var(--syntax-string) !important;
 }
 
-.scrollbar-teal::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #0f766e, #0d9488);
-  box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+.token.operator,
+.token.entity,
+.token.url {
+  color: var(--syntax-operator) !important;
 }
 
-.scrollbar-teal::-webkit-scrollbar-thumb:active {
-  background: linear-gradient(135deg, #134e4a, #0f766e);
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: var(--syntax-keyword) !important;
+}
+
+.token.function,
+.token.function-name,
+.token.method,
+.token.class-name {
+  color: var(--syntax-function) !important;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: var(--syntax-variable) !important;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+/* MUI overrides */
+.MuiTooltip-tooltip {
+  background-color: var(--mui-tooltip-bg) !important;
+  border: 1px solid var(--muted) !important;
+  box-shadow: var(--mui-shadow) !important;
+  font-size: var(--font-size-xs) !important;
+  color: var(--text-primary) !important;
+}
+
+.MuiPaper-root.MuiMenu-paper,
+.MuiPaper-root.MuiPopover-paper,
+.MuiPopover-paper,
+.MuiMenu-paper {
+  background-color: var(--mui-tooltip-bg) !important;
+  border: 1px solid var(--muted) !important;
+  color: var(--text-primary) !important;
+}
+
+.MuiMenu-list,
+.MuiMenuItem-root {
+  background-color: var(--mui-tooltip-bg) !important;
+}
+
+.MuiMenuItem-root:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Table styling */
+.table,
+.prose table,
+table {
+  width: 100%;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: var(--primary-light-20) !important;
+  border: 1px solid var(--border-color) !important;
+  margin: 0.5rem 0 !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden;
+  font-family: var(--font-mono) !important;
+}
+
+.table th,
+.prose th,
+th {
+  background: var(--primary-light-30) !important;
+  color: var(--text-primary) !important;
+  font-weight: 600 !important;
+  font-size: var(--font-size-sm) !important;
+  padding: 0.5rem 1rem !important;
+  text-align: left;
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 184, 212, 0.3) !important;
+}
+
+.table th:first-child,
+.prose th:first-child,
+th:first-child {
+  border-top-left-radius: 0.5rem;
+}
+
+.table th:last-child,
+.prose th:last-child,
+th:last-child {
+  border-top-right-radius: 0.5rem;
+}
+
+.table td,
+.prose td,
+td {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  padding: 0.5rem 1rem !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(0, 184, 212, 0.3) !important;
+  font-size: var(--font-size-sm) !important;
+}
+
+.table tbody tr:last-child td:first-child,
+.prose tbody tr:last-child td:first-child,
+tbody tr:last-child td:first-child {
+  border-bottom-left-radius: 0.5rem;
+  border-bottom: none !important;
+}
+
+.table tbody tr:last-child td:last-child,
+.prose tbody tr:last-child td:last-child,
+tbody tr:last-child td:last-child {
+  border-bottom-right-radius: 0.5rem;
+  border-bottom: none !important;
+}
+
+.table tbody tr:last-child td,
+.prose tbody tr:last-child td,
+tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+.table tbody tr:hover,
+.prose tbody tr:hover,
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Search highlighting */
+mark {
+  background-color: oklch(0.76 0.196 198.3 / 0.2);
+  color: oklch(0.76 0.196 198.3);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Prose styling */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  border-bottom: 1px solid rgba(0, 184, 212, 0.5) !important;
+  padding-bottom: 0.5rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.prose hr {
+  border-color: rgba(0, 184, 212, 0.5) !important;
+  margin: 2rem 0 !important;
+}
+
+.prose blockquote {
+  border-left: 4px solid rgba(0, 184, 212, 0.3) !important;
+  background: var(--background-secondary) !important;
+  margin: 1rem 0 !important;
+  padding: 1rem !important;
+  border-radius: 0.5rem;
+}
+
+/* Utility classes */
+.primary-button {
+  background-color: var(--primary-color);
+  color: var(--background-main);
+  border: 1px solid var(--border-color);
+  transition: background-color 0.2s ease;
+}
+
+.primary-button:hover {
+  background-color: var(--primary-light-20);
+}
+
+.primary-button-outline {
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  transition: background-color 0.2s ease;
+}
+
+.primary-button-outline:hover {
+  background-color: var(--primary-light-10);
+}
+
+.primary-panel {
+  background-color: var(--background-main);
+  border: 1px solid var(--border-color);
+}
+
+.primary-hover {
+  transition: background-color 0.2s ease;
+}
+
+.primary-hover:hover {
+  background-color: var(--primary-light-10);
+}
+
+.primary-active {
+  background-color: var(--primary-light-20);
+  border: 1px solid var(--primary-color);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border-color);
+    outline-color: var(--border-color);
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--background-main);
+    color: var(--text-primary);
   }
 }
