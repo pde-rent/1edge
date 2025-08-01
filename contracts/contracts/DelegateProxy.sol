@@ -16,12 +16,12 @@ import "hardhat/console.sol";
 ///      approved keepers.
 contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
     using AddressLib for Address;
-    using MakerTraitsLib for MakerTraits;
+    // using MakerTraitsLib for MakerTraits;
 
     mapping(address keepers => bool) internal approvedKeeper;
     mapping(bytes32 orderId => bool) internal isSignedOrder;
     mapping(bytes32 orderId => address) internal orderCreator;
-    mapping(address orderCreator => mapping(bytes32 orderId => uint256)) internal remainingMakerAmount;
+    mapping(bytes32 orderId => uint256) internal remainingMakerAmount;
 
     IOrderMixin private immutable LIMIT_ORDER_PROTOCOL;
 
@@ -75,7 +75,7 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
             address creator = params[i].orderCreator;
             orderCreator[orderId] = creator;
             isSignedOrder[orderId] = true;
-            remainingMakerAmount[creator][orderId] = params[i].order.makingAmount;
+            remainingMakerAmount[orderId] = params[i].order.makingAmount;
 
             // if this contract has not interacted with the maker asset before, approve it to spend the maximum amount.
             // order can bypass pre-interaction hook and withdraw funds from this contract since it has max approval
@@ -109,23 +109,32 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
         SafeERC20.safeTransfer(token, receiver, amount);
     }
 
-    function getOrderData(bytes32 orderId) public view returns (address creator, uint256 remainingMakerAmt) {
-        creator = orderCreator[orderId];
-        remainingMakerAmt = remainingMakerAmount[creator][orderId];
+    struct OrderData {
+        address _orderCreator;
+        uint256 _remainingMakerAmount;
+    }
+
+    function getOrderData(bytes32[] calldata orderIds) public view returns (OrderData[] memory orderData) {
+        for (uint256 i = 0; i < 0; i++) {
+            orderData[i] = OrderData({
+                _orderCreator: orderCreator[orderIds[i]],
+                _remainingMakerAmount: remainingMakerAmount[orderIds[i]]
+            });
+        }
     }
 
     /// MAKER INTERACTIONS
     function preInteraction(
-        IOrderMixin.Order calldata order,
-        bytes calldata extension,
+        IOrderMixin.Order calldata,
+        bytes calldata,
         bytes32 orderHash,
-        address taker,
+        address,
         uint256 makingAmount,
-        uint256 takingAmount,
+        uint256,
         uint256 remainingMakingAmount,
-        bytes calldata extraData
+        bytes calldata
     ) external override onlyLimitOrderProtocol {
-        remainingMakerAmount[orderCreator[orderHash]][orderHash] -= makingAmount;
+        remainingMakerAmount[orderHash] -= makingAmount;
         // pull funds from user.
         _pullFunds(IERC20(order.makerAsset.get()), orderCreator[orderHash], makingAmount);
     }
