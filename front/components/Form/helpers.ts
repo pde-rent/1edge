@@ -46,7 +46,7 @@ export interface MomentumReversalParams {
 }
 
 /**
- * Range Breakout Trading configuration
+ * Breakout Trading configuration
  * Params: adxPeriod, adxmaPeriod, emaPeriod, tpPct, slPct
  * Note: Missing amount param in docs - should be added
  */
