@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -64,9 +65,9 @@ export function BaseModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <div 
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-start pt-12"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex justify-center items-center p-4"
       onClick={onClose}
     >
       <Card
@@ -131,6 +132,8 @@ export function BaseModal({
       </Card>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
 
 // Reusable content sections that follow the same styling patterns

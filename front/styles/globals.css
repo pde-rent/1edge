@@ -298,7 +298,6 @@ table {
   background: var(--primary-light-20) !important;
   border: 1px solid var(--border-color) !important;
   margin: 0.5rem 0 !important;
-  border-radius: 0.5rem !important;
   overflow: hidden;
   font-family: var(--font-mono) !important;
 }
