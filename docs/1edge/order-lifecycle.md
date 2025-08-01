@@ -17,28 +17,58 @@ This document describes the complete lifecycle of an order in the 1edge system, 
 
 The order lifecycle is managed by the `OrderRegistry` service, which receives, stores, monitors, and executes all orders. Each order is processed by a dedicated "watcher" that monitors trigger conditions and executes when conditions are met. All order types (including strategies, which are recurring orders) follow the same unified flow.
 
-##  Architecture Diagram
+##  Architecture & Flow
+
+The order lifecycle is divided into three main phases:
+
+### Phase 1: 1edge Order Creation
 
 ```mermaid
 %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TD
-    A[User creates order in UI] --> B[Sign order payload with wallet];
-    B --> C[POST /orders with signed payload];
-    C --> D[API Server validates signature];
-    D --> E[OrderRegistry.createOrder];
-    E --> F[Save order to database];
-    F --> G[Spawn order watcher];
-    G --> H[Check triggers every 5s];
-    H --> I{Trigger conditions met?};
-    I --No--> H;
-    I --Yes--> J[Execute order via handler];
-    J --> K[Create 1inch limit order];
-    K --> L[Submit to DelegateSafe];
-    L --> M[Post to 1inch API];
-    M --> N[Update order status to ACTIVE];
-    N --> O[Monitor 1inch order status];
-    O --> P[Order filled/cancelled/expired];
-    P --> Q[Update final status];
+    A[User] --signs order--> D[API /order]
+    A --approves--> G[DelegateProxy]
+    D --registers--> E[OrderRegistry]
+    E --persists--> F[Database]
+    E --spawns--> G[Watcher]
+    E --"ok"--> D --"ok"--> A
+```
+
+### Phase 2: Recurring 1inch Order Submission
+
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
+graph TD
+    A[Watcher condition met?] --yes--> D[Keeper]
+    A --> C[No] --loops--> A
+    D --calls--> E[DelegateSafe.createUserOrder]
+    E --1inch order signature--> D
+    D --submits order--> F[1inch LOP]
+    D --updates db--> G[Order status: ACTIVE]
+```
+
+### Phase 2bis: 1inch Orders Fulfillment
+
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
+graph TD
+    A["Market Taker (Trader)"] --fillOrder--> B[AggregationProxyV6]
+    B --preInteraction transferFrom--> C["Receiver (User)"] --transfer makerAsset--> D[DelegateProxy]
+    B --> D --transfer makerAsset--> A
+    A --transfer takerAsset--> C
+    B --postInteraction updateRemaining--> D
+```
+
+### Phase 3: 1edge Order Fulfillment
+
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
+graph TD
+    A[Watcher] --"observes"--> B[1inch order fill]
+    A --> C[Stop condition met?]
+    C --> D[Yes] --stops--> A
+    C --no--> A
+    D --updates db--> F[Order status: FILLED]
 ```
 
 ##  Complete Flow
