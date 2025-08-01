@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Loader2, RefreshCw, Plus } from "lucide-react";
 import { useOrderStore } from "@/stores/orderStore";
+import { THEME } from "@common/constants";
 
 // Step size options for order aggregation
 const STEP_OPTIONS = [
@@ -333,44 +334,45 @@ export default function OrderBookPanel({
         {/* Main level row */}
         <div
           className={cn(
-            "grid grid-cols-3 gap-2 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-2 overflow-hidden group",
-            isBid
-              ? "border-l-success/70 hover:border-l-success hover:bg-success/20"
-              : "border-l-red-500/70 hover:border-l-red-400 hover:bg-red-900/20",
+            "grid grid-cols-3 gap-2 px-3 hover:bg-black/30 transition-all duration-300 relative cursor-pointer border-l-4 overflow-hidden group",
             isHovered && "ring-2 ring-yellow-400/50 bg-yellow-900/10",
           )}
+          style={{
+            borderLeftColor: isBid ? THEME.success + '70' : THEME.error + '70',
+          }}
           onMouseEnter={() => setHoveredPrice(level.price)}
           onMouseLeave={() => setHoveredPrice(null)}
           onClick={() => handleCreateOrder(level.price, isBid)}
         >
-          {/* Enhanced depth visualization backdrop with gradient fading */}
+          {/* Enhanced depth visualization backdrop with proper theme colors */}
           <div
-            className={cn(
-              "absolute inset-0 transition-all duration-300",
-              isBid
-                ? "bg-chart-up/20"
-                : "bg-chart-down/20",
-            )}
+            className="absolute inset-0 transition-all duration-500 ease-out"
             style={{
               width: `${depthPercentage}%`,
               right: 0,
               left: "auto",
+              background: `linear-gradient(to left, ${isBid ? THEME.success + '30' : THEME.error + '30'}, transparent)`,
             }}
           />
 
-          {/* Additional subtle background layer for depth emphasis */}
+          {/* Additional depth bar with stronger color */}
           <div
-            className={cn(
-              "absolute inset-0 opacity-60 transition-all duration-300",
-              isBid ? "bg-chart-up/8" : "bg-chart-down/8",
-            )}
+            className="absolute inset-0 transition-all duration-500 ease-out"
             style={{
-              width: `${Math.min(depthPercentage * 1.3, 100)}%`,
+              width: `${Math.min(depthPercentage * 0.7, 100)}%`,
               right: 0,
               left: "auto",
-              backgroundColor: isBid
-                ? `rgba(16, 185, 129, ${0.12 * (depthPercentage / 100)})`
-                : `rgba(239, 68, 68, ${0.12 * (depthPercentage / 100)})`,
+              backgroundColor: isBid ? THEME.success + '15' : THEME.error + '15',
+            }}
+          />
+
+          {/* Depth indicator line */}
+          <div
+            className="absolute top-0 bottom-0 w-[2px] transition-all duration-500 ease-out"
+            style={{
+              right: `${100 - depthPercentage}%`,
+              backgroundColor: isBid ? THEME.success : THEME.error,
+              opacity: depthPercentage > 10 ? 0.6 : 0,
             }}
           />
 
@@ -384,31 +386,38 @@ export default function OrderBookPanel({
             </div>
           )}
 
-          {/* Price column */}
+          {/* Price column with theme colors */}
           <span
-            className={cn(
-              "font-mono text-sm tabular-nums text-left relative z-10",
-              isBid ? "text-success" : "text-destructive",
-            )}
+            className="font-mono text-sm tabular-nums text-left relative z-10 font-semibold"
+            style={{
+              color: isBid ? THEME.success : THEME.error,
+            }}
           >
             {level.isRemainder
               ? `${formatPrice(level.price)}+`
               : formatPrice(level.price)}
           </span>
 
-          {/* Amount column with darker background to indicate order count */}
+          {/* Amount column with theme colors */}
           <span
             className={cn(
-              "font-mono text-sm tabular-nums text-right px-2 py-0.5 relative z-10",
+              "font-mono text-sm tabular-nums text-right px-2 py-0.5 relative z-10 font-medium",
               level.count > 1 ? "bg-slate-800/60 rounded-sm" : "",
-              isBid ? "text-slate-200" : "text-slate-200",
             )}
+            style={{
+              color: isBid ? THEME.success : THEME.error,
+            }}
           >
             {formatAmount(level.amount)}
           </span>
 
-          {/* Total column */}
-          <span className="font-mono text-sm text-slate-300 tabular-nums text-right relative z-10">
+          {/* Total column with subtle theme tint */}
+          <span 
+            className="font-mono text-sm tabular-nums text-right relative z-10 font-medium"
+            style={{
+              color: isBid ? THEME.success + '80' : THEME.error + '80',
+            }}
+          >
             {formatAmount(level.total)}
           </span>
         </div>
@@ -709,8 +718,8 @@ export default function OrderBookPanel({
             </div>
           ) : (
             <div>
-              {/* Asks (sells) in reverse order */}
-              <div>
+              {/* Asks (sells) in reverse order with section header */}
+              <div className="border-b border-red-500/20 pb-1">
                 {aggregatedAsks
                   .slice()
                   .reverse()
@@ -793,8 +802,8 @@ export default function OrderBookPanel({
                   );
                 })()}
 
-              {/* Bids (buys) */}
-              <div>
+              {/* Bids (buys) with section header */}
+              <div className="border-t border-green-500/20 pt-1">
                 {aggregatedBids.map((level, index) =>
                   renderLevel(level, true, maxTotal, index, aggregatedBids),
                 )}

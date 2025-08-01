@@ -258,7 +258,7 @@ const CreateOrderForm = () => {
         id: "RangeBreakout",
         name: "Breakout",
         icon: Zap,
-        description: "Range breakouts",
+        description: "Breakouts",
       },
       {
         id: "TrendFollowing",
@@ -455,7 +455,7 @@ const CreateOrderForm = () => {
         <h2 className="text-lg font-bold relative z-10 text-primary">
           Create
         </h2>
-        
+
         {/* Order Type Selector */}
         <Select value={orderType} onValueChange={setOrderType}>
           <SelectTrigger className="flex items-center gap-2 px-4 py-3 bg-primary/20 backdrop-blur-sm rounded-lg text-foreground hover:bg-primary/30 transition-all duration-300 border-0 w-auto cursor-pointer">
@@ -517,7 +517,7 @@ const CreateOrderForm = () => {
         </Select>
 
         <div className="flex-1" />
-        
+
         {/* Show indicator if order was triggered from orderbook */}
         {orderDefaults && (
           <div className="flex items-center gap-2">

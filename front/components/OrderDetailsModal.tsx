@@ -179,7 +179,7 @@ export function OrderDetailsModal({
                       </div>
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={getStatusBadgeStyle(event.status)} size="sm">
+                          <Badge variant="outline" className={getStatusBadgeStyle(event.status)}>
                             {event.status}
                           </Badge>
                           <Clock className="w-3 h-3 text-muted-foreground" />

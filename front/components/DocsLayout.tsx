@@ -6,6 +6,7 @@ import { DocStructure } from '@/lib/docs';
 import { DocsLoader } from './DocsLoader';
 import { SearchDropdown } from './SearchDropdown';
 import { TableOfContents } from './TableOfContents';
+import { DocsNavigation } from './DocsNavigation';
 import { TreeItem, TreeItemData } from './common/TreeItem';
 import Image from 'next/image';
 
@@ -75,14 +76,14 @@ export function DocsLayout({ children, docStructure, currentSlug, loading = fals
                   className="h-7 w-auto"
                 />
               </Link>
-              <Badge variant="secondary" className="text-xs">
+              {/* <Badge variant="secondary" className="text-xs">
                 Docs
-              </Badge>
+              </Badge> */}
             </div>
 
             {/* Center: Search bar aligned left with content */}
             <div className="col-span-3 flex justify-start">
-              <button 
+              <button
                 className="w-full max-w-md text-left text-muted-foreground bg-background border border-primary/50 rounded-lg px-4 py-2 text-sm flex items-center justify-between"
                 onClick={() => setIsSearchOpen(true)}
               >
@@ -180,7 +181,7 @@ export function DocsLayout({ children, docStructure, currentSlug, loading = fals
             </div>
 
             <div className="mb-4">
-              <button 
+              <button
                 className="w-full text-left text-muted-foreground bg-background border border-primary/50 rounded-lg px-4 py-2 text-sm flex items-center justify-between"
                 onClick={() => setIsSearchOpen(true)}
               >
@@ -202,6 +203,7 @@ export function DocsLayout({ children, docStructure, currentSlug, loading = fals
                           onItemClick={() => setMobileNavOpen(false)}
                           showIcons={true}
                           renderIcon={renderNavIcon}
+                          showLoadingStates={true}
                         />
                       ))}
                     </nav>
@@ -213,11 +215,11 @@ export function DocsLayout({ children, docStructure, currentSlug, loading = fals
         </div>
       </header>
 
-      <SearchDropdown 
-        isOpen={isSearchOpen} 
-        query={searchQuery} 
-        onQueryChange={setSearchQuery} 
-        onClose={() => setIsSearchOpen(false)} 
+      <SearchDropdown
+        isOpen={isSearchOpen}
+        query={searchQuery}
+        onQueryChange={setSearchQuery}
+        onClose={() => setIsSearchOpen(false)}
       />
 
       <div className="w-full">
@@ -239,6 +241,7 @@ export function DocsLayout({ children, docStructure, currentSlug, loading = fals
                       currentPath={currentSlug ? `/docs/${currentSlug}` : undefined}
                       showIcons={true}
                       renderIcon={renderNavIcon}
+                      showLoadingStates={true}
                     />
                   ))}
                 </div>
@@ -258,6 +261,12 @@ export function DocsLayout({ children, docStructure, currentSlug, loading = fals
                   <div className="p-6">
                     <div className="prose prose-slate dark:prose-invert max-w-none">
                       {children}
+                      
+                      {/* Navigation at bottom of content */}
+                      <DocsNavigation 
+                        docStructure={docStructure} 
+                        currentSlug={currentSlug} 
+                      />
                     </div>
                   </div>
                 </div>

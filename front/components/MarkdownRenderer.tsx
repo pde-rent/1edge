@@ -266,7 +266,7 @@ export function MarkdownRenderer({ content, title, frontMatter }: MarkdownRender
           [&>tr:last-child>td]:border-b-0
           [&>a]:text-primary [&>a]:hover:text-primary/80 [&>a]:underline [&>a]:underline-offset-4 [&>a]:transition-colors
           [&>code]:bg-muted [&>code]:px-2 [&>code]:py-1 [&>code]:rounded-md [&>code]:text-sm [&>code]:font-mono [&>code]:text-foreground
-          [&>pre]:bg-muted/30 [&>pre]:border [&>pre]:border-border [&>pre]:p-4 [&>pre]:rounded-lg [&>pre]:overflow-x-auto [&>pre]:mb-4
+          [&>pre]:bg-primary/20 [&>pre]:border-0 [&>pre]:p-4 [&>pre]:rounded-lg [&>pre]:overflow-x-auto [&>pre]:mb-4 [&>pre]:font-mono
           [&>pre>code]:bg-transparent [&>pre>code]:p-0 [&>pre>code]:border-0
           [&>hr]:border-border [&>hr]:my-8
           [&>strong]:font-semibold [&>strong]:text-foreground
