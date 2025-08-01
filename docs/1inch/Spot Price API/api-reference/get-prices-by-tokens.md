@@ -891,13 +891,13 @@ Server-side error occurred.
 Always prefer POST batch requests when querying multiple tokens:
 
 ```javascript
-// ❌ Inefficient: Multiple single requests
+//  Inefficient: Multiple single requests
 const prices = {};
 for (const token of tokens) {
   prices[token] = await getSingleTokenPrice(token, "USD");
 }
 
-// ✅ Efficient: Single batch request
+//  Efficient: Single batch request
 const prices = await getBatchTokenPrices(tokens, "USD");
 ```
 

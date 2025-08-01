@@ -6,12 +6,12 @@ This document describes the complete lifecycle of an order in the 1edge system, 
 
 | Phase | Component | Status |
 |-------|-----------|--------|
-| Creation | Frontend UI |  Active |
-| Validation | API Server |  Active |
-| Registration | OrderRegistry |  Active |
-| Monitoring | Watcher System |  Active |
-| Execution | Order Handlers |  Active |
-| Integration | 1inch Protocol |  Active |
+| Creation | Frontend UI | Active |
+| Validation | API Server | Active |
+| Registration | OrderRegistry | Active |
+| Monitoring | Watcher System | Active |
+| Execution | Order Handlers | Active |
+| Integration | 1inch Protocol | Active |
 
 ##  Overview
 
@@ -20,7 +20,7 @@ The order lifecycle is managed by the `OrderRegistry` service, which receives, s
 ##  Architecture Diagram
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TD
     A[User creates order in UI] --> B[Sign order payload with wallet];
     B --> C[POST /orders with signed payload];
@@ -62,7 +62,7 @@ graph TD
 - Creates order event with `PENDING` status
 - Spawns a new watcher for the order via `startWatcher()`
 
-###  Order Monitoring (Watcher System)
+###  Order Monitoring (Watcher)
 - Each order has a dedicated watcher running in `watchOrder()` loop
 - Watcher checks trigger conditions every 5 seconds using modular handlers
 - Handlers implement `OrderWatcher` interface with `shouldTrigger()` method
@@ -138,70 +138,48 @@ Cancels an order and stops its watcher.
 
 ##  Database Schema
 
-| Column | Type | Description | Status |
-|--------|------|-------------|---------|
-| `id` | TEXT | Unique order identifier |  |
-| `pair` | TEXT | Trading pair (e.g., WETH/USDC) |  |
-| `type` | TEXT | Order type (STOP_LIMIT, etc.) |  |
-| `status` | TEXT | Current status |  |
-| `size` | TEXT | Original order size |  |
-| `remainingSize` | TEXT | Remaining unfilled size |  |
-| `createdAt` | INTEGER | Order creation timestamp |  |
-| `triggerType` | TEXT | Type of trigger condition |  |
-| `triggerCount` | INTEGER | Times triggered |  |
-| `nextTriggerValue` | TEXT | Next trigger for recurring |  |
-| `oneInchOrderHashes` | TEXT | Array of 1inch hashes |  |
+| Column                 | Type     | Description                                 |
+|------------------------|----------|---------------------------------------------|
+| `id`                   | TEXT     | Unique order identifier                     |
+| `order_hash`           | TEXT     | 1inch-computed order hash (unique)          |
+| `strategy_id`          | TEXT     | Associated strategy identifier              |
+| `type`                 | TEXT     | Order type (e.g., STOP_LIMIT, LIMIT)        |
+| `status`               | TEXT     | Current order status                        |
+| `maker_asset`          | TEXT     | Maker asset address                         |
+| `taker_asset`          | TEXT     | Taker asset address                         |
+| `making_amount`        | TEXT     | Amount of maker asset to sell               |
+| `taking_amount`        | TEXT     | Amount of taker asset to buy                |
+| `maker`                | TEXT     | Maker address (order creator)               |
+| `receiver`             | TEXT     | Receiver address (optional)                 |
+| `salt`                 | TEXT     | Unique salt for order hash                  |
+| `signature`            | TEXT     | EVM signature for order                     |
+| `size`                 | TEXT     | Original order size                         |
+| `remaining_size`       | TEXT     | Remaining unfilled size                     |
+| `trigger_count`        | INTEGER  | Number of times triggered                   |
+| `next_trigger_value`   | TEXT     | Next trigger value for recurring orders     |
+| `trigger_price`        | REAL     | Trigger price (if applicable)               |
+| `filled_amount`        | TEXT     | Total filled amount                         |
+| `created_at`           | INTEGER  | Order creation timestamp                    |
+| `executed_at`          | INTEGER  | Execution timestamp (if filled)             |
+| `cancelled_at`         | INTEGER  | Cancellation timestamp (if cancelled)       |
+| `tx_hash`              | TEXT     | Transaction hash (if on-chain)              |
+| `network`              | INTEGER  | Chain/network ID                            |
+| `expiry`               | INTEGER  | Expiry timestamp (if set)                   |
+| `user_signed_payload`  | TEXT     | User-signed payload (JSON or string)        |
+| `one_inch_order_hashes`| TEXT     | JSON array of 1inch order hashes            |
+| `raw_data`             | TEXT     | Complete JSON-serialized Order object       |
 
 ##  Order Statuses
 
-| Status | Description | Icon |
-|--------|-------------|------|
-| PENDING | Order created, watcher monitoring |  |
-| ACTIVE | Submitted to 1inch, awaiting fill |  |
-| PARTIALLY_FILLED | Partially executed |  |
-| FILLED | Completely executed |  |
-| CANCELLED | Cancelled by user/system | ❌ |
-| EXPIRED | Expired without execution |  |
-| FAILED | Execution failed |  |
-
-##  Performance & Reliability
-
-###  Database Optimizations
-
-| Optimization | Implementation | Benefit |
-|--------------|----------------|----------|
-| WAL Mode | Write-Ahead Logging | Non-blocking concurrent access |
-| Memory Optimization | 256MB mmap + 10MB cache | Ultra-fast queries |
-| Prepared Statements | Pre-compiled SQL | Zero parsing overhead |
-| Strategic Indexes | Hash, maker, status | Optimized lookups |
-| Composite Indexes | Multi-column queries | Complex filtering |
-
-###  Watcher Recovery System
-
-| Feature | Implementation | Status |
-|---------|----------------|---------|
-| Automatic Restoration | DB-driven recovery on restart |  |
-| Zero Downtime | Seamless watcher resumption |  |
-| State Persistence | SQLite ACID guarantees |  |
-| Reliability Logging | Recovery visibility |  |
-
-###  Order Transparency
-
-| Aspect | Implementation | Purpose |
-|--------|----------------|---------|
-| Public Access | No authentication required | Full transparency |
-| User Filtering | `?maker=0x123...` queries | Address-based filtering |
-| Open Intent | Visible trading intentions | Market transparency |
-
-##  Security Model
-
-| Security Layer | Implementation | Status |
-|----------------|----------------|---------|
-| EVM Signatures | Required from maker address |  |
-| Signature Validation | `ethers.utils.recoverAddress` |  |
-| Fund Management | DelegateSafe contract |  |
-| Private Keys | No direct access |  |
-| Keeper Authorization | User-authorized signatures |  |
+| Status            | Description                          |
+|-------------------|--------------------------------------|
+| PENDING           | Order created, watcher monitoring    |
+| ACTIVE            | Submitted to 1inch, awaiting fill    |
+| PARTIALLY_FILLED  | Partially executed                   |
+| FILLED            | Completely executed                  |
+| CANCELLED         | Cancelled by user/system             |
+| EXPIRED           | Expired without execution            |
+| FAILED            | Execution failed                     |
 
 ##  Involved Components
 

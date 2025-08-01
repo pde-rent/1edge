@@ -4,6 +4,21 @@
 
  **Note**: All time periods are specified in milliseconds for precise control.
 
+## 1inch Order Placement Strategy
+
+> **Fast Fill Optimization**: To ensure rapid order fills when triggering orders to 1inch, limit orders should be placed close to the spot price, inside the bid-ask spread.
+
+**Recommended Pricing Strategy:**
+- **Limit Buy Orders**: Set price at `spot - 0.05%` (slightly below market, within book spread)
+- **Limit Sell Orders**: Set price at `spot + 0.05%` (slightly above market, within book spread)
+- **Maximum Deviation**: Stay within ±0.2% of spot price for optimal execution
+- **Rationale**: Orders priced inside the spread get filled immediately by market makers and arbitrageurs
+
+**Implementation Notes:**
+- All order watchers should apply this pricing when creating 1inch limit orders
+- Price adjustments should be calculated dynamically based on current spot price
+- Consider slippage tolerance based on order size and market conditions
+
 ##  One-off Orders
 
 > **Single Execution Orders**: Execute once when conditions are met, then complete.
@@ -157,12 +172,12 @@
 
  **Signal**: RSI crosses RSI MA (up = long, down = short)
 
-###  Range Breakout Trading
+###  Breakout Trading
 
 | Property | Value | Status |
 |----------|-------|---------|
 | **Trigger** | ADX trend breakout |  |
-| **Execution** | Range breakout timing |  |
+| **Execution** | Breakout timing |  |
 | **Description** | ADX-based chase-limit orders |  |
 
 **Parameters:**

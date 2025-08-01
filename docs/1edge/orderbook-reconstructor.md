@@ -24,7 +24,7 @@ The orderbook reconstruction service fetches active limit orders from the 1inch 
 | Real-time Updates | Snapshot-based | Live market data |
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TD
     subgraph "Data Flow"
         CLIENT[Client Request] --> API[1edge API]
@@ -230,8 +230,8 @@ The service automatically filters out:
 | Status | Description | Action |
 |--------|-------------|--------|
 | 1 | Valid orders - Active and executable |  Include |
-| 2 | Temporarily invalid - May become valid | ❌ Exclude |
-| 3 | Invalid orders - Permanently invalid | ❌ Exclude |
+| 2 | Temporarily invalid - May become valid |  Exclude |
+| 3 | Invalid orders - Permanently invalid |  Exclude |
 
 ###  Spot Price Filtering
 
@@ -244,7 +244,7 @@ To ensure clean bid and ask separation, the service:
 | 3 | Filter wrong territories | Clean separation |
 | 4 | Reduce noise | Better display |
 
-⚠ **Note**: Uses [1inch Spot Price API](/docs/1inch/Spot%20Price%20API/) for reference pricing.
+ **Note**: Uses [1inch Spot Price API](/docs/1inch/Spot%20Price%20API/) for reference pricing.
 
 ###  Price Level Aggregation
 
@@ -259,7 +259,7 @@ Orders with the same price are aggregated into levels:
 
 ##  Configuration
 
-### 🔑 Environment Variables
+###  Environment Variables
 
 | Variable | Required | Purpose | Status |
 |----------|----------|---------|--------|
@@ -385,7 +385,7 @@ function transformForTradingView(orderbook) {
 
 ##  Troubleshooting
 
-### ⚠ Common Issues
+###  Common Issues
 
 | Issue | Causes | Solutions | Status |
 |-------|--------|-----------|--------|

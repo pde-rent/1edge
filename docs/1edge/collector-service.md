@@ -1,18 +1,18 @@
 # Collector Service Documentation
 
-> **Core Data Engine**: The Collector Service is the backbone of 1edge's real-time price data aggregation and historical market data management system.
+> **Protocol Data Engine**: The Collector Service is the core of 1edge's real-time price data aggregation and historical data management.
 
 ## Overview
 
-The Collector Service is the core data aggregation and processing component of the 1edge system. It handles real-time price data collection, index price computation, OHLC candle generation, and historical data management with comprehensive failover capabilities.
+The Collector Service is the core data aggregation and processing component of the 1edge system. It handles real-time price data collection, index price computation, OHLC candle generation, and historical data management with failover capabilities.
 
 | Component | Status | Description |
 |-----------|--------|-------------|
-| Multi-Exchange Aggregation |  Active | Real-time price feeds from multiple sources |
-| Index Price Computation |  Active | Weighted average calculations with metrics |
-| OHLC Candle System |  Active | Multiple timeframes with dual storage |
-| Historical Data Management |  Active | Automatic gap filling and batch retrieval |
-| Pub/Sub Architecture |  Active | Tcp based scalable broadcasting |
+| Multi-Exchange Aggregation | Active | Real-time price feeds from multiple sources |
+| Index Price Computation | Active | Weighted average calculations with metrics |
+| OHLC Candle System | Active | Multiple timeframes with dual storage |
+| Historical Data Management | Active | Automatic gap filling and batch retrieval |
+| Pub/Sub Architecture | Active | TCP based broadcasting |
 
 ## Key Features
 
@@ -57,7 +57,7 @@ The Collector Service is the core data aggregation and processing component of t
 ## Architecture
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 flowchart TD
     A[Exchange A WebSocket] --> D[Collector Service]
     B[Exchange B WebSocket] --> D
@@ -319,8 +319,8 @@ interface AggregatedTickerConfig {
 |-------|---------|----------|
 | INFO | Service lifecycle, sanity results |  Operations |
 | DEBUG | Candle saves, cache ops |  Development |
-| ERROR | WebSocket, DB, CCXT failures | ❌ Critical issues |
-| WARN | Missing data, config issues | ⚠ Attention needed |
+| ERROR | WebSocket, DB, CCXT failures |  Critical issues |
+| WARN | Missing data, config issues |  Attention needed |
 
 ### Metrics Export
 Statistics are logged every 60 seconds:
@@ -440,7 +440,7 @@ SELECT MIN(timestamp), MAX(timestamp) FROM candles_1m;
 
 | Feature | Priority | Timeline | Status |
 |---------|----------|----------|---------|
-| Data Compression | High | Q1 2025 | 🚧 |
+| Data Compression | High | Q1 2025 |  |
 | Distributed Storage | Medium | Q2 2025 |  |
 | Advanced Analytics | High | Q1 2025 |  |
 | Data Export | Low | Q3 2025 |  |
@@ -450,7 +450,7 @@ SELECT MIN(timestamp), MAX(timestamp) FROM candles_1m;
 
 | Improvement | Impact | Priority | Status |
 |-------------|--------|----------|--------|
-| Batch Processing | +50% DB throughput | High | 🚧 |
+| Batch Processing | +50% DB throughput | High |  |
 | Connection Pooling | +30% query speed | Medium |  |
 | Memory Optimization | -20% RAM usage | Medium |  |
 | Parallel Processing | +100% computation | High |  |

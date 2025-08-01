@@ -112,7 +112,7 @@ Authorization: Bearer YOUR_API_KEY
 
 ### Security Best Practices
 
-> **⚠️ Security Guidelines**
+> ** Security Guidelines**
 >
 > - Never expose API keys in client-side code
 > - Use environment variables for key storage
@@ -176,11 +176,11 @@ Authorization: Bearer YOUR_API_KEY
 
 | Code  | Status          | Meaning               |
 | ----- | --------------- | --------------------- |
-| `200` | ✅ OK           | Request successful    |
-| `400` | ❌ Bad Request  | Invalid parameters    |
+| `200` |  OK           | Request successful    |
+| `400` |  Bad Request  | Invalid parameters    |
 | `401` | 🔒 Unauthorized | Invalid API key       |
-| `404` | 🔍 Not Found    | Resource not found    |
-| `429` | ⏸️ Rate Limited | Too many requests     |
+| `404` |  Not Found    | Resource not found    |
+| `429` | ⏸ Rate Limited | Too many requests     |
 | `500` | 🔥 Server Error | Internal server issue |
 
 ---
@@ -191,13 +191,13 @@ Authorization: Bearer YOUR_API_KEY
 
 | Network       | Chain ID | Status    | Features        |
 | ------------- | -------- | --------- | --------------- |
-| **Ethereum**  | `1`      | 🟢 Active | Full support    |
-| **Polygon**   | `137`    | 🟢 Active | Full support    |
-| **BSC**       | `56`     | 🟢 Active | Full support    |
-| **Arbitrum**  | `42161`  | 🟢 Active | Full support    |
-| **Optimism**  | `10`     | 🟢 Active | Full support    |
-| **Avalanche** | `43114`  | 🟢 Active | Full support    |
-| **Base**      | `8453`   | 🟡 Beta   | Limited support |
+| **Ethereum**  | `1`      |  Active | Full support    |
+| **Polygon**   | `137`    |  Active | Full support    |
+| **BSC**       | `56`     |  Active | Full support    |
+| **Arbitrum**  | `42161`  |  Active | Full support    |
+| **Optimism**  | `10`     |  Active | Full support    |
+| **Avalanche** | `43114`  |  Active | Full support    |
+| **Base**      | `8453`   |  Beta   | Limited support |
 
 ### Network Configuration
 
@@ -249,14 +249,14 @@ console.log(`Found ${orders.length} active orders`);
 ### Quick Links
 
 - [ **Quickstart Guide**](./quickstart.md) - Get up and running in 5 minutes
-- [📖 **API Reference**](./api-reference/) - Comprehensive endpoint documentation
-- [🛠️ **SDK Integration**](../1inch%20LOP/Limit%20Order%20SDK/install.md) - JavaScript/TypeScript SDK
+- [ **API Reference**](./api-reference/) - Comprehensive endpoint documentation
+- [🛠 **SDK Integration**](../1inch%20LOP/Limit%20Order%20SDK/install.md) - JavaScript/TypeScript SDK
 - [ **Contract Integration**](../1inch%20LOP/limit-order-maker-contract.md) - Direct contract interaction
 
 ### Support & Community
 
-- 📚 [**Documentation Portal**](https://docs.1inch.io/) - Complete documentation
-- 💬 [**Developer Discord**](https://discord.gg/1inch) - Community support
+-  [**Documentation Portal**](https://docs.1inch.io/) - Complete documentation
+-  [**Developer Discord**](https://discord.gg/1inch) - Community support
 - 🐛 [**GitHub Issues**](https://github.com/1inch/limit-order-protocol) - Bug reports
 - 📧 [**Developer Support**](mailto:dev-support@1inch.io) - Direct assistance
 

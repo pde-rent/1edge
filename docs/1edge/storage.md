@@ -14,7 +14,7 @@
 ##  Architecture Overview
 
 ```mermaid
-%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%%
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TB
     subgraph "Application Layer"
         API[API Server]
@@ -155,6 +155,7 @@ CREATE TABLE strategies (
 ###  Performance Optimizations
 
 ```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph LR
     subgraph "Query Optimization"
         PrepStmt[Prepared Statements]
@@ -182,7 +183,7 @@ graph LR
     TTLCache --> AsyncOps
 ```
 
-### 🔑 Key Operations
+###  Key Operations
 
 #### Order Management
 ```typescript
@@ -237,6 +238,7 @@ Specialized service for high-performance OHLC (candlestick) data storage and rea
 ###  Architecture
 
 ```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TB
     subgraph "Data Ingestion"
         RT[Real-time Prices]
@@ -344,6 +346,7 @@ CREATE TABLE candles_30m (
 #### Real-time Price Processing
 
 ```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 sequenceDiagram
     participant P as Price Feed
     participant O as OHLC Service
@@ -370,6 +373,7 @@ sequenceDiagram
 #### Historical Data Retrieval
 
 ```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 sequenceDiagram
     participant S as Startup
     participant O as OHLC Service
@@ -429,7 +433,7 @@ private getCCXTSymbol(symbol: Symbol): string {
 }
 ```
 
-### 📦 Cache Management
+###  Cache Management
 
 Memory-based caching for ultra-fast access to short timeframes:
 
@@ -464,6 +468,7 @@ Non-blocking database writes with queue management:
 | SQLite DBs | Persistent storage | ACID compliance |  |
 
 ```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph LR
     subgraph "Price Updates"
         P1[Price Update 1]

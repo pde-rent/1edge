@@ -89,7 +89,7 @@ console.log(`Extension Hash: ${hash}`);
 
 #### isEmpty
 
-> **✅ Validation Check**  
+> ** Validation Check**  
 > Determines if the extension contains any active components.
 
 ```typescript
@@ -100,7 +100,7 @@ if (extension.isEmpty()) {
 
 #### encode
 
-> **🌐 Blockchain Ready**  
+> ** Blockchain Ready**  
 > Converts extension to hex string format for blockchain submission.
 
 ```typescript
@@ -117,15 +117,15 @@ const encodedData = extension.encode();
 
 ### Core Extension Components
 
-| Property                |  Purpose                        | 📝 Type           |  Use Case                 |
+| Property                |  Purpose                        |  Type           |  Use Case                 |
 | ----------------------- | --------------------------------- | ----------------- | --------------------------- |
 | **🆔 EMPTY**            | Default empty state               | `ExtensionStruct` | Template for new extensions |
-| **💰 makerAssetSuffix** | Additional maker asset data       | `string`          | Custom token handling       |
-| **💎 takerAssetSuffix** | Additional taker asset data       | `string`          | Custom token handling       |
+| ** makerAssetSuffix** | Additional maker asset data       | `string`          | Custom token handling       |
+| ** takerAssetSuffix** | Additional taker asset data       | `string`          | Custom token handling       |
 | ** makingAmountData** | Dynamic making amount calculation | `string`          | Oracle-based pricing        |
-| **📈 takingAmountData** | Dynamic taking amount calculation | `string`          | Oracle-based pricing        |
+| ** takingAmountData** | Dynamic taking amount calculation | `string`          | Oracle-based pricing        |
 | ** predicate**        | Conditional execution logic       | `string`          | Automated triggers          |
-| **🔑 makerPermit**      | Maker authorization data          | `string`          | Gasless approvals           |
+| ** makerPermit**      | Maker authorization data          | `string`          | Gasless approvals           |
 | **🔄 preInteraction**   | Pre-execution hooks               | `string`          | Setup operations            |
 | **🏁 postInteraction**  | Post-execution hooks              | `string`          | Cleanup operations          |
 | **🎨 customData**       | Application-specific data         | `string`          | Custom functionality        |
@@ -217,31 +217,31 @@ extension.customData = "0x6666..."; // Strategy parameters, user preferences, et
 
 ### Builder Pattern Benefits
 
-- **🔗 Chainable Methods**: Fluent API for readable code
-- **✅ Type Safety**: Full TypeScript support and validation
-- **🛠️ Incremental Building**: Add components step by step
-- **🔍 Easy Testing**: Clear separation of concerns
+- ** Chainable Methods**: Fluent API for readable code
+- ** Type Safety**: Full TypeScript support and validation
+- **🛠 Incremental Building**: Add components step by step
+- ** Easy Testing**: Clear separation of concerns
 
 ### Builder Methods Overview
 
-| Method                      |  Purpose                | 📝 Parameters                            | 🔗 Chainable |
+| Method                      |  Purpose                |  Parameters                            |  Chainable |
 | --------------------------- | ------------------------- | ---------------------------------------- | ------------ |
-| ** withMakerAssetSuffix** | Add maker asset data      | `suffix: string`                         | ✅           |
-| **💎 withTakerAssetSuffix** | Add taker asset data      | `suffix: string`                         | ✅           |
-| ** withMakingAmountData** | Set dynamic making amount | `address: Address, data: string`         | ✅           |
-| **📈 withTakingAmountData** | Set dynamic taking amount | `address: Address, data: string`         | ✅           |
-| ** withPredicate**        | Add conditional logic     | `predicate: string`                      | ✅           |
-| **🔑 withMakerPermit**      | Include permit data       | `tokenFrom: Address, permitData: string` | ✅           |
-| **🔄 withPreInteraction**   | Set pre-execution hook    | `interaction: Interaction`               | ✅           |
-| **🏁 withPostInteraction**  | Set post-execution hook   | `interaction: Interaction`               | ✅           |
-| **🎨 withCustomData**       | Add custom functionality  | `data: string`                           | ✅           |
-| **✨ build**                | Create final Extension    | -                                        | ❌ Final     |
+| ** withMakerAssetSuffix** | Add maker asset data      | `suffix: string`                         |            |
+| ** withTakerAssetSuffix** | Add taker asset data      | `suffix: string`                         |            |
+| ** withMakingAmountData** | Set dynamic making amount | `address: Address, data: string`         |            |
+| ** withTakingAmountData** | Set dynamic taking amount | `address: Address, data: string`         |            |
+| ** withPredicate**        | Add conditional logic     | `predicate: string`                      |            |
+| ** withMakerPermit**      | Include permit data       | `tokenFrom: Address, permitData: string` |            |
+| **🔄 withPreInteraction**   | Set pre-execution hook    | `interaction: Interaction`               |            |
+| **🏁 withPostInteraction**  | Set post-execution hook   | `interaction: Interaction`               |            |
+| **🎨 withCustomData**       | Add custom functionality  | `data: string`                           |            |
+| **✨ build**                | Create final Extension    | -                                        |  Final     |
 
 ### Detailed Method Documentation
 
 #### withMakerAssetSuffix
 
-> **💰 Enhance Maker Asset**  
+> ** Enhance Maker Asset**  
 > Appends custom data to maker asset transfers for specialized handling.
 
 ```typescript
@@ -252,7 +252,7 @@ const builder = new ExtensionBuilder().withMakerAssetSuffix(
 
 #### withTakerAssetSuffix
 
-> **💎 Enhance Taker Asset**  
+> ** Enhance Taker Asset**  
 > Appends custom data to taker asset transfers for specialized handling.
 
 ```typescript
@@ -387,7 +387,7 @@ import { ExtensionBuilder, Address, Interaction } from "@1inch/limit-order-sdk";
 
 // Build a sophisticated extension with multiple components
 const advancedExtension = new ExtensionBuilder()
-  // 💰 Add fee calculation for maker asset
+  //  Add fee calculation for maker asset
   .withMakerAssetSuffix("0x1234567890abcdef")
 
   //  Dynamic pricing via oracle
@@ -428,7 +428,7 @@ console.log("Encoded extension:", advancedExtension.encode());
 
 ## Extension Mastery Complete!
 
-✅ You now understand how to leverage the full power of 1inch Limit Order Extensions.
+ You now understand how to leverage the full power of 1inch Limit Order Extensions.
 
 ### Next Steps
 
