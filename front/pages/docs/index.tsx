@@ -17,13 +17,13 @@ export default function DocsIndex({ docStructure }: DocsIndexProps) {
         {/* Header */}
         <div className="text-left space-y-6 mb-12">
           <h1 className="text-5xl font-bold tracking-tight text-foreground">
-            1edge
+            1edge Documentation
           </h1>
           <p className="text-2xl text-muted-foreground">
             Advanced orders and market making strategies for 1inch's order book
           </p>
           <p className="text-lg text-muted-foreground">
-            Automate complex trading strategies with time-weighted average price (TWAP), 
+            Automate complex trading strategies with time-weighted average price (TWAP),
             iceberg orders, range trading, momentum strategies, and more.
           </p>
         </div>
@@ -31,39 +31,39 @@ export default function DocsIndex({ docStructure }: DocsIndexProps) {
         {/* Main Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           <Link href="/docs/1edge/order-types" className="block">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
               className="w-full h-32 flex flex-col items-center justify-center gap-4 text-lg font-semibold border-primary text-primary hover:bg-primary/10"
             >
-              <ArrowLeftRight className="h-24 w-24" />
+              <ArrowLeftRight className="h-24 w-24" style={{ width: '96px', height: '96px' }} />
               Order Types
             </Button>
           </Link>
 
           <Link href="/docs/1edge/user-guides" className="block">
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
               className="w-full h-32 flex flex-col items-center justify-center gap-4 text-lg font-semibold border-primary text-primary hover:bg-primary/10"
             >
-              <BookOpen className="h-24 w-24" />
+              <BookOpen className="h-24 w-24" style={{ width: '96px', height: '96px' }} />
               User Guides
             </Button>
           </Link>
 
-          <a 
-            href="https://portal.1inch.dev/documentation" 
-            target="_blank" 
+          <a
+            href="https://portal.1inch.dev/documentation"
+            target="_blank"
             rel="noopener noreferrer"
             className="block"
           >
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
               className="w-full h-32 flex flex-col items-center justify-center gap-4 text-lg font-semibold border-primary text-primary hover:bg-primary/10"
             >
-              <ExternalLink className="h-24 w-24" />
+              <ExternalLink className="h-24 w-24" style={{ width: '96px', height: '96px' }} />
               1inch Docs
             </Button>
           </a>
