@@ -11,9 +11,10 @@ graph TD
         BUILD --> SIGN[Sign Order]
         SIGN --> SUBMIT[Submit to Orderbook]
     end
+```
 
----
-
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TD
     subgraph "Order Components"
         ORDER[Order Struct] --> MAKER_ASSET[Maker Asset]
@@ -23,9 +24,10 @@ graph TD
         ORDER --> TRAITS[Maker Traits]
         ORDER --> EXTENSION[Extension Data]
     end
+```
 
----
-
+```mermaid
+%%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%%
 graph TD
     subgraph "Amount Calculations"
         PARTIAL[Partial Fill] --> CALC_TAKING[calcTakingAmount]
@@ -33,8 +35,7 @@ graph TD
         CALC_TAKING --> PROPORTION[Linear Proportion]
         CALC_MAKING --> PROPORTION
     end
-
----
+```
 
 ## Overview
 
