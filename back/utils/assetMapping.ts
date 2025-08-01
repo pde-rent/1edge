@@ -39,7 +39,7 @@ export function symbolToAddress(symbol: string, chainId: number = 1): string | u
 /**
  * Create price feed symbol from maker and taker asset addresses
  */
-export function getSymbolFromAssets(makerAsset: string, takerAsset: string, chainId: number = 1): string {
+export function getSymbolFromAssets(makerAsset: string, takerAsset: string, chainId: number = 1): `${string}:${string}:${string}` {
   const makerSymbol = addressToSymbol(makerAsset, chainId);
   const takerSymbol = addressToSymbol(takerAsset, chainId);
 

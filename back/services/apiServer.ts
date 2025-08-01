@@ -111,10 +111,10 @@ class ApiServer {
         return this.handleGetTicker(path, headers);
       }
 
-        case path === "/orders":
-        case path.startsWith("/orders/"):
-          // Proxy all order requests to OrderRegistry service
-          return this.proxyToOrderRegistry(request, headers);
+      if (path === "/orders" || path.startsWith("/orders/")) {
+        // Proxy all order requests to OrderRegistry service
+        return this.proxyToOrderRegistry(request, headers);
+      }
 
       if (path === "/positions") {
         return this.handleGetPositions(url, headers);
