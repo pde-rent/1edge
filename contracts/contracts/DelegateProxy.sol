@@ -7,20 +7,21 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "./deps/interfaces/IOrderMixin.sol";
-import "./deps/interfaces/IPostInteraction.sol";
+import "./deps/interfaces/IPreInteraction.sol";
 import "./deps/libraries/AddressLib.sol";
+import "hardhat/console.sol";
 
-/// @title DelegateSafe
-/// @dev A minimal escrow contract that holds user funds and facilitates the creation of 1inch limit orders 
-///      through approved keepers.
-contract DelegateSafe is IERC1271, Ownable, IPostInteraction {
+/// @title DelegateProxy
+/// @dev A minimal contract that facilitates creation of 1inch limit orders through
+///      approved keepers.
+contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
     using AddressLib for Address;
     using MakerTraitsLib for MakerTraits;
 
-    mapping(address keepers => bool) public approvedKeeper;
-    mapping(bytes32 orderId => uint256 amountCommitted) public amountCommitted;
-    mapping(bytes32 orderId => address) public orderCreator;
-    mapping(bytes32 orderId => bool) isSignedOrder;
+    mapping(address keepers => bool) internal approvedKeeper;
+    mapping(bytes32 orderId => bool) internal isSignedOrder;
+    mapping(bytes32 orderId => address) internal orderCreator;
+    mapping(address orderCreator => mapping(bytes32 orderId => uint256)) internal remainingMakerAmount;
 
     IOrderMixin private immutable LIMIT_ORDER_PROTOCOL;
 
@@ -62,23 +63,23 @@ contract DelegateSafe is IERC1271, Ownable, IPostInteraction {
 
     /// @notice create/sign user order.
     /// @dev signs the 1inch order and pulls funds from the `orderCreator` to facilitate order execution.
-    ///      to track the amount committed by the `orderCreator`, ensure `Order.makerTraits`
-    ///      has post-interactions enabled. this allows the contract to determine how much to refund
-    ///      in the event of order cancellation before order execution or during partial fills.
+    ///      to pull the maker amount from the `orderCreator` JIT, ensure `Order.MakerTraits` has
+    ///      pre-interactions enabled.
     ///      additionally, for this contract to execute the order, it must be set as the `Order.Maker`.
     function createUserOrder(CreateOrderParams[] calldata params) external onlyApprovedKeeper {
         for (uint256 i = 0; i < params.length; i++) {
             address makerAsset = params[i].order.makerAsset.get();
-            // pull the funds from the user to this contract.
-            _pullFunds(IERC20(makerAsset), params[i].orderCreator, params[i].order.makingAmount);
+
             // compute order hash
             bytes32 orderId = LIMIT_ORDER_PROTOCOL.hashOrder(params[i].order);
-
-            amountCommitted[orderId] = params[i].order.makingAmount;
-            orderCreator[orderId] = params[i].orderCreator;
+            address creator = params[i].orderCreator;
+            orderCreator[orderId] = creator;
             isSignedOrder[orderId] = true;
+            remainingMakerAmount[creator][orderId] = params[i].order.makingAmount;
 
             // if this contract has not interacted with the maker asset before, approve it to spend the maximum amount.
+            // order can bypass pre-interaction hook and withdraw funds from this contract since it has max approval
+            // for tokens. but this contract is not expected to hold any funds.
             if (IERC20(makerAsset).allowance(address(this), address(LIMIT_ORDER_PROTOCOL)) == 0) {
                 _maxApproveToken(makerAsset);
             }
@@ -87,26 +88,19 @@ contract DelegateSafe is IERC1271, Ownable, IPostInteraction {
         }
     }
 
-    // cancels order and refunds the remaining committed funds to the `orderCreator`.
+    // cancels order.
     function cancelOrder(IOrderMixin.Order calldata order) external onlyApprovedKeeper {
         bytes32 orderId = LIMIT_ORDER_PROTOCOL.hashOrder(order);
-        uint256 amtCommitted = amountCommitted[orderId]; // reset committed amount
 
-        amountCommitted[orderId] = 0;
         LIMIT_ORDER_PROTOCOL.cancelOrder(order.makerTraits, orderId);
-
-        if (amtCommitted > 0) {
-            // refund the committed funds to the user, if any.
-            _pushFunds(IERC20(order.makerAsset.get()), orderCreator[orderId], amtCommitted);
-        }
 
         emit OrderCancelled(orderId, order);
     }
 
-    // transfer funds from `receiver` to this contract.
-    function _pullFunds(IERC20 token, address receiver, uint256 amount) internal {
+    // transfer funds from `sender` to this contract.
+    function _pullFunds(IERC20 token, address sender, uint256 amount) internal {
         // ensure the user has approved this contract to spend their tokens
-        SafeERC20.safeTransferFrom(token, receiver, address(this), amount);
+        SafeERC20.safeTransferFrom(token, sender, address(this), amount);
     }
 
     // transfer funds to `receiver`.
@@ -115,18 +109,25 @@ contract DelegateSafe is IERC1271, Ownable, IPostInteraction {
         SafeERC20.safeTransfer(token, receiver, amount);
     }
 
+    function getOrderData(bytes32 orderId) public view returns (address creator, uint256 remainingMakerAmt) {
+        creator = orderCreator[orderId];
+        remainingMakerAmt = remainingMakerAmount[creator][orderId];
+    }
+
     /// MAKER INTERACTIONS
-    function postInteraction(
-        IOrderMixin.Order calldata,
-        bytes calldata,
+    function preInteraction(
+        IOrderMixin.Order calldata order,
+        bytes calldata extension,
         bytes32 orderHash,
-        address,
+        address taker,
         uint256 makingAmount,
-        uint256,
-        uint256,
-        bytes calldata
+        uint256 takingAmount,
+        uint256 remainingMakingAmount,
+        bytes calldata extraData
     ) external override onlyLimitOrderProtocol {
-        amountCommitted[orderHash] -= makingAmount;
+        remainingMakerAmount[orderCreator[orderHash]][orderHash] -= makingAmount;
+        // pull funds from user.
+        _pullFunds(IERC20(order.makerAsset.get()), orderCreator[orderHash], makingAmount);
     }
 
     /// EIP-1271 IMPLEMENTATION

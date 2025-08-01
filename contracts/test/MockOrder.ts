@@ -10,7 +10,7 @@ export function buildMockOrder(overrides: Partial<IOrderMixin.OrderStruct> = {})
     takerAsset: ZeroAddress,
     makingAmount: parseEther("1"),
     takingAmount: parseEther("1"),
-    makerTraits: 1n << 251n,
+    makerTraits: 1n << 252n,
     ...overrides,
   };
 }
