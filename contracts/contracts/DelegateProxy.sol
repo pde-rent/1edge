@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./deps/interfaces/IOrderMixin.sol";
 import "./deps/interfaces/IPreInteraction.sol";
 import "./deps/libraries/AddressLib.sol";
-import "hardhat/console.sol";
 
 /// @title DelegateProxy
 /// @dev A minimal contract that facilitates creation of 1inch limit orders through
@@ -31,6 +30,7 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
     }
 
     // Errors
+    error CanNotMakeOrder();
     error CallerNotApprovedKeeper();
     error CallerNotLimitOrderProtocol();
     error KeeperNotApproved(address);
@@ -65,11 +65,11 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
     /// @dev signs the 1inch order and pulls funds from the `orderCreator` to facilitate order execution.
     ///      to pull the maker amount from the `orderCreator` JIT, ensure `Order.MakerTraits` has
     ///      pre-interactions enabled.
-    ///      additionally, for this contract to execute the order, it must be set as the `Order.Maker`.
     function createUserOrder(CreateOrderParams[] calldata params) external onlyApprovedKeeper {
         for (uint256 i = 0; i < params.length; i++) {
-            address makerAsset = params[i].order.makerAsset.get();
+            if(params[i].order.maker.get() != address(this)) revert CanNotMakeOrder();
 
+            address makerAsset = params[i].order.makerAsset.get();
             // compute order hash
             bytes32 orderId = LIMIT_ORDER_PROTOCOL.hashOrder(params[i].order);
             address creator = params[i].orderCreator;
@@ -114,24 +114,26 @@ contract DelegateProxy is IERC1271, Ownable, IPreInteraction {
         uint256 _remainingMakerAmount;
     }
 
-    function getOrderData(bytes32[] calldata orderIds) public view returns (OrderData[] memory orderData) {
-        for (uint256 i = 0; i < 0; i++) {
+    function getOrderData(bytes32[] calldata orderIds) public view returns (OrderData[] memory) {
+        OrderData[] memory orderData = new OrderData[](orderIds.length);
+        for (uint256 i = 0; i < orderIds.length; i++) {
             orderData[i] = OrderData({
                 _orderCreator: orderCreator[orderIds[i]],
                 _remainingMakerAmount: remainingMakerAmount[orderIds[i]]
             });
         }
+        return orderData;
     }
 
     /// MAKER INTERACTIONS
     function preInteraction(
-        IOrderMixin.Order calldata,
+        IOrderMixin.Order calldata order,
         bytes calldata,
         bytes32 orderHash,
         address,
         uint256 makingAmount,
         uint256,
-        uint256 remainingMakingAmount,
+        uint256 ,
         bytes calldata
     ) external override onlyLimitOrderProtocol {
         remainingMakerAmount[orderHash] -= makingAmount;
