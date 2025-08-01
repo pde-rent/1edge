@@ -33,7 +33,7 @@
     "test:contracts": "cd contracts && npx hardhat test",
     "compile:contracts": "cd contracts && npx hardhat compile",
     "deploy:contracts": "cd contracts && npx hardhat run scripts/deploy.ts",
-    "install:all": "bun install && cd front && bun install && cd ../contracts && npm install && cd ..",
+    "install:all": "bun install && cd front && bun install && cd ../contracts && bun install && cd ..",
     "test:websocket": "bun run scripts/test-websocket.ts",
     "test:ohlc": "bun run scripts/test-ohlc.ts"
   },
