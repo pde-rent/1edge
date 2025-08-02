@@ -14,7 +14,7 @@ import {
   logOrderState,
   TEST_PRICES,
   TEST_TIMEOUTS,
-  TestContext
+  TestContext,
 } from "../utils";
 
 // Test configuration
@@ -39,9 +39,9 @@ describe("Momentum Strategy Lifecycle Test", () => {
   test("Momentum Reversal order triggers on oversold reversal signal", async () => {
     // Mock price cache with oversold reversal scenario
     const rsiScenario = TechnicalAnalysisScenarios.rsi(
-      'oversold-reversal',
+      "oversold-reversal",
       RSI_PERIOD,
-      RSIMA_PERIOD
+      RSIMA_PERIOD,
     );
     mockPriceCache(rsiScenario);
 
@@ -54,7 +54,11 @@ describe("Momentum Strategy Lifecycle Test", () => {
     };
 
     // Create order using factory
-    const order = await OrderFactory.momentum(context.testWallet, momentumReversalParams, ETH_PRICE);
+    const order = await OrderFactory.momentum(
+      context.testWallet,
+      momentumReversalParams,
+      ETH_PRICE,
+    );
 
     console.log(`Testing momentum reversal with RSI oversold reversal signal`);
 
@@ -71,19 +75,21 @@ describe("Momentum Strategy Lifecycle Test", () => {
     // Verify momentum reversal functionality
     expectOrderState(updatedOrder, {
       status: [OrderStatus.PENDING, OrderStatus.ACTIVE],
-      type: OrderType.MOMENTUM_REVERSAL
+      type: OrderType.MOMENTUM_REVERSAL,
     });
 
     if (updatedOrder!.triggerCount > 0) {
-      console.log(`✅ Momentum reversal order triggered on oversold reversal signal`);
+      console.log(
+        `✅ Momentum reversal order triggered on oversold reversal signal`,
+      );
       expect(updatedOrder!.status).toBe(OrderStatus.ACTIVE);
       console.log(`Order executed with TP: ${TP_PCT}%, SL: ${SL_PCT}%`);
     } else {
-      console.log(`ℹ️  Momentum reversal conditions not met - RSI analysis may require specific patterns`);
+      console.log(
+        `ℹ️  Momentum reversal conditions not met - RSI analysis may require specific patterns`,
+      );
     }
 
     expect(updatedOrder!.params).toBeDefined();
-
   }, 20000);
-
 });

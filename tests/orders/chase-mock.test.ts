@@ -14,7 +14,7 @@ import {
   logOrderState,
   TEST_PRICES,
   TEST_TIMEOUTS,
-  TestContext
+  TestContext,
 } from "../utils";
 
 // Test configuration
@@ -44,11 +44,15 @@ describe("Chase Limit Order Lifecycle Test", () => {
       amount: "1.0",
       distancePct: DISTANCE_PCT,
       expiry: EXPIRY_DAYS,
-      maxPrice: INITIAL_ETH_PRICE + 500 // Set max price above initial
+      maxPrice: INITIAL_ETH_PRICE + 500, // Set max price above initial
     };
 
     // Create order using factory
-    const order = await OrderFactory.chase(context.testWallet, chaseLimitParams, INITIAL_ETH_PRICE);
+    const order = await OrderFactory.chase(
+      context.testWallet,
+      chaseLimitParams,
+      INITIAL_ETH_PRICE,
+    );
 
     // Create order and verify initial state
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
@@ -56,32 +60,45 @@ describe("Chase Limit Order Lifecycle Test", () => {
 
     // Simulate price movement that should trigger the chase
     // Move price by more than distancePct (3%)
-    const priceMovement = INITIAL_ETH_PRICE * (DISTANCE_PCT + 1) / 100; // 4% movement
+    const priceMovement = (INITIAL_ETH_PRICE * (DISTANCE_PCT + 1)) / 100; // 4% movement
     const newPrice = INITIAL_ETH_PRICE + priceMovement;
 
-    console.log(`Price moved from ${INITIAL_ETH_PRICE} to ${newPrice} (+${((newPrice - INITIAL_ETH_PRICE) / INITIAL_ETH_PRICE * 100).toFixed(2)}%)`);
+    console.log(
+      `Price moved from ${INITIAL_ETH_PRICE} to ${newPrice} (+${(((newPrice - INITIAL_ETH_PRICE) / INITIAL_ETH_PRICE) * 100).toFixed(2)}%)`,
+    );
 
     // Test price movement trigger
-    let updatedOrder = await TestScenarios.priceTrigger(priceMock, order.id, newPrice, TEST_TIMEOUTS.MEDIUM);
+    let updatedOrder = await TestScenarios.priceTrigger(
+      priceMock,
+      order.id,
+      newPrice,
+      TEST_TIMEOUTS.MEDIUM,
+    );
     logOrderState(updatedOrder, "After first movement");
     expect(updatedOrder.triggerCount).toBeGreaterThan(0);
     expect(updatedOrder.triggerPrice).toBe(newPrice);
 
     // Test another price movement - Another 3.5% movement
-    const secondMovement = newPrice * (DISTANCE_PCT + 0.5) / 100;
+    const secondMovement = (newPrice * (DISTANCE_PCT + 0.5)) / 100;
     const finalPrice = newPrice + secondMovement;
 
-    console.log(`Price moved again to ${finalPrice} (+${((finalPrice - INITIAL_ETH_PRICE) / INITIAL_ETH_PRICE * 100).toFixed(2)}% total)`);
+    console.log(
+      `Price moved again to ${finalPrice} (+${(((finalPrice - INITIAL_ETH_PRICE) / INITIAL_ETH_PRICE) * 100).toFixed(2)}% total)`,
+    );
 
-    updatedOrder = await TestScenarios.priceTrigger(priceMock, order.id, finalPrice, TEST_TIMEOUTS.LONG);
+    updatedOrder = await TestScenarios.priceTrigger(
+      priceMock,
+      order.id,
+      finalPrice,
+      TEST_TIMEOUTS.LONG,
+    );
     logOrderState(updatedOrder, "After second movement");
 
     // The test passes if we get at least one trigger
     expectOrderState(updatedOrder, {
-      triggerCount: 'greater-than-zero',
-      type: OrderType.CHASE_LIMIT
+      triggerCount: "greater-than-zero",
+      type: OrderType.CHASE_LIMIT,
     });
-
   }, 30000);
 
   test("Chase Limit order respects maxPrice limit", async () => {
@@ -93,11 +110,15 @@ describe("Chase Limit Order Lifecycle Test", () => {
       amount: "0.5",
       distancePct: DISTANCE_PCT,
       expiry: EXPIRY_DAYS,
-      maxPrice: INITIAL_ETH_PRICE + 100 // Set low max price
+      maxPrice: INITIAL_ETH_PRICE + 100, // Set low max price
     };
 
     // Create order using factory
-    const order = await OrderFactory.chase(context.testWallet, chaseLimitParams, INITIAL_ETH_PRICE);
+    const order = await OrderFactory.chase(
+      context.testWallet,
+      chaseLimitParams,
+      INITIAL_ETH_PRICE,
+    );
 
     // Create order and verify initial state
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
@@ -105,12 +126,18 @@ describe("Chase Limit Order Lifecycle Test", () => {
     // Simulate large price movement that exceeds maxPrice
     const highPrice = INITIAL_ETH_PRICE + 300; // Well above maxPrice
 
-    console.log(`Price moved to ${highPrice}, above maxPrice of ${chaseLimitParams.maxPrice}`);
+    console.log(
+      `Price moved to ${highPrice}, above maxPrice of ${chaseLimitParams.maxPrice}`,
+    );
 
     // Test price movement - order should not execute due to maxPrice constraint
-    const updatedOrder = await TestScenarios.priceTrigger(priceMock, order.id, highPrice, TEST_TIMEOUTS.SHORT);
+    const updatedOrder = await TestScenarios.priceTrigger(
+      priceMock,
+      order.id,
+      highPrice,
+      TEST_TIMEOUTS.SHORT,
+    );
     logOrderState(updatedOrder, "Above maxPrice");
-
   }, 20000);
 
   test("Chase Limit order expires correctly", async () => {
@@ -125,7 +152,11 @@ describe("Chase Limit Order Lifecycle Test", () => {
     };
 
     // Create order using factory
-    const order = await OrderFactory.chase(context.testWallet, chaseLimitParams, INITIAL_ETH_PRICE);
+    const order = await OrderFactory.chase(
+      context.testWallet,
+      chaseLimitParams,
+      INITIAL_ETH_PRICE,
+    );
 
     // Create order and verify initial state
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
@@ -138,11 +169,9 @@ describe("Chase Limit Order Lifecycle Test", () => {
       priceMock,
       order.id,
       INITIAL_ETH_PRICE + PRICE_MOVEMENT,
-      TEST_TIMEOUTS.SHORT
+      TEST_TIMEOUTS.SHORT,
     );
 
     logOrderState(updatedOrder, "After expiry");
-
   }, 15000);
-
 });

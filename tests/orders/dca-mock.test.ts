@@ -12,7 +12,7 @@ import {
   expectOrderState,
   logOrderState,
   TEST_PRICES,
-  TestContext
+  TestContext,
 } from "../utils";
 
 // Test configuration - simplified for DCA
@@ -43,11 +43,15 @@ describe("DCA Strategy Lifecycle Test", () => {
       amount: "0.5",
       startDate: now,
       interval: INTERVAL_SECONDS / (24 * 60 * 60), // Convert seconds to days for the parameter
-      maxPrice: ETH_PRICE + 200 // Allow execution
+      maxPrice: ETH_PRICE + 200, // Allow execution
     };
 
     // Create DCA order using factory
-    const order = await OrderFactory.dca(context.testWallet, dcaParams, ETH_PRICE);
+    const order = await OrderFactory.dca(
+      context.testWallet,
+      dcaParams,
+      ETH_PRICE,
+    );
 
     console.log(`DCA order created with ${INTERVAL_SECONDS}s intervals`);
 
@@ -62,12 +66,11 @@ describe("DCA Strategy Lifecycle Test", () => {
 
     // Verify DCA functionality
     expectOrderState(finalOrder, {
-      triggerCount: 'greater-than-zero',
+      triggerCount: "greater-than-zero",
       status: OrderStatus.ACTIVE,
-      type: OrderType.DCA
+      type: OrderType.DCA,
     });
 
     expect(finalOrder!.triggerCount).toBeGreaterThan(1); // Should have executed multiple times
   }, 30000);
-
 });

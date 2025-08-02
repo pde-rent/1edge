@@ -82,7 +82,13 @@ async function startBackendServices() {
 
   // Start only essential backend services
   const essentialServices = services.filter((service) =>
-    ["collector", "api", "websocket", "order-registry", "status-checker"].includes(service.id),
+    [
+      "collector",
+      "api",
+      "websocket",
+      "order-registry",
+      "status-checker",
+    ].includes(service.id),
   );
 
   for (const service of essentialServices) {
@@ -110,7 +116,11 @@ async function startBackendServices() {
       if (service.id === "collector") {
         console.log("Waiting for collector to initialize pub/sub server...");
         await new Promise((resolve) => setTimeout(resolve, 3000));
-      } else if (service.id === "api" || service.id === "websocket" || service.id === "order-registry") {
+      } else if (
+        service.id === "api" ||
+        service.id === "websocket" ||
+        service.id === "order-registry"
+      ) {
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }

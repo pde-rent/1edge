@@ -13,7 +13,7 @@ import {
   expectOrderState,
   TestAssertions,
   TEST_CONFIGS,
-  TestContext
+  TestContext,
 } from "../utils";
 
 describe("Range Order Test", () => {
@@ -37,7 +37,7 @@ describe("Range Order Test", () => {
       context.testWallet,
       OrderType.RANGE,
       rangeParams,
-      config.startPrice + 100
+      config.startPrice + 100,
     );
     order.nextTriggerValue = config.startPrice;
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
@@ -45,11 +45,11 @@ describe("Range Order Test", () => {
     // Test price movements through range
     const priceMock = new DynamicPriceMock(config.startPrice + 100);
     mockPriceCache(priceMock);
-    
+
     const results = await OrderTestScenarios.multiPriceMovements(
       priceMock,
       order.id,
-      [config.startPrice - 20, config.startPrice - 60, config.endPrice + 10]
+      [config.startPrice - 20, config.startPrice - 60, config.endPrice + 10],
     );
 
     // Verify multi-level execution
@@ -57,10 +57,12 @@ describe("Range Order Test", () => {
     TestAssertions.expectTriggered(finalOrder);
     expectOrderState(finalOrder, {
       status: [OrderStatus.ACTIVE, OrderStatus.COMPLETED],
-      type: OrderType.RANGE
+      type: OrderType.RANGE,
     });
-    
-    console.log(`✅ Range order triggered ${finalOrder.triggerCount} times across price levels`);
+
+    console.log(
+      `✅ Range order triggered ${finalOrder.triggerCount} times across price levels`,
+    );
   }, 30000);
 
   test("Range order respects step progression", async () => {
@@ -73,23 +75,22 @@ describe("Range Order Test", () => {
 
     const order = await OrderFactory.generic(
       context.testWallet,
-      OrderType.RANGE, 
+      OrderType.RANGE,
       rangeParams,
-      config.startPrice
+      config.startPrice,
     );
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
-    
+
     // Verify no initial trigger, then trigger on price movement
     TestAssertions.expectNotTriggered(await getOrder(order.id));
-    
+
     const triggeredOrder = await TestScenarios.priceTrigger(
       priceMock,
       order.id,
-      config.startPrice - 50
+      config.startPrice - 50,
     );
-    
+
     TestAssertions.expectTriggered(triggeredOrder, 1);
     console.log("✅ Range order correctly triggers on price entry into range");
   }, 15000);
-
 });

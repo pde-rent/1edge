@@ -17,7 +17,8 @@ describe("WebSocket Collector Integration", () => {
       function check() {
         const msg = messages.find((m) => m.type === type);
         if (msg) return resolve(msg);
-        if (Date.now() - start > timeout) return reject(new Error(`Timeout waiting for message type: ${type}`));
+        if (Date.now() - start > timeout)
+          return reject(new Error(`Timeout waiting for message type: ${type}`));
         setTimeout(check, 25);
       }
       check();
@@ -61,7 +62,8 @@ describe("WebSocket Collector Integration", () => {
       const start = Date.now();
       function check() {
         if (isOpen) return resolve(true);
-        if (Date.now() - start > 2000) return reject(new Error("WebSocket did not open in time"));
+        if (Date.now() - start > 2000)
+          return reject(new Error("WebSocket did not open in time"));
         setTimeout(check, 20);
       }
       check();
@@ -107,18 +109,24 @@ describe("WebSocket Collector Integration", () => {
 
   it("should retrieve historical data for orderbook reconstruction", async () => {
     // Test direct API call to orderbook endpoint
-    const response = await fetch("http://localhost:40005/orderbook/1/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/0xdAC17F958D2ee523a2206206994597C13D831ec7?limit=10");
+    const response = await fetch(
+      "http://localhost:40005/orderbook/1/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/0xdAC17F958D2ee523a2206206994597C13D831ec7?limit=10",
+    );
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data).toBeDefined();
     expect(data.data.bids).toBeDefined();
     expect(data.data.asks).toBeDefined();
     expect(data.data.chain).toBe(1);
-    expect(data.data.makerAsset).toBe("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
-    expect(data.data.takerAsset).toBe("0xdAC17F958D2ee523a2206206994597C13D831ec7");
-    
+    expect(data.data.makerAsset).toBe(
+      "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    );
+    expect(data.data.takerAsset).toBe(
+      "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+    );
+
     // Verify orderbook structure
     if (data.data.bids.length > 0) {
       const bid = data.data.bids[0];
@@ -136,7 +144,7 @@ describe("WebSocket Collector Integration", () => {
     // Test market overview endpoint - currently returns error due to missing getMarketOverview method
     const response = await fetch("http://localhost:40005/orderbook/1?limit=5");
     const data = await response.json();
-    
+
     // Currently this endpoint fails because getMarketOverview is not implemented
     // This test verifies the error handling works properly
     expect(response.status).toBe(500);
@@ -146,13 +154,15 @@ describe("WebSocket Collector Integration", () => {
 
   it("should test symbol-based orderbook endpoint", async () => {
     // Test symbol-based endpoint
-    const response = await fetch("http://localhost:40005/orderbook-symbol/1/WETHUSDT?limit=5");
+    const response = await fetch(
+      "http://localhost:40005/orderbook-symbol/1/WETHUSDT?limit=5",
+    );
     const data = await response.json();
-    
+
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.data).toBeDefined();
-    
+
     if (data.data.bids && data.data.bids.length > 0) {
       expect(data.data.bids[0]).toHaveProperty("price");
       expect(data.data.bids[0]).toHaveProperty("amount");

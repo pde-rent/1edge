@@ -3,7 +3,14 @@ import { beforeAll, afterAll, mock } from "bun:test";
 import { ethers } from "ethers";
 import { generateOrderId } from "@common/utils";
 import { OrderType, OrderStatus } from "@common/types";
-import type { Order, DCAParams, ChaseLimitParams, IcebergParams, MomentumReversalParams, StopLimitParams } from "@common/types";
+import type {
+  Order,
+  DCAParams,
+  ChaseLimitParams,
+  IcebergParams,
+  MomentumReversalParams,
+  StopLimitParams,
+} from "@common/types";
 import { getConfig } from "@back/services/config";
 import { initStorage } from "@back/services/storage";
 import { createOrderRegistry } from "@back/services/orderRegistry";
@@ -84,19 +91,19 @@ export class PriceSeriesGenerator {
   static rsi(options: {
     periods: number;
     currentRSI: number;
-    condition: 'oversold' | 'overbought' | 'neutral';
-    trend?: 'up' | 'down' | 'sideways';
+    condition: "oversold" | "overbought" | "neutral";
+    trend?: "up" | "down" | "sideways";
   }): number[] {
-    const { periods, currentRSI, condition, trend = 'sideways' } = options;
+    const { periods, currentRSI, condition, trend = "sideways" } = options;
     const series: number[] = [];
 
     // Generate base RSI values based on condition
     let baseRSI: number;
     switch (condition) {
-      case 'oversold':
+      case "oversold":
         baseRSI = 25;
         break;
-      case 'overbought':
+      case "overbought":
         baseRSI = 75;
         break;
       default:
@@ -109,9 +116,9 @@ export class PriceSeriesGenerator {
       let rsi = baseRSI + variation;
 
       // Apply trend
-      if (trend === 'up') {
+      if (trend === "up") {
         rsi += (i / periods) * 10;
-      } else if (trend === 'down') {
+      } else if (trend === "down") {
         rsi -= (i / periods) * 10;
       }
 
@@ -130,16 +137,22 @@ export class PriceSeriesGenerator {
     startPrice: number;
     endPrice?: number;
     volatility?: number;
-    trend?: 'up' | 'down' | 'sideways';
+    trend?: "up" | "down" | "sideways";
   }): number[] {
-    const { length, startPrice, endPrice = startPrice, volatility = 0.02, trend = 'sideways' } = options;
+    const {
+      length,
+      startPrice,
+      endPrice = startPrice,
+      volatility = 0.02,
+      trend = "sideways",
+    } = options;
     const series: number[] = [];
 
     for (let i = 0; i < length; i++) {
       const progress = i / (length - 1);
       let price: number;
 
-      if (trend === 'sideways') {
+      if (trend === "sideways") {
         price = startPrice + (Math.random() - 0.5) * startPrice * volatility;
       } else {
         const basePrice = startPrice + (endPrice - startPrice) * progress;
@@ -161,7 +174,9 @@ export class PriceSeriesGenerator {
       if (i < period - 1) {
         ma.push(prices[i]); // Not enough data for MA
       } else {
-        const sum = prices.slice(i - period + 1, i + 1).reduce((a, b) => a + b, 0);
+        const sum = prices
+          .slice(i - period + 1, i + 1)
+          .reduce((a, b) => a + b, 0);
         ma.push(sum / period);
       }
     }
@@ -171,23 +186,25 @@ export class PriceSeriesGenerator {
 }
 
 // Mock price cache with configurable data
-export function mockPriceCache(config: PriceCacheConfig | DynamicPriceMock): void {
+export function mockPriceCache(
+  config: PriceCacheConfig | DynamicPriceMock,
+): void {
   if (config instanceof DynamicPriceMock) {
     mock.module("@back/services/priceCache", () => ({
       priceCache: {
         getPrice: () => ({
-          last: { mid: config.getPrice() }
-        })
-      }
+          last: { mid: config.getPrice() },
+        }),
+      },
     }));
   } else {
     mock.module("@back/services/priceCache", () => ({
       priceCache: {
         getPrice: () => ({
           last: { mid: config.price || TEST_PRICES.ETH },
-          analysis: config.analysis || {}
-        })
-      }
+          analysis: config.analysis || {},
+        }),
+      },
     }));
   }
 }
@@ -209,7 +226,7 @@ export function createTestSuite(): {
 
     teardown: async (context: TestContext): Promise<void> => {
       await context.orderRegistry.stop();
-    }
+    },
   };
 }
 
@@ -219,14 +236,16 @@ export class OrderFactory {
     wallet: ethers.HDNodeWallet,
     type: OrderType,
     amount: string,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Partial<Order> {
     const config = getConfig();
     const orderId = generateOrderId(wallet.address);
     const now = Date.now();
 
     const makingAmountWei = ethers.parseEther(amount).toString();
-    const takingAmountUsdt = ethers.parseUnits((parseFloat(amount) * price).toString(), 6).toString();
+    const takingAmountUsdt = ethers
+      .parseUnits((parseFloat(amount) * price).toString(), 6)
+      .toString();
 
     return {
       id: orderId,
@@ -243,14 +262,14 @@ export class OrderFactory {
       userSignedPayload: "test",
       status: OrderStatus.PENDING,
       oneInchOrderHashes: [],
-      salt: Math.floor(Math.random() * 1000000000).toString()
+      salt: Math.floor(Math.random() * 1000000000).toString(),
     };
   }
 
   static async dca(
     wallet: ethers.HDNodeWallet,
     params: DCAParams,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Promise<Order> {
     const baseOrder = this.base(wallet, OrderType.DCA, params.amount, price);
 
@@ -258,14 +277,16 @@ export class OrderFactory {
       ...baseOrder,
       params,
       nextTriggerValue: params.startDate,
-      signature: await wallet.signMessage(JSON.stringify({
-        type: OrderType.DCA,
-        size: params.amount,
-        params,
-        maker: wallet.address,
-        makerAsset: getConfig().tokenMapping.WETH["1"],
-        takerAsset: getConfig().tokenMapping.USDT["1"],
-      }))
+      signature: await wallet.signMessage(
+        JSON.stringify({
+          type: OrderType.DCA,
+          size: params.amount,
+          params,
+          maker: wallet.address,
+          makerAsset: getConfig().tokenMapping.WETH["1"],
+          takerAsset: getConfig().tokenMapping.USDT["1"],
+        }),
+      ),
     } as Order;
 
     return order;
@@ -274,22 +295,29 @@ export class OrderFactory {
   static async chase(
     wallet: ethers.HDNodeWallet,
     params: ChaseLimitParams,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Promise<Order> {
-    const baseOrder = this.base(wallet, OrderType.CHASE_LIMIT, params.amount, price);
+    const baseOrder = this.base(
+      wallet,
+      OrderType.CHASE_LIMIT,
+      params.amount,
+      price,
+    );
 
     const order: Order = {
       ...baseOrder,
       params,
       triggerPrice: price,
-      signature: await wallet.signMessage(JSON.stringify({
-        type: OrderType.CHASE_LIMIT,
-        size: params.amount,
-        params,
-        maker: wallet.address,
-        makerAsset: getConfig().tokenMapping.WETH["1"],
-        takerAsset: getConfig().tokenMapping.USDT["1"],
-      }))
+      signature: await wallet.signMessage(
+        JSON.stringify({
+          type: OrderType.CHASE_LIMIT,
+          size: params.amount,
+          params,
+          maker: wallet.address,
+          makerAsset: getConfig().tokenMapping.WETH["1"],
+          takerAsset: getConfig().tokenMapping.USDT["1"],
+        }),
+      ),
     } as Order;
 
     return order;
@@ -298,21 +326,28 @@ export class OrderFactory {
   static async iceberg(
     wallet: ethers.HDNodeWallet,
     params: IcebergParams,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Promise<Order> {
-    const baseOrder = this.base(wallet, OrderType.ICEBERG, params.amount, price);
+    const baseOrder = this.base(
+      wallet,
+      OrderType.ICEBERG,
+      params.amount,
+      price,
+    );
 
     const order: Order = {
       ...baseOrder,
       params,
-      signature: await wallet.signMessage(JSON.stringify({
-        type: OrderType.ICEBERG,
-        size: params.amount,
-        params,
-        maker: wallet.address,
-        makerAsset: getConfig().tokenMapping.WETH["1"],
-        takerAsset: getConfig().tokenMapping.USDT["1"],
-      }))
+      signature: await wallet.signMessage(
+        JSON.stringify({
+          type: OrderType.ICEBERG,
+          size: params.amount,
+          params,
+          maker: wallet.address,
+          makerAsset: getConfig().tokenMapping.WETH["1"],
+          takerAsset: getConfig().tokenMapping.USDT["1"],
+        }),
+      ),
     } as Order;
 
     return order;
@@ -321,21 +356,28 @@ export class OrderFactory {
   static async momentum(
     wallet: ethers.HDNodeWallet,
     params: MomentumReversalParams,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Promise<Order> {
-    const baseOrder = this.base(wallet, OrderType.MOMENTUM_REVERSAL, params.amount, price);
+    const baseOrder = this.base(
+      wallet,
+      OrderType.MOMENTUM_REVERSAL,
+      params.amount,
+      price,
+    );
 
     const order: Order = {
       ...baseOrder,
       params,
-      signature: await wallet.signMessage(JSON.stringify({
-        type: OrderType.MOMENTUM_REVERSAL,
-        size: params.amount,
-        params,
-        maker: wallet.address,
-        makerAsset: getConfig().tokenMapping.WETH["1"],
-        takerAsset: getConfig().tokenMapping.USDT["1"],
-      }))
+      signature: await wallet.signMessage(
+        JSON.stringify({
+          type: OrderType.MOMENTUM_REVERSAL,
+          size: params.amount,
+          params,
+          maker: wallet.address,
+          makerAsset: getConfig().tokenMapping.WETH["1"],
+          takerAsset: getConfig().tokenMapping.USDT["1"],
+        }),
+      ),
     } as Order;
 
     return order;
@@ -344,21 +386,28 @@ export class OrderFactory {
   static async stop(
     wallet: ethers.HDNodeWallet,
     params: StopLimitParams,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Promise<Order> {
-    const baseOrder = this.base(wallet, OrderType.STOP_LIMIT, params.amount, price);
+    const baseOrder = this.base(
+      wallet,
+      OrderType.STOP_LIMIT,
+      params.amount,
+      price,
+    );
 
     const order: Order = {
       ...baseOrder,
       params,
-      signature: await wallet.signMessage(JSON.stringify({
-        type: OrderType.STOP_LIMIT,
-        size: params.amount,
-        params,
-        maker: wallet.address,
-        makerAsset: getConfig().tokenMapping.WETH["1"],
-        takerAsset: getConfig().tokenMapping.USDT["1"],
-      }))
+      signature: await wallet.signMessage(
+        JSON.stringify({
+          type: OrderType.STOP_LIMIT,
+          size: params.amount,
+          params,
+          maker: wallet.address,
+          makerAsset: getConfig().tokenMapping.WETH["1"],
+          takerAsset: getConfig().tokenMapping.USDT["1"],
+        }),
+      ),
     } as Order;
 
     return order;
@@ -368,21 +417,23 @@ export class OrderFactory {
     wallet: ethers.HDNodeWallet,
     type: OrderType,
     params: any,
-    price: number = TEST_PRICES.ETH
+    price: number = TEST_PRICES.ETH,
   ): Promise<Order> {
     const baseOrder = this.base(wallet, type, params.amount, price);
 
     const order: Order = {
       ...baseOrder,
       params,
-      signature: await wallet.signMessage(JSON.stringify({
-        type,
-        size: params.amount,
-        params,
-        maker: wallet.address,
-        makerAsset: getConfig().tokenMapping.WETH["1"],
-        takerAsset: getConfig().tokenMapping.USDT["1"],
-      }))
+      signature: await wallet.signMessage(
+        JSON.stringify({
+          type,
+          size: params.amount,
+          params,
+          maker: wallet.address,
+          makerAsset: getConfig().tokenMapping.WETH["1"],
+          takerAsset: getConfig().tokenMapping.USDT["1"],
+        }),
+      ),
     } as Order;
 
     return order;
@@ -391,7 +442,7 @@ export class OrderFactory {
 
 // Wait utilities
 export const wait = (ms: number): Promise<void> =>
-  new Promise(resolve => setTimeout(resolve, ms));
+  new Promise((resolve) => setTimeout(resolve, ms));
 
 export const waitShort = (): Promise<void> => wait(TEST_TIMEOUTS.SHORT);
 export const waitMedium = (): Promise<void> => wait(TEST_TIMEOUTS.MEDIUM);
@@ -401,17 +452,17 @@ export const waitLong = (): Promise<void> => wait(TEST_TIMEOUTS.LONG);
 export function expectOrderState(
   order: Order | null,
   expectedStates: {
-    triggerCount?: number | 'greater-than-zero';
+    triggerCount?: number | "greater-than-zero";
     status?: OrderStatus | OrderStatus[];
     type?: OrderType;
-  }
+  },
 ): void {
   if (!order) {
-    throw new Error('Order is null or undefined');
+    throw new Error("Order is null or undefined");
   }
 
   if (expectedStates.triggerCount !== undefined) {
-    if (expectedStates.triggerCount === 'greater-than-zero') {
+    if (expectedStates.triggerCount === "greater-than-zero") {
       expect(order.triggerCount).toBeGreaterThan(0);
     } else {
       expect(order.triggerCount).toBe(expectedStates.triggerCount);
@@ -432,20 +483,24 @@ export function expectOrderState(
 }
 
 // Logging utilities
-export function logOrderState(order: Order | null, context: string = ''): void {
+export function logOrderState(order: Order | null, context: string = ""): void {
   if (!order) {
     console.log(`${context} Order is null`);
     return;
   }
 
-  console.log(`${context} Order state - ID: ${order.id.slice(0, 8)}..., Type: ${order.type}, Status: ${order.status}, Triggers: ${order.triggerCount}`);
+  console.log(
+    `${context} Order state - ID: ${order.id.slice(0, 8)}..., Type: ${order.type}, Status: ${order.status}, Triggers: ${order.triggerCount}`,
+  );
 
   if (order.triggerPrice) {
     console.log(`  Trigger Price: ${order.triggerPrice}`);
   }
 
   if (order.nextTriggerValue) {
-    console.log(`  Next Trigger: ${new Date(order.nextTriggerValue).toISOString()}`);
+    console.log(
+      `  Next Trigger: ${new Date(order.nextTriggerValue).toISOString()}`,
+    );
   }
 }
 
@@ -454,16 +509,18 @@ export class TestScenarios {
   static async createStoreOrder(
     orderRegistry: any,
     order: Order,
-    expectedStatus: OrderStatus = OrderStatus.PENDING
+    expectedStatus: OrderStatus = OrderStatus.PENDING,
   ): Promise<Order> {
     await orderRegistry.createOrder(order);
     await waitShort();
 
-    const updatedOrder = await import("@back/services/storage").then(m => m.getOrder(order.id));
+    const updatedOrder = await import("@back/services/storage").then((m) =>
+      m.getOrder(order.id),
+    );
     expectOrderState(updatedOrder, {
       status: expectedStatus,
       triggerCount: 0,
-      type: order.type
+      type: order.type,
     });
 
     return updatedOrder!;
@@ -473,28 +530,29 @@ export class TestScenarios {
     priceMock: DynamicPriceMock,
     orderId: string,
     newPrice: number,
-    waitTime: number = TEST_TIMEOUTS.MEDIUM
+    waitTime: number = TEST_TIMEOUTS.MEDIUM,
   ): Promise<Order> {
     priceMock.setPrice(newPrice);
     await wait(waitTime);
 
-    const updatedOrder = await import("@back/services/storage").then(m => m.getOrder(orderId));
+    const updatedOrder = await import("@back/services/storage").then((m) =>
+      m.getOrder(orderId),
+    );
     return updatedOrder!;
   }
 
-  static async timeTrigger(
-    orderId: string,
-    waitTime: number
-  ): Promise<Order> {
+  static async timeTrigger(orderId: string, waitTime: number): Promise<Order> {
     await wait(waitTime);
-    const updatedOrder = await import("@back/services/storage").then(m => m.getOrder(orderId));
+    const updatedOrder = await import("@back/services/storage").then((m) =>
+      m.getOrder(orderId),
+    );
     return updatedOrder!;
   }
 
   static async multiSteps(
     priceMock: DynamicPriceMock | null,
     orderId: string,
-    steps: { price?: number; waitTime: number }[]
+    steps: { price?: number; waitTime: number }[],
   ): Promise<Order[]> {
     const results: Order[] = [];
 
@@ -504,7 +562,9 @@ export class TestScenarios {
       }
       await wait(step.waitTime);
 
-      const updatedOrder = await import("@back/services/storage").then(m => m.getOrder(orderId));
+      const updatedOrder = await import("@back/services/storage").then((m) =>
+        m.getOrder(orderId),
+      );
       if (updatedOrder) {
         results.push(updatedOrder);
       }
@@ -516,12 +576,14 @@ export class TestScenarios {
   static async orderExpiry(
     orderRegistry: any,
     order: Order,
-    expiryWaitTime: number
+    expiryWaitTime: number,
   ): Promise<Order> {
     await orderRegistry.createOrder(order);
     await wait(expiryWaitTime);
 
-    const expiredOrder = await import("@back/services/storage").then(m => m.getOrder(order.id));
+    const expiredOrder = await import("@back/services/storage").then((m) =>
+      m.getOrder(order.id),
+    );
     return expiredOrder!;
   }
 }
@@ -529,30 +591,30 @@ export class TestScenarios {
 // Technical analysis test helpers
 export class TechnicalAnalysisScenarios {
   static rsi(
-    condition: 'oversold-reversal' | 'overbought-reversal' | 'neutral',
+    condition: "oversold-reversal" | "overbought-reversal" | "neutral",
     rsiPeriod: number = 14,
-    rsimaPeriod: number = 5
+    rsimaPeriod: number = 5,
   ): PriceCacheConfig {
     let rsiSeries: number[];
 
     switch (condition) {
-      case 'oversold-reversal':
+      case "oversold-reversal":
         // Create RSI series that shows oversold reversal
         rsiSeries = PriceSeriesGenerator.rsi({
           periods: rsiPeriod + rsimaPeriod + 5,
           currentRSI: 25, // Below 30 but turning up
-          condition: 'oversold',
-          trend: 'up'
+          condition: "oversold",
+          trend: "up",
         });
         break;
 
-      case 'overbought-reversal':
+      case "overbought-reversal":
         // Create RSI series that shows overbought reversal
         rsiSeries = PriceSeriesGenerator.rsi({
           periods: rsiPeriod + rsimaPeriod + 5,
           currentRSI: 75, // Above 70 but turning down
-          condition: 'overbought',
-          trend: 'down'
+          condition: "overbought",
+          trend: "down",
         });
         break;
 
@@ -561,20 +623,23 @@ export class TechnicalAnalysisScenarios {
         rsiSeries = PriceSeriesGenerator.rsi({
           periods: rsiPeriod + rsimaPeriod + 5,
           currentRSI: 50,
-          condition: 'neutral',
-          trend: 'sideways'
+          condition: "neutral",
+          trend: "sideways",
         });
     }
 
     return {
       price: TEST_PRICES.ETH,
-      analysis: { rsi: rsiSeries }
+      analysis: { rsi: rsiSeries },
     };
   }
 
-  static adx(trend: 'strong' | 'weak', adxValue: number = 25): PriceCacheConfig {
-    const adxSeries = new Array(20).fill(0).map((_, i) => {
-      if (trend === 'strong') {
+  static adx(
+    trend: "strong" | "weak",
+    adxValue: number = 25,
+  ): PriceCacheConfig {
+    const adxSeries = Array.from({ length: 20 }, (_, i) => {
+      if (trend === "strong") {
         return Math.min(100, adxValue + i * 2); // Trending up
       } else {
         return Math.max(0, adxValue - i * 0.5); // Trending down
@@ -583,7 +648,7 @@ export class TechnicalAnalysisScenarios {
 
     return {
       price: TEST_PRICES.ETH,
-      analysis: { adx: adxSeries }
+      analysis: { adx: adxSeries },
     };
   }
 
@@ -591,10 +656,10 @@ export class TechnicalAnalysisScenarios {
     adxThreshold: number = 25,
     adxmaPeriod: number = 5,
     breakoutPct: number = 2.0,
-    currentPrice: number = TEST_PRICES.ETH
+    currentPrice: number = TEST_PRICES.ETH,
   ): PriceCacheConfig {
     // Generate ADX series showing strong trend
-    const adxSeries = new Array(20).fill(0).map((_, i) => {
+    const adxSeries = Array.from({ length: 20 }, (_, i) => {
       if (i < 10) {
         return adxThreshold - 5; // Below threshold initially
       }
@@ -603,14 +668,14 @@ export class TechnicalAnalysisScenarios {
 
     // Generate EMA series for breakout condition
     const emaPrice = currentPrice / (1 + breakoutPct / 100 + 0.01); // Price that will trigger breakout
-    const emaSeries = new Array(20).fill(emaPrice);
+    const emaSeries = Array.from({ length: 20 }, () => emaPrice);
 
     return {
       price: currentPrice,
       analysis: {
         adx: adxSeries,
-        ema: emaSeries
-      }
+        ema: emaSeries,
+      },
     };
   }
 
@@ -618,11 +683,11 @@ export class TechnicalAnalysisScenarios {
     startPrice: number,
     endPrice: number,
     currentPrice: number,
-    stepPct: number = 2.0
+    stepPct: number = 2.0,
   ): PriceCacheConfig {
     return {
       price: currentPrice,
-      analysis: {}
+      analysis: {},
     };
   }
 }
@@ -633,109 +698,115 @@ export const TEST_CONFIGS = {
     distancePct: 3,
     expiry: 1,
     priceMovement: 200,
-    amount: "1.0"
+    amount: "1.0",
   },
   DCA: {
     amount: "5.0",
     intervalDays: 7,
     totalDays: 21,
-    maxPrice: TEST_PRICES.ETH + 200
+    maxPrice: TEST_PRICES.ETH + 200,
   },
   GRID: {
     stepPct: 5.0,
     startPrice: 3900,
     endPrice: 4100,
-    amount: "2.0"
+    amount: "2.0",
   },
   ICEBERG: {
     steps: 3,
     minStepSize: "0.1",
-    amount: "1.0"
+    amount: "1.0",
   },
   MOMENTUM: {
     rsiPeriod: 14,
     rsimaPeriod: 5,
-    amount: "1.0"
+    amount: "1.0",
   },
   RANGE: {
     startPrice: 3980,
     endPrice: 3800,
     stepPct: 2.0,
-    amount: "2.0"
+    amount: "2.0",
   },
   STOP_LIMIT: {
     stopPrice: 4000,
     limitPrice: 4100,
     expiry: 1,
-    amount: "1.0"
+    amount: "1.0",
   },
   TWAP: {
     slices: 4,
     intervalMinutes: 30,
-    amount: "2.0"
+    amount: "2.0",
   },
   BREAKOUT: {
     adxThreshold: 25,
     adxmaPeriod: 5,
     breakoutPct: 2.0,
-    amount: "1.0"
-  }
+    amount: "1.0",
+  },
 } as const;
 
 // Enhanced order test scenarios
 export class OrderTestScenarios {
   static async priceBreakout(
     context: TestContext,
-    orderId: string, 
-    config: typeof TEST_CONFIGS.BREAKOUT
+    orderId: string,
+    config: typeof TEST_CONFIGS.BREAKOUT,
   ): Promise<Order> {
     const breakoutScenario = TechnicalAnalysisScenarios.breakout(
       config.adxThreshold,
       config.adxmaPeriod,
-      config.breakoutPct
+      config.breakoutPct,
     );
     mockPriceCache(breakoutScenario);
     await wait(TEST_TIMEOUTS.MEDIUM);
-    return (await import("@back/services/storage").then(m => m.getOrder(orderId)))!;
+    return (await import("@back/services/storage").then((m) =>
+      m.getOrder(orderId),
+    ))!;
   }
 
   static async gridLevelMovement(
     priceMock: DynamicPriceMock,
     orderId: string,
-    levels: number[]
+    levels: number[],
   ): Promise<Order[]> {
     const results: Order[] = [];
-    
+
     for (const level of levels) {
       priceMock.setPrice(level);
       await wait(TEST_TIMEOUTS.SHORT);
-      const order = await import("@back/services/storage").then(m => m.getOrder(orderId));
+      const order = await import("@back/services/storage").then((m) =>
+        m.getOrder(orderId),
+      );
       if (order) results.push(order);
     }
-    
+
     return results;
   }
 
   static async orderExpiration(
-    orderId: string, 
-    expiryMs: number
+    orderId: string,
+    expiryMs: number,
   ): Promise<Order> {
     await wait(expiryMs);
-    return (await import("@back/services/storage").then(m => m.getOrder(orderId)))!;
+    return (await import("@back/services/storage").then((m) =>
+      m.getOrder(orderId),
+    ))!;
   }
 
   static async multiPriceMovements(
     priceMock: DynamicPriceMock,
     orderId: string,
-    movements: number[]
+    movements: number[],
   ): Promise<Order[]> {
     const results: Order[] = [];
-    
+
     for (const price of movements) {
       const order = await TestScenarios.priceTrigger(priceMock, orderId, price);
       results.push(order);
     }
-    
+
     return results;
   }
 }

@@ -31,7 +31,9 @@ const services = [
 ];
 
 async function startServices() {
-  console.log("🚀 Starting 1edge core services (price tracking + orders + API)...\n");
+  console.log(
+    "🚀 Starting 1edge core services (price tracking + orders + API)...\n",
+  );
 
   const apiPort = process.env.API_PORT || "40005";
   const processes: any[] = [];

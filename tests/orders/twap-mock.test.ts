@@ -18,7 +18,7 @@ describe("TWAP Order Lifecycle Test", () => {
 
   beforeAll(async () => {
     context = await testSuite.setup();
-    
+
     // Mock price cache with static price
     mockPriceCache({ price: TEST_PRICES.ETH });
   });
@@ -29,45 +29,46 @@ describe("TWAP Order Lifecycle Test", () => {
 
   test("TWAP executes multiple intervals", async () => {
     const now = Date.now();
-    
+
     const twapParams: TwapParams = {
       amount: "1.0",
       startDate: now,
       endDate: now + TOTAL_DURATION * 1000,
       interval: INTERVAL_SECONDS * 1000,
-      maxPrice: TEST_PRICES.ETH + 100
+      maxPrice: TEST_PRICES.ETH + 100,
     };
-    
+
     // Create TWAP order using factory
     const order = await OrderFactory.generic(
       context.testWallet,
       OrderType.TWAP,
       twapParams,
-      TEST_PRICES.ETH
+      TEST_PRICES.ETH,
     );
     order.nextTriggerValue = now; // Set initial trigger time
-    
+
     // Create order and verify initial state
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
     logOrderState(await getOrder(order.id), "Initial");
-    
+
     // Wait for multiple executions
     const finalOrder = await TestScenarios.timeTrigger(
       order.id,
-      (TOTAL_DURATION + 5) * 1000
+      (TOTAL_DURATION + 5) * 1000,
     );
-    
+
     logOrderState(finalOrder, "Final");
-    
+
     // Verify TWAP executed multiple times and completed
     expectOrderState(finalOrder, {
-      triggerCount: 'greater-than-zero',
+      triggerCount: "greater-than-zero",
       status: OrderStatus.COMPLETED,
-      type: OrderType.TWAP
+      type: OrderType.TWAP,
     });
-    
-    expect(finalOrder.triggerCount).toBeGreaterThan(1); // Should have executed multiple intervals
-    console.log(`✅ TWAP order executed ${finalOrder.triggerCount} intervals as expected`);
-  }, 60000);
 
+    expect(finalOrder.triggerCount).toBeGreaterThan(1); // Should have executed multiple intervals
+    console.log(
+      `✅ TWAP order executed ${finalOrder.triggerCount} intervals as expected`,
+    );
+  }, 60000);
 });

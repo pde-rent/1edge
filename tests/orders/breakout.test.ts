@@ -14,7 +14,7 @@ import {
   logOrderState,
   TEST_PRICES,
   TEST_TIMEOUTS,
-  TestContext
+  TestContext,
 } from "../utils";
 
 // Test configuration
@@ -41,7 +41,7 @@ describe("Breakout Strategy Lifecycle Test", () => {
       ADX_THRESHOLD,
       ADXMA_PERIOD,
       BREAKOUT_PCT,
-      ETH_PRICE
+      ETH_PRICE,
     );
     mockPriceCache(breakoutScenario);
 
@@ -49,7 +49,7 @@ describe("Breakout Strategy Lifecycle Test", () => {
       amount: "1.0",
       adxThreshold: ADX_THRESHOLD,
       adxmaPeriod: ADXMA_PERIOD,
-      breakoutPct: BREAKOUT_PCT
+      breakoutPct: BREAKOUT_PCT,
     };
 
     // Create order using factory
@@ -57,10 +57,12 @@ describe("Breakout Strategy Lifecycle Test", () => {
       context.testWallet,
       OrderType.RANGE_BREAKOUT,
       rangeBreakoutParams,
-      ETH_PRICE
+      ETH_PRICE,
     );
 
-    console.log(`Testing breakout with ADX threshold ${ADX_THRESHOLD} and ${BREAKOUT_PCT}% breakout`);
+    console.log(
+      `Testing breakout with ADX threshold ${ADX_THRESHOLD} and ${BREAKOUT_PCT}% breakout`,
+    );
 
     // Create order and verify initial state
     await TestScenarios.createStoreOrder(context.orderRegistry, order);
@@ -75,28 +77,32 @@ describe("Breakout Strategy Lifecycle Test", () => {
     // Verify breakout functionality
     expectOrderState(updatedOrder, {
       status: [OrderStatus.PENDING, OrderStatus.ACTIVE],
-      type: OrderType.RANGE_BREAKOUT
+      type: OrderType.RANGE_BREAKOUT,
     });
 
     if (updatedOrder!.triggerCount > 0) {
       console.log(`✅ Breakout order triggered on strong trending conditions`);
       expectOrderState(updatedOrder, { status: OrderStatus.ACTIVE });
     } else {
-      console.log(`ℹ️ Breakout detection may require specific technical patterns`);
+      console.log(
+        `ℹ️ Breakout detection may require specific technical patterns`,
+      );
     }
-
   }, 20000);
 
   test("Breakout requires strong ADX trend", async () => {
     // Mock weak ADX trend scenario
-    const weakTrendScenario = TechnicalAnalysisScenarios.adx('weak', ADX_THRESHOLD - 10);
+    const weakTrendScenario = TechnicalAnalysisScenarios.adx(
+      "weak",
+      ADX_THRESHOLD - 10,
+    );
     mockPriceCache(weakTrendScenario);
 
     const rangeBreakoutParams: RangeBreakoutParams = {
       amount: "0.5",
       adxThreshold: ADX_THRESHOLD,
       adxmaPeriod: ADXMA_PERIOD,
-      breakoutPct: BREAKOUT_PCT
+      breakoutPct: BREAKOUT_PCT,
     };
 
     // Create order using factory
@@ -104,7 +110,7 @@ describe("Breakout Strategy Lifecycle Test", () => {
       context.testWallet,
       OrderType.RANGE_BREAKOUT,
       rangeBreakoutParams,
-      ETH_PRICE
+      ETH_PRICE,
     );
 
     // Verify order doesn't trigger on weak trend
@@ -118,11 +124,9 @@ describe("Breakout Strategy Lifecycle Test", () => {
     expectOrderState(updatedOrder, {
       triggerCount: 0,
       status: OrderStatus.PENDING,
-      type: OrderType.RANGE_BREAKOUT
+      type: OrderType.RANGE_BREAKOUT,
     });
 
     console.log(`✅ Order correctly did not trigger on weak ADX trend`);
-
   }, 15000);
-
 });

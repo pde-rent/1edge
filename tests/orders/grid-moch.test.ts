@@ -13,13 +13,13 @@ import {
   expectOrderState,
   logOrderState,
   TEST_TIMEOUTS,
-  TestContext
+  TestContext,
 } from "../utils";
 
 // Test configuration
 const START_PRICE = 3900; // Grid start price
-const END_PRICE = 4100;   // Grid end price
-const STEP_PCT = 5.0;     // 5% step size = $10 per step (20 steps total)
+const END_PRICE = 4100; // Grid end price
+const STEP_PCT = 5.0; // 5% step size = $10 per step (20 steps total)
 const INITIAL_PRICE = 3950; // Start in middle of grid
 
 describe("Grid Strategy Lifecycle Test", () => {
@@ -38,7 +38,6 @@ describe("Grid Strategy Lifecycle Test", () => {
   });
 
   test("Grid Trading order triggers on price level changes", async () => {
-
     const gridTradingParams: GridTradingParams = {
       amount: "2.0",
       startPrice: START_PRICE,
@@ -54,7 +53,9 @@ describe("Grid Strategy Lifecycle Test", () => {
     const totalLevels = Math.floor(priceRange / stepSize) + 1;
     const initialLevel = Math.floor((INITIAL_PRICE - START_PRICE) / stepSize);
 
-    console.log(`Grid setup: ${START_PRICE} - ${END_PRICE}, step size: ${stepSize}, total levels: ${totalLevels}`);
+    console.log(
+      `Grid setup: ${START_PRICE} - ${END_PRICE}, step size: ${stepSize}, total levels: ${totalLevels}`,
+    );
     console.log(`Starting at price ${INITIAL_PRICE} (level ${initialLevel})`);
 
     // Create grid order using factory
@@ -62,7 +63,7 @@ describe("Grid Strategy Lifecycle Test", () => {
       context.testWallet,
       OrderType.GRID_TRADING,
       gridTradingParams,
-      INITIAL_PRICE
+      INITIAL_PRICE,
     );
 
     // Create and verify initial order state
@@ -71,41 +72,45 @@ describe("Grid Strategy Lifecycle Test", () => {
 
     // Simulate price movement to trigger grid level change
     const newPriceDown = INITIAL_PRICE - stepSize;
-    console.log(`Price moved from ${INITIAL_PRICE} to ${newPriceDown} (level change)`);
-    
+    console.log(
+      `Price moved from ${INITIAL_PRICE} to ${newPriceDown} (level change)`,
+    );
+
     const updatedOrder1 = await TestScenarios.priceTrigger(
       priceMock,
       order.id,
       newPriceDown,
-      TEST_TIMEOUTS.MEDIUM
+      TEST_TIMEOUTS.MEDIUM,
     );
     logOrderState(updatedOrder1, "After first price movement");
 
     // Move price in opposite direction to trigger another level
     const newPriceUp = INITIAL_PRICE + stepSize;
     console.log(`Price moved to ${newPriceUp} (another level change)`);
-    
+
     const updatedOrder2 = await TestScenarios.priceTrigger(
       priceMock,
       order.id,
       newPriceUp,
-      TEST_TIMEOUTS.MEDIUM
+      TEST_TIMEOUTS.MEDIUM,
     );
     logOrderState(updatedOrder2, "After second price movement");
 
     // Verify grid trading functionality
     expectOrderState(updatedOrder2, {
       status: [OrderStatus.PENDING, OrderStatus.ACTIVE],
-      type: OrderType.GRID_TRADING
+      type: OrderType.GRID_TRADING,
     });
 
     if (updatedOrder2.triggerCount > 0) {
-      console.log(`✅ Grid trading order triggered ${updatedOrder2.triggerCount} times on level changes`);
+      console.log(
+        `✅ Grid trading order triggered ${updatedOrder2.triggerCount} times on level changes`,
+      );
       expectOrderState(updatedOrder2, { status: OrderStatus.ACTIVE });
     } else {
-      console.log(`ℹ️  Grid trading level detection may require more specific conditions`);
+      console.log(
+        `ℹ️  Grid trading level detection may require more specific conditions`,
+      );
     }
-
   }, 20000);
-
 });
