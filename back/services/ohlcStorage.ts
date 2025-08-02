@@ -3,7 +3,7 @@
 import { Database } from "bun:sqlite";
 import { join } from "path";
 import { mkdir, access } from "fs/promises";
-import type { Symbol } from "@common/types";
+import type { PairSymbol } from "@common/types";
 import { logger } from "@back/utils/logger";
 import ccxt from "ccxt";
 
@@ -154,7 +154,7 @@ export class OHLCStorageService {
   /**
    * Get pair name from symbol (extract the base/quote pair)
    */
-  private getPairFromSymbol(symbol: Symbol): string {
+  private getPairFromSymbol(symbol: PairSymbol): string {
     // Extract pair from symbol like "binance:spot:BTCUSDT" -> "BTCUSDT"
     const parts = symbol.split(":");
     return parts[parts.length - 1];
@@ -164,7 +164,7 @@ export class OHLCStorageService {
    * Convert internal symbol format to CCXT format
    * "binance:spot:BTCUSDT" -> "BTC/USDT"
    */
-  private getCCXTSymbol(symbol: Symbol): string {
+  private getCCXTSymbol(symbol: PairSymbol): string {
     const pair = this.getPairFromSymbol(symbol);
 
     // Convert common pairs to CCXT format with slash
@@ -183,7 +183,7 @@ export class OHLCStorageService {
    * Process real-time price update and compute OHLC candles
    */
   async processPriceUpdate(
-    symbol: Symbol,
+    symbol: PairSymbol,
     price: number,
     volume: number = 0,
   ): Promise<void> {
@@ -381,7 +381,7 @@ export class OHLCStorageService {
    * Get OHLC candles for a pair and timeframe
    */
   async getCandles(
-    symbol: Symbol,
+    symbol: PairSymbol,
     timeframe: OHLCTimeframe,
     startTime?: number,
     endTime?: number,
@@ -459,7 +459,7 @@ export class OHLCStorageService {
   /**
    * Run sanity check on historical data and fill gaps if needed
    */
-  async runDataSanityCheck(symbols: Symbol[]): Promise<void> {
+  async runDataSanityCheck(symbols: PairSymbol[]): Promise<void> {
     logger.info("Running OHLC data sanity check...");
 
     const now = Date.now();
@@ -503,7 +503,7 @@ export class OHLCStorageService {
    * Fill historical data using CCXT from Binance
    */
   private async fillHistoricalData(
-    symbol: Symbol,
+    symbol: PairSymbol,
     timeframe: OHLCTimeframe,
   ): Promise<void> {
     const pair = this.getPairFromSymbol(symbol);
@@ -796,7 +796,7 @@ export class OHLCStorageService {
   /**
    * Get statistics about stored data
    */
-  async getDataStats(symbol: Symbol): Promise<Record<string, any>> {
+  async getDataStats(symbol: PairSymbol): Promise<Record<string, any>> {
     const pair = this.getPairFromSymbol(symbol);
     const stats: Record<string, any> = {};
 

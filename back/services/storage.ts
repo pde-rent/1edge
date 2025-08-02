@@ -274,30 +274,30 @@ class StorageService {
       maker, receiver, salt, signature, size, remaining_size,
       trigger_count, next_trigger_value, trigger_price,
       filled_amount, created_at, executed_at, cancelled_at, tx_hash,
-      network, expiry, user_signed_payload, one_inch_order_hashes, raw_data
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      network, expiry, one_inch_order_hashes, raw_data
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
-    const makingAmount = order?.makingAmount || order.size.toString();
-    const takingAmount = order?.takingAmount || "0";
-    const remainingSize = order?.remainingSize || order.size.toString();
+    const makingAmount = order.params?.makingAmount?.toString() || "0";
+    const takingAmount = order.params?.takingAmount?.toString() || "0";
+    const remainingMakerAmount = order.remainingMakerAmount || 0;
 
     stmt.run(
       order.id,
       order.orderHash || null,
       order.strategyId || null,
-      order.type,
+      order.params?.type || "UNKNOWN",
       order.status,
-      order.makerAsset,
-      order.takerAsset,
+      order.params?.makerAsset || "",
+      order.params?.takerAsset || "",
       makingAmount, // Ensure this is never null
       takingAmount, // Ensure this is never null
-      order.maker,
-      order.receiver || null,
-      order.salt || null,
+      order.params?.maker || "",
+      order.params?.receiver || null,
+      order.params?.salt || null,
       order.signature || null,
-      order.size.toString(), // Convert to string to be safe
-      remainingSize,
+      makingAmount, // Use makingAmount as size for compatibility
+      remainingMakerAmount.toString(),
       order.triggerCount || 0,
       order.nextTriggerValue ? String(order.nextTriggerValue) : null,
       order.triggerPrice ? String(order.triggerPrice) : null,
@@ -307,10 +307,7 @@ class StorageService {
       order.cancelledAt || null,
       order.txHash || null,
       1, // Default to Ethereum mainnet
-      order.expiry || null,
-      typeof order.userSignedPayload === "string"
-        ? order.userSignedPayload
-        : JSON.stringify(order.userSignedPayload || {}),
+      order.params?.expiry || null,
       order.oneInchOrderHashes
         ? JSON.stringify(order.oneInchOrderHashes)
         : null,

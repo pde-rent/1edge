@@ -4,11 +4,18 @@ import { logger } from "@back/utils/logger";
 import { getConfig } from "./config";
 import { getCachedTokenDecimals, cacheTokenDecimals } from "./storage";
 import { priceCache } from "./priceCache";
+import {
+  addressToSymbol,
+  mapSymbolForFeed,
+  parseTradingPair,
+  symbolToAddress,
+} from "@common/utils";
 import type {
   OneInchOrder,
   OrderbookLevel,
   OneInchOrderBook,
   TokenMapping,
+  PairSymbol,
 } from "@common/types";
 
 /**
@@ -53,8 +60,8 @@ export class OrderbookReconstructor {
 
     try {
       // Fetch token decimals for proper scaling - no hardcoded defaults
-      let makerAssetDecimals: number;
-      let takerAssetDecimals: number;
+      let makerAssetDecimals: number = 18; // Default fallback
+      let takerAssetDecimals: number = 18; // Default fallback
 
       if (makerAsset && takerAsset) {
         try {
@@ -111,8 +118,8 @@ export class OrderbookReconstructor {
       // Separate orders into bids and asks (no scaling needed here)
       const result = this.separateBidsAndAsksWithSpotPrice(
         allOrders,
-        makerAsset,
-        takerAsset,
+        makerAsset!,
+        takerAsset!,
         spotPrice,
       );
       const bidOrders = result.bidOrders;
@@ -224,14 +231,19 @@ export class OrderbookReconstructor {
   ): Promise<number | null> {
     try {
       // Map addresses to symbols for collector lookup
-      const baseSymbol = this.getSymbolFromAddress(baseAsset, chain);
-      const quoteSymbol = this.getSymbolFromAddress(quoteAsset, chain);
+      const baseSymbol = addressToSymbol(baseAsset, this.tokenMapping, chain);
+      const quoteSymbol = addressToSymbol(quoteAsset, this.tokenMapping, chain);
 
       logger.info(
         `Mapping addresses to symbols: ${baseAsset} -> ${baseSymbol}, ${quoteAsset} -> ${quoteSymbol}`,
       );
 
-      if (!baseSymbol || !quoteSymbol) {
+      if (
+        !baseSymbol ||
+        baseSymbol === "UNKNOWN" ||
+        !quoteSymbol ||
+        quoteSymbol === "UNKNOWN"
+      ) {
         logger.warn(
           `Cannot map addresses to symbols: ${baseAsset} -> ${baseSymbol}, ${quoteAsset} -> ${quoteSymbol}`,
         );
@@ -239,18 +251,8 @@ export class OrderbookReconstructor {
       }
 
       // Map symbols to feed format (WETH -> ETH, WBTC -> BTC for feeds)
-      const feedBaseSymbol =
-        baseSymbol === "WETH"
-          ? "ETH"
-          : baseSymbol === "WBTC"
-            ? "BTC"
-            : baseSymbol;
-      const feedQuoteSymbol =
-        quoteSymbol === "WETH"
-          ? "ETH"
-          : quoteSymbol === "WBTC"
-            ? "BTC"
-            : quoteSymbol;
+      const feedBaseSymbol = mapSymbolForFeed(baseSymbol);
+      const feedQuoteSymbol = mapSymbolForFeed(quoteSymbol);
 
       // Construct feed symbol based on config ticker format
       const pairSymbol = `${feedBaseSymbol}${feedQuoteSymbol}`;
@@ -266,7 +268,7 @@ export class OrderbookReconstructor {
       );
 
       // Get price from priceCache (using same pattern as frontend WebSocket subscriber)
-      const priceData = priceCache.getPrice(feedSymbol);
+      const priceData = priceCache.getPrice(feedSymbol as PairSymbol);
 
       logger.info(
         `Looking for price data for ${feedSymbol}, found: ${priceData ? "YES" : "NO"}`,
@@ -296,23 +298,14 @@ export class OrderbookReconstructor {
 
   /**
    * Maps token address to symbol for collector lookup using config
+   * @deprecated Use addressToSymbol from common/utils instead
    */
   private getSymbolFromAddress(
     address: string,
     chain: number = 1,
   ): string | null {
-    const addr = address.toLowerCase();
-    const chainStr = chain.toString();
-
-    // Search through token mapping from config
-    for (const [symbol, chainAddresses] of Object.entries(this.tokenMapping)) {
-      const configAddress = chainAddresses[chainStr];
-      if (configAddress && configAddress.toLowerCase() === addr) {
-        return symbol;
-      }
-    }
-
-    return null;
+    const result = addressToSymbol(address, this.tokenMapping, chain);
+    return result === "UNKNOWN" ? null : result;
   }
 
   /**
@@ -551,7 +544,7 @@ export class OrderbookReconstructor {
       const totalAmountScaled = ordersAtLevel.reduce((sum, order) => {
         if (isBid) {
           // Bid: makerAsset is quote (USDT), takerAsset is base (WETH)
-          // Use makerAmount (USDT) directly - but makerAssetDecimals here refers to USDT decimals = 6
+          // Use makingAmount (USDT) directly - but makerAssetDecimals here refers to USDT decimals = 6
           const rawMakingAmount = parseFloat(order.remainingMakerAmount || "0");
           const scaledMakingAmount =
             rawMakingAmount / Math.pow(10, takerAssetDecimals); // Use takerAssetDecimals (USDT = 6)
@@ -578,8 +571,8 @@ export class OrderbookReconstructor {
 
     // Sort levels by price
     levels.sort((a, b) => {
-      const priceA = parseFloat(a.price);
-      const priceB = parseFloat(b.price);
+      const priceA = a.price;
+      const priceB = b.price;
       return descending ? priceB - priceA : priceA - priceB;
     });
 
@@ -629,9 +622,9 @@ export class OrderbookReconstructor {
       }, 0);
 
       levels.push({
-        price,
-        amount: totalAmount.toString(),
-        total: "0", // will be set later
+        price: parseFloat(price),
+        amount: totalAmount,
+        total: 0, // will be set later
         count: ordersAtLevel.length,
         orders: ordersAtLevel,
       });
@@ -639,8 +632,8 @@ export class OrderbookReconstructor {
 
     // Sort levels by price
     levels.sort((a, b) => {
-      const priceA = parseFloat(a.price);
-      const priceB = parseFloat(b.price);
+      const priceA = a.price;
+      const priceB = b.price;
       return descending ? priceB - priceA : priceA - priceB;
     });
 
@@ -670,27 +663,12 @@ export class OrderbookReconstructor {
    * Parse a trading pair symbol like "BTCUSDT" into base and quote tokens
    * @param pairSymbol - Trading pair symbol (e.g., "BTCUSDT", "ETHUSDC")
    * @returns Object with base and quote token symbols
+   * @deprecated Use parseTradingPair from common/utils instead
    */
   private parseTradingPair(
     pairSymbol: string,
   ): { base: string; quote: string } | null {
-    // Remove common prefixes/suffixes if they exist
-    const cleanSymbol = pairSymbol.replace(/^agg:spot:/, "");
-
-    // Common quote assets (in order of priority for matching)
-    const quoteAssets = ["USDT", "USDC", "WETH", "WBTC", "ETH", "BTC"];
-
-    for (const quote of quoteAssets) {
-      if (cleanSymbol.endsWith(quote)) {
-        const base = cleanSymbol.slice(0, -quote.length);
-        if (base.length > 0) {
-          return { base, quote };
-        }
-      }
-    }
-
-    logger.warn(`Unable to parse trading pair: ${pairSymbol}`);
-    return null;
+    return parseTradingPair(pairSymbol);
   }
 
   /**
@@ -698,23 +676,14 @@ export class OrderbookReconstructor {
    * @param symbol - Token symbol (e.g., "WBTC", "USDT")
    * @param chain - Chain ID
    * @returns Contract address or null if not found
+   * @deprecated Use symbolToAddress from common/utils instead
    */
   private resolveTokenAddress(symbol: string, chain: number): string | null {
-    const chainStr = chain.toString();
-    const tokenConfig = this.tokenMapping[symbol];
-
-    if (!tokenConfig) {
-      logger.warn(`Token mapping not found for symbol: ${symbol}`);
-      return null;
-    }
-
-    const address = tokenConfig[chainStr];
+    const address = symbolToAddress(symbol, this.tokenMapping, chain);
     if (!address) {
       logger.warn(`Token address not found for ${symbol} on chain ${chain}`);
-      return null;
     }
-
-    return address;
+    return address || null;
   }
 
   /**
@@ -796,7 +765,7 @@ export class OrderbookReconstructor {
 
     // Get RPC URL from keeper config (reuse existing network config)
     const config = getConfig();
-    const networkConfig = config.services?.keeper?.networks?.[chainId];
+    const networkConfig = config.networks?.[chainId];
     if (!networkConfig?.rpcUrl) {
       throw new Error(`No RPC URL configured for chain ${chainId}`);
     }

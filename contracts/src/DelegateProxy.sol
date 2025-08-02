@@ -6,7 +6,6 @@ import "solady/src/auth/Ownable.sol";
 import "solady/src/utils/ReentrancyGuard.sol";
 import "./deps/interfaces/IOrderMixin.sol";
 import "./deps/interfaces/IPreInteraction.sol";
-import "./deps/interfaces/IPostInteraction.sol";
 import "./deps/libraries/AddressLib.sol";
 
 /// @notice ERC1271 interface for signature validation
@@ -16,7 +15,7 @@ interface IERC1271 {
 
 /// @title DelegateProxy
 /// @dev Minimal contract for 1inch limit order creation via approved keepers
-contract DelegateProxy is IERC1271, Ownable, ReentrancyGuard, IPreInteraction, IPostInteraction {
+contract DelegateProxy is IERC1271, Ownable, ReentrancyGuard, IPreInteraction {
   using AddressLib for Address;
 
   struct OrderInfo {
@@ -141,25 +140,10 @@ contract DelegateProxy is IERC1271, Ownable, ReentrancyGuard, IPreInteraction, I
   ) external override only1inch nonReentrant {
     OrderInfo storage info = orders[orderHash];
     info.remainingAmount -= makingAmount;
-    ERC20(order.makerAsset.get()).transferFrom(info.maker, address(this), makingAmount);
-  }
-
-  /// @notice Post-interaction: update remaining amount
-  function postInteraction(
-    IOrderMixin.Order calldata,
-    bytes calldata,
-    bytes32 orderHash,
-    address,
-    uint256,
-    uint256,
-    uint256 remainingMakingAmount,
-    bytes calldata
-  ) external override only1inch {
-    if (remainingMakingAmount == 0) {
+    if (info.remainingAmount == 0) {
       delete orders[orderHash];
-    } else {
-      orders[orderHash].remainingAmount = remainingMakingAmount;
     }
+    ERC20(order.makerAsset.get()).transferFrom(info.maker, address(this), makingAmount);
   }
 
   /// @notice ERC1271 signature validation

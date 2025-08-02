@@ -5,11 +5,11 @@ import { createServer } from "http";
 import { getConfig } from "./config";
 import { getTicker, getActiveTickers } from "./marketData";
 import { logger } from "@back/utils/logger";
-import type { Symbol, AggregatedTicker, TickerFeed } from "@common/types";
+import type { PairSymbol, AggregatedTicker, TickerFeed } from "@common/types";
 import { PubSubClient } from "./pubSubClient";
 
 interface ClientSubscription {
-  symbols: Set<Symbol>;
+  symbols: Set<PairSymbol>;
 }
 
 class WebSocketService {
@@ -18,7 +18,7 @@ class WebSocketService {
   private clients: Map<WebSocket, ClientSubscription> = new Map();
   private port: number;
   private pubSubClient: PubSubClient;
-  private latestPrices: Map<Symbol, any> = new Map();
+  private latestPrices: Map<PairSymbol, any> = new Map();
 
   constructor() {
     const config = getConfig();
@@ -33,10 +33,12 @@ class WebSocketService {
     await this.pubSubClient.connect();
 
     // Subscribe to all price updates
-    this.pubSubClient.subscribeToAllPrices((symbol: Symbol, priceData: any) => {
-      this.latestPrices.set(symbol, priceData);
-      this.broadcastPriceUpdate(symbol, priceData);
-    });
+    this.pubSubClient.subscribeToAllPrices(
+      (symbol: PairSymbol, priceData: any) => {
+        this.latestPrices.set(symbol, priceData);
+        this.broadcastPriceUpdate(symbol, priceData);
+      },
+    );
 
     // Create HTTP server for WebSocket upgrade
     this.server = createServer();
@@ -82,7 +84,7 @@ class WebSocketService {
   /**
    * Broadcast a price update to all subscribed clients
    */
-  private broadcastPriceUpdate(symbol: Symbol, priceData: any) {
+  private broadcastPriceUpdate(symbol: PairSymbol, priceData: any) {
     if (this.clients.size === 0) return;
 
     const message = JSON.stringify({
@@ -193,7 +195,7 @@ class WebSocketService {
   private handleSubscribe(
     ws: WebSocket,
     client: ClientSubscription,
-    symbols: Symbol[],
+    symbols: PairSymbol[],
   ) {
     if (!Array.isArray(symbols)) {
       ws.send(
@@ -235,7 +237,7 @@ class WebSocketService {
   private handleUnsubscribe(
     ws: WebSocket,
     client: ClientSubscription,
-    symbols: Symbol[],
+    symbols: PairSymbol[],
   ) {
     if (!Array.isArray(symbols)) {
       ws.send(
@@ -262,7 +264,7 @@ class WebSocketService {
     logger.debug(`🛑 Client unsubscribed from: ${symbols.join(", ")}`);
   }
 
-  private async handleGetTicker(ws: WebSocket, symbol: Symbol) {
+  private async handleGetTicker(ws: WebSocket, symbol: PairSymbol) {
     try {
       const ticker = await getTicker(symbol);
       ws.send(
@@ -283,7 +285,7 @@ class WebSocketService {
   }
 
   private handleGetAllTickers(ws: WebSocket) {
-    const tickers: Record<Symbol, any> = {};
+    const tickers: Record<PairSymbol, any> = {};
     for (const [symbol, data] of this.latestPrices) {
       tickers[symbol] = data;
     }

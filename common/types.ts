@@ -59,7 +59,7 @@ export type ServiceId = (typeof services)[number]["id"];
  * "binance:spot:BTCUSDT"
  * "coinbase:spot:BTC-USD"
  */
-export type Symbol = `${string}:${string}:${string}`;
+export type PairSymbol = `${string}:${string}:${string}`;
 
 /**
  * Network configuration for 1inch
@@ -77,7 +77,7 @@ export interface NetworkConfig {
 /**
  * Represents a 1inch limit order
  */
-export interface LimitOrderParams {
+export interface OneInchLimitOrderParams {
   makerAsset: string; // Token address
   takerAsset: string; // Token address
   makingAmount: string; // Amount of maker asset
@@ -91,45 +91,6 @@ export interface LimitOrderParams {
 }
 
 /**
- * Extended order information with metadata
- * Includes all fields needed for UI table display
- */
-export interface Order extends LimitOrderParams {
-  // Core identification
-  id: string; // Internal order ID
-  orderHash?: string; // On-chain order hash (may have multiple for complex orders)
-  signature?: string; // User's EVM signature for authentication
-
-  // UI Table columns
-  type: OrderType;
-  status: OrderStatus;
-  size: string; // Total order size
-  remainingSize: string; // Remaining unfilled size
-  createdAt: number; // Created at timestamp
-
-  // Trigger information
-  triggerCount: number; // Number of times triggered
-  nextTriggerValue?: number | string; // Next trigger value/condition
-
-  // Order execution tracking
-  strategyId?: string; // Associated strategy if any
-  triggerPrice?: number; // Price trigger for execution
-  executedAt?: number;
-  cancelledAt?: number;
-  filledAmount?: string;
-  txHash?: string; // Transaction hash if executed
-
-  // Order configuration params (union type based on order type)
-  params?: OrderParams;
-
-  // 1inch order hashes (for complex orders that spawn multiple 1inch orders)
-  oneInchOrderHashes?: string[]; // Array of 1inch order hashes
-
-  // Raw user-signed payload for verification
-  userSignedPayload?: string;
-}
-
-/**
  * 1inch Limit Order structure from API
  */
 export interface OneInchOrder {
@@ -138,22 +99,12 @@ export interface OneInchOrder {
   remainingMakerAmount: string;
   makerBalance: string;
   makerAllowance: string;
-  data: {
-    makerAsset: string;
-    takerAsset: string;
-    salt: string;
-    receiver?: string;
-    makingAmount: string;
-    takingAmount: string;
-    maker: string;
-    extension?: string;
-    makerTraits?: string;
-  };
   makerRate: string;
   takerRate: string;
   isMakerContract: boolean;
   orderInvalidReason: string | null;
   signature: string;
+  data: OneInchLimitOrderParams;
 }
 
 /**
@@ -182,6 +133,133 @@ export interface OneInchOrderBook {
     spread: string | null;
     spotPrice?: number | null;
   };
+}
+
+/**
+ * Base order interface with common attributes
+ */
+export interface BaseOrderParams {
+  // Order definition
+  type: OrderType;
+  salt?: string; // Order salt for uniqueness
+  expiry?: number; // Optional expiry (timestamp or days)
+
+  // Optional 1inch-specific fields (for when order becomes a single 1inch order)
+  receiver?: string; // Optional receiver address
+  maker: string; // Maker address
+
+  chainId?: number; // Chain ID for the order (defaults to 1 if not specified)
+  makerAsset: string; // Token address for asset being sold
+  takerAsset: string; // Token address for asset being bought
+
+  // Optional amounts (may not be pre-defined for complex orders)
+  makingAmount?: number; // Total amount of maker asset (if known) - float64
+  takingAmount?: number; // Total amount of taker asset (if known) - float64
+}
+
+/**
+ * TWAP order configuration
+ * Params: makingAmount, startDate, endDate, interval, maxPrice
+ */
+export interface TwapParams extends BaseOrderParams {
+  startDate: number; // Timestamp
+  endDate: number; // Timestamp
+  interval: number; // Interval in ms
+  maxPrice?: number; // Maximum price per unit (float64)
+}
+
+/**
+ * TWAP order alias for backward compatibility
+ */
+export type TWAPParams = TwapParams;
+
+/**
+ * Range order configuration
+ * Params: makingAmount, startPrice, endPrice, stepPct, expiry
+ */
+export interface RangeOrderParams extends BaseOrderParams {
+  startPrice: number; // Start price (float64)
+  endPrice: number; // End price (float64)
+  stepPct: number; // Step percentage (float64)
+}
+
+/**
+ * Range order alias for backward compatibility
+ */
+export type RangeParams = RangeOrderParams;
+
+/**
+ * Iceberg order configuration
+ * Params: makingAmount, startPrice, endPrice, steps, expiry
+ */
+export interface IcebergParams extends BaseOrderParams {
+  startPrice: number; // Start price (float64)
+  endPrice: number; // End price (float64)
+  steps: number; // Number of steps
+  amount?: number; // Amount per step (backward compatibility)
+}
+
+/**
+ * Momentum Reversal Trading configuration
+ */
+export interface MomentumReversalParams extends BaseOrderParams {
+  rsiPeriod: number;
+  rsimaPeriod: number;
+  tpPct: number;
+  slPct: number;
+}
+
+/**
+ * Breakout Trading configuration
+ * Params: adxPeriod, adxmaPeriod, emaPeriod, tpPct, slPct
+ */
+export interface RangeBreakoutParams extends BaseOrderParams {
+  adxPeriod: number;
+  adxmaPeriod: number;
+  emaPeriod: number;
+  tpPct: number;
+  slPct: number;
+  adxThreshold?: number; // ADX threshold for breakout detection
+  breakoutPct?: number; // Breakout percentage threshold
+}
+
+/**
+ * Stop-Limit Order configuration
+ */
+export interface StopLimitParams extends BaseOrderParams {
+  stopPrice: number; // Stop price (float64)
+  limitPrice: number; // Limit price (float64)
+}
+
+/**
+ * Chase-Limit Order configuration
+ */
+export interface ChaseLimitParams extends BaseOrderParams {
+  distancePct: number; // Distance percentage (float64)
+  maxPrice?: number; // Maximum price per unit (float64)
+}
+
+/**
+ * Dollar-Cost Averaging configuration
+ * Params: makingAmount, startDate, interval, maxPrice
+ */
+export interface DCAParams extends BaseOrderParams {
+  startDate: number; // Timestamp
+  interval: number; // Days
+  maxPrice?: number; // Maximum price per unit (float64)
+}
+
+/**
+ * Grid Trading configuration
+ * Params: makingAmount, startPrice, endPrice, stepPct, stepMultiplier, singleSide, tpPct
+ */
+export interface GridTradingParams extends BaseOrderParams {
+  startPrice: number; // Start price (float64)
+  endPrice: number; // End price (float64)
+  stepPct: number; // Step percentage (float64)
+  stepMultiplier?: number; // Step multiplier (float64)
+  singleSide: boolean;
+  tpPct?: number; // Take profit percentage (float64)
 }
 
 export enum OrderType {
@@ -216,109 +294,40 @@ export enum OrderStatus {
 }
 
 /**
- * TWAP order configuration
- * Params: amount, startDate, endDate, interval, maxPrice
+ * 1edge internal order - represents a high-level order that can spawn multiple 1inch orders
+ * This is our internal order tracking system, separate from individual 1inch limit orders
  */
-export interface TwapParams {
-  amount: string;
-  startDate: number; // Timestamp
-  endDate: number; // Timestamp
-  interval: number; // Interval in ms
-  maxPrice?: number;
-}
+export interface Order {
+  // Core identification
+  id: string; // Internal order ID (hash-based)
+  signature: string; // User's EVM signature for authentication
 
-/**
- * Range order configuration
- * Params: amount, startPrice, endPrice, stepPct, expiry
- */
-export interface RangeOrderParams {
-  amount: string;
-  startPrice: number;
-  endPrice: number;
-  stepPct: number;
-  expiry: number; // Days
-}
+  // Order configuration params (union type based on order type)
+  params?: OrderParams;
 
-/**
- * Iceberg order configuration
- * Params: amount, startPrice, endPrice, steps, expiry
- */
-export interface IcebergParams {
-  amount: string;
-  startPrice: number;
-  endPrice: number;
-  steps: number;
-  expiry: number; // Days
-}
+  // Order status and tracking
+  status: OrderStatus;
+  remainingMakerAmount: number; // Remaining unfilled amount (float64 not bigint)
+  triggerCount: number; // Number of times triggered
 
-/**
- * Momentum Reversal Trading configuration
- */
-export interface MomentumReversalParams {
-  amount: string;
-  rsiPeriod: number;
-  rsimaPeriod: number;
-  tpPct: number;
-  slPct: number;
-}
+  // Optional execution tracking
+  nextTriggerValue?: number | string; // Next trigger value/condition
+  createdAt: number; // Created at timestamp
+  executedAt?: number;
+  cancelledAt?: number;
+  filledAmount?: string;
+  txHash?: string; // Transaction hash if executed
 
-/**
- * Breakout Trading configuration
- * Params: adxPeriod, adxmaPeriod, emaPeriod, tpPct, slPct
- * Note: Missing amount param in docs - should be added
- */
-export interface RangeBreakoutParams {
-  amount: string;
-  adxPeriod: number;
-  adxmaPeriod: number;
-  emaPeriod: number;
-  tpPct: number;
-  slPct: number;
-}
+  // 1inch order tracking (1edge order can manage multiple 1inch orders)
+  oneInchOrderHashes?: string[]; // Array of 1inch order hashes spawned by this order
 
-/**
- * Stop-Limit Order configuration
- */
-export interface StopLimitParams {
-  amount: string;
-  stopPrice: number;
-  limitPrice: number;
-  expiry: number; // Days
-}
-
-/**
- * Chase-Limit Order configuration
- */
-export interface ChaseLimitParams {
-  amount: string;
-  distancePct: number;
-  expiry: number; // Days
-  maxPrice?: number;
-}
-
-/**
- * Dollar-Cost Averaging configuration
- * Params: amount, startDate, interval, maxPrice
- */
-export interface DCAParams {
-  amount: string;
-  startDate: number; // Timestamp
-  interval: number; // Days
-  maxPrice?: number;
-}
-
-/**
- * Grid Trading configuration
- * Params: amount, startPrice, endPrice, stepPct, stepMultiplier, singleSide, tpPct
- */
-export interface GridTradingParams {
-  amount: string;
-  startPrice: number;
-  endPrice: number;
-  stepPct: number;
-  stepMultiplier?: number;
-  singleSide: boolean;
-  tpPct?: number; // Take profit percentage
+  // Missing properties for compatibility
+  orderHash?: string; // Primary 1inch order hash (if applicable)
+  strategyId?: string; // Strategy ID for strategy-based orders
+  receiver?: string; // Receiver address (if different from maker)
+  salt?: string; // Salt value for uniqueness
+  expiry?: number; // Expiry timestamp
+  triggerPrice?: number; // Trigger price for conditional orders
 }
 
 /**
@@ -342,7 +351,7 @@ export interface StrategyConfig {
   id: string;
   name: string;
   type: OrderType;
-  symbols: Symbol[]; // Price feeds to monitor
+  symbols: PairSymbol[]; // Price feeds to monitor
   network: number; // Chain ID
   enabled: boolean;
   // Single params attribute with union type
@@ -422,11 +431,12 @@ export interface TickerAnalysis {
   atr?: number[]; // Average True Range
   mom?: number[]; // Momentum
   volume?: number[]; // Volume analysis
+  adx?: number[]; // Average Directional Index
 }
 
 /** Ticker feed with analysis */
 export interface TickerFeed {
-  id: Symbol;
+  id: PairSymbol;
   exchange: string;
   tf: TimeFrame;
   status: FeedStatus;
@@ -438,16 +448,16 @@ export interface TickerFeed {
 
 /** Aggregated ticker configuration */
 export interface AggregatedTickerConfig {
-  id: Symbol;
+  id: PairSymbol;
   name: string;
   tf: TimeFrame;
   lookback: number; // Lookback period in seconds
-  sources: Record<Symbol, { weight: number }>;
+  sources: Record<PairSymbol, { weight: number }>;
 }
 
 /** Aggregated ticker data */
 export interface AggregatedTicker extends TickerFeed {
-  sources: Record<Symbol, TickerFeed>;
+  sources: Record<PairSymbol, TickerFeed>;
 }
 
 // Storage configuration
@@ -459,7 +469,7 @@ export interface StorageConfig {
 // Collector service configuration
 export interface CollectorConfig {
   pollIntervalMs: number;
-  tickers: Record<Symbol, AggregatedTickerConfig>;
+  tickers: Record<PairSymbol, AggregatedTickerConfig>;
 }
 
 // Keeper service configuration
@@ -550,7 +560,7 @@ export interface Strategy extends StrategyConfig {
 export interface Position {
   id: string;
   strategyId: string;
-  symbol: Symbol;
+  symbol: PairSymbol;
   side: "LONG" | "SHORT";
   entryPrice: number;
   currentPrice?: number;

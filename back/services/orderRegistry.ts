@@ -22,9 +22,10 @@ import { SERVICE_PORTS } from "@common/constants";
 class OrderRegistryService {
   private config: KeeperConfig;
   private isRunning: boolean = false;
-  private watchers: Map<string, boolean> = new Map();
+  private activeOrders: Set<string> = new Set(); // Track active order IDs
   private mockMode: boolean = false;
   private server?: any;
+  private watchInterval?: any; // Single interval for all orders
 
   constructor(mockMode: boolean = false) {
     this.config = getServiceConfig("keeper");
@@ -36,30 +37,36 @@ class OrderRegistryService {
     logger.info("Starting Order Registry service...");
     this.isRunning = true;
 
-    // Start HTTP server
-    await this.startHttpServer();
+    // Start HTTP server (skip in mock mode)
+    if (!this.mockMode) {
+      await this.startHttpServer();
+    }
 
-    // Reliability: Load pending orders from database to restart watchers
-    // This ensures watchers are restored after server shutdown/restart
-    const pendingOrders = await getPendingOrders();
-    logger.info(
-      `Restoring ${pendingOrders.length} pending orders from database`,
-    );
-
-    for (const order of pendingOrders) {
-      this.startWatcher(order);
-      logger.debug(`Restored watcher for order ${order.id}`);
+    // Load active orders from database
+    const activeOrders = await getActiveOrders();
+    for (const order of activeOrders) {
+      this.activeOrders.add(order.id);
     }
 
     logger.info(
-      `Order Registry service started with ${pendingOrders.length} active watchers`,
+      `Order Registry service started with ${activeOrders.length} active orders`,
     );
+
+    // Start a single watch interval that processes all orders
+    this.startWatchInterval();
   }
 
   async stop() {
     logger.info("Stopping Order Registry service...");
     this.isRunning = false;
-    this.watchers.clear();
+
+    // Stop watch interval
+    if (this.watchInterval) {
+      clearInterval(this.watchInterval);
+      this.watchInterval = undefined;
+    }
+
+    this.activeOrders.clear();
 
     // Stop HTTP server
     if (this.server) {
@@ -74,53 +81,31 @@ class OrderRegistryService {
     if (!this.validateOrderSignature(order)) {
       throw new Error("Invalid order signature");
     }
-    if (!order.makingAmount && order.params?.amount) {
-      // For TWAP orders, use the total amount from params
-      if (order.type === OrderType.TWAP) {
-        order.makingAmount = order.params.amount;
-      } else {
-        // For other order types, use size as fallback
-        order.makingAmount = order.size.toString();
-      }
-    } else if (!order.makingAmount) {
-      // Fallback to size if no params.amount
-      order.makingAmount = order.size.toString();
-    }
 
-    if (!order.takingAmount) {
-      // Calculate taking amount based on maxPrice if available
-      if (order.params?.maxPrice) {
-        const makingAmountNum = parseFloat(order.makingAmount);
-        const maxPrice = order.params.maxPrice;
-        order.takingAmount = (makingAmountNum * maxPrice * 1e6).toString();
-      } else {
-        // Fallback calculation - assume 1:2000 ratio (1 ETH = 2000 USDT)
-        const makingAmountNum = parseFloat(order.makingAmount);
-        const estimatedTakingAmount = makingAmountNum * 2000;
-        // Convert to proper decimal places (USDT has 6 decimals)
-        order.takingAmount = (estimatedTakingAmount * 1e6).toString();
-      }
+    // Validate that order has required params
+    if (!order.params?.makingAmount) {
+      throw new Error("Order must have params.makingAmount defined");
     }
 
     // Initialize order fields with proper defaults
     order.status = OrderStatus.PENDING;
     order.triggerCount = 0;
-    order.remainingSize = order.size.toString();
+    order.remainingMakerAmount = order.params.makingAmount;
     order.createdAt = Date.now();
 
     // Set other required fields to null if not provided
-    order.orderHash = order.orderHash || null;
-    order.strategyId = order.strategyId || null;
-    order.receiver = order.receiver || null;
-    order.salt = order.salt || null;
-    order.nextTriggerValue = order.nextTriggerValue || null;
-    order.triggerPrice = order.triggerPrice || null;
+    order.orderHash = order.orderHash;
+    order.strategyId = order.strategyId;
+    order.receiver = order.receiver;
+    order.salt = order.salt;
+    order.nextTriggerValue = order.nextTriggerValue;
+    order.nextTriggerValue = order.nextTriggerValue;
     order.filledAmount = order.filledAmount || "0";
-    order.executedAt = order.executedAt || null;
-    order.cancelledAt = order.cancelledAt || null;
-    order.txHash = order.txHash || null;
-    order.expiry = order.expiry || null;
-    order.oneInchOrderHashes = order.oneInchOrderHashes || null;
+    order.executedAt = order.executedAt;
+    order.cancelledAt = order.cancelledAt;
+    order.txHash = order.txHash;
+    order.expiry = order.expiry;
+    order.oneInchOrderHashes = order.oneInchOrderHashes;
 
     // Clean up extra fields that shouldn't be stored
     const { pair, validateOnly, ...cleanOrder } = order as any;
@@ -137,8 +122,8 @@ class OrderRegistryService {
       timestamp: Date.now(),
     });
 
-    // Start a watcher for the new order
-    this.startWatcher(cleanOrder);
+    // Add to active orders set
+    this.activeOrders.add(cleanOrder.id);
 
     logger.info(`Order ${cleanOrder.id} registered successfully`);
   }
@@ -149,8 +134,8 @@ class OrderRegistryService {
       throw new Error(`Order ${orderId} not found`);
     }
 
-    // Stop watcher
-    this.watchers.delete(orderId);
+    // Remove from active orders
+    this.activeOrders.delete(orderId);
 
     // Update order status
     order.status = OrderStatus.CANCELLED;
@@ -199,230 +184,191 @@ class OrderRegistryService {
     return newOrder.id;
   }
 
-  private startWatcher(order: Order) {
-    if (this.watchers.has(order.id)) {
+  private startWatchInterval() {
+    // Process all active orders every 5 seconds
+    this.watchInterval = setInterval(async () => {
+      if (!this.isRunning) return;
+
+      // Process orders in batches to avoid blocking
+      const orderIds = Array.from(this.activeOrders);
+      logger.info(`📊 Processing ${orderIds.length} active orders: [${orderIds.join(', ')}]`);
+      
+      for (const orderId of orderIds) {
+        try {
+          await this.processOrder(orderId);
+        } catch (error) {
+          logger.error(`Error processing order ${orderId}:`, error);
+        }
+      }
+    }, 5000); // 5 seconds
+  }
+
+  private async processOrder(orderId: string) {
+    logger.info(`🔍 Processing order: ${orderId}`);
+    const order = await getOrder(orderId);
+    if (!order) {
+      logger.warn(`Order ${orderId} not found in database, removing from active set`);
+      this.activeOrders.delete(orderId);
       return;
     }
 
-    this.watchers.set(order.id, true);
-    this.watchOrder(order);
-  }
-
-  private async watchOrder(order: Order) {
-    while (this.isRunning && this.watchers.has(order.id)) {
-      try {
-        const currentOrder = await getOrder(order.id);
-        if (
-          !currentOrder ||
-          (currentOrder.status !== OrderStatus.PENDING &&
-            currentOrder.status !== OrderStatus.ACTIVE)
-        ) {
-          this.watchers.delete(order.id);
-          break;
-        }
-
-        // Check trigger conditions
-        const triggered = await this.checkTriggers(currentOrder);
-        if (triggered) {
-          await this.executeOrder(currentOrder);
-
-          // For recurring orders, check if they should continue based on completion criteria
-          const updatedOrder = await getOrder(currentOrder.id);
-          if (updatedOrder) {
-            const shouldComplete = this.shouldCompleteOrder(updatedOrder);
-            if (shouldComplete) {
-              // Mark order as completed and stop watcher
-              logger.info(
-                `Order ${updatedOrder.id} completed, marking as finished`,
-              );
-              updatedOrder.status = OrderStatus.COMPLETED;
-              await saveOrder(updatedOrder);
-              this.watchers.delete(order.id);
-              break;
-            }
-          }
-        }
-      } catch (error) {
-        logger.error(`Error watching order ${order.id}:`, error);
-      }
-
-      await sleep(5000); // 5 seconds
+    // Remove completed/failed orders from tracking
+    if (
+      order.status === OrderStatus.FILLED ||
+      order.status === OrderStatus.CANCELLED ||
+      order.status === OrderStatus.FAILED
+    ) {
+      this.activeOrders.delete(orderId);
+      return;
     }
-  }
 
-  private async checkTriggers(order: Order): Promise<boolean> {
-    const watcher = getOrderWatcher(order.type);
+    // Get the appropriate watcher for this order type
+    const orderType = order.params?.type;
+    logger.info(`Order ${order.id} type: ${orderType}`);
+    if (!orderType) {
+      logger.warn(`Order ${order.id} missing type in params`);
+      return;
+    }
+
+    const watcher = getOrderWatcher(orderType);
+    logger.info(`Watcher for ${orderType}: ${watcher ? 'found' : 'not found'}`);
     if (!watcher) {
-      logger.warn(`No watcher found for order type: ${order.type}`);
-      return false;
+      logger.warn(`No watcher found for order type: ${orderType}`);
+      return;
     }
 
-    return watcher.shouldTrigger(order);
-  }
+    // For ACTIVE/PARTIALLY_FILLED orders, update from on-chain data
+    if (
+      order.status === OrderStatus.ACTIVE ||
+      order.status === OrderStatus.PARTIALLY_FILLED
+    ) {
+      await (watcher as any).updateOrderFromOnChain?.(order);
 
-  private async executeOrder(order: Order) {
-    try {
-      const watcher = getOrderWatcher(order.type);
-      if (!watcher) {
-        throw new Error(`No watcher found for order type: ${order.type}`);
+      // Check if order completed after update
+      const updatedOrder = await getOrder(orderId);
+      if (updatedOrder?.status === OrderStatus.FILLED) {
+        this.activeOrders.delete(orderId);
+        return;
       }
-
-      logger.info(`Executing order ${order.id}`);
-
-      // Increment trigger count
-      order.triggerCount = (order.triggerCount || 0) + 1;
-
-      // Calculate amounts based on order type
-      const amounts = this.calculateOrderAmounts(order);
-
-      // Trigger using watcher with calculated amounts
-      await watcher.trigger(order, amounts.makerAmount, amounts.takerAmount);
-
-      // Update order status
-      order.status = OrderStatus.ACTIVE;
-
-      // Update next trigger for recurring orders
-      if (watcher.updateNextTrigger) {
-        watcher.updateNextTrigger(order);
-      }
-
-      await saveOrder(order);
-
-      // Create order event (order hash will be set by watcher in oneInchOrderHashes)
-      await saveOrderEvent({
-        orderId: order.id,
-        status: OrderStatus.SUBMITTED,
-        timestamp: Date.now(),
-      });
-    } catch (error) {
-      logger.error(`Failed to execute order ${order.id}:`, error);
-
-      // Update order status
-      order.status = OrderStatus.FAILED;
-      await saveOrder(order);
-
-      // Create failed event
-      await saveOrderEvent({
-        orderId: order.id,
-        status: OrderStatus.FAILED,
-        timestamp: Date.now(),
-        error: error.message,
-      });
     }
-  }
 
-  private shouldCompleteOrder(order: Order): boolean {
-    const now = Date.now();
+    // Check if trigger conditions are met for PENDING orders
+    logger.info(`Order ${order.id} status: ${order.status}`);
+    if (order.status === OrderStatus.PENDING) {
+      // Check if order has expired before triggering
+      if ((watcher as any).isExpired?.(order)) {
+        logger.info(
+          `⏰ Order ${order.id.slice(0, 8)}... has expired before triggering`,
+        );
+        order.status = OrderStatus.EXPIRED;
+        order.cancelledAt = Date.now();
+        await saveOrder(order);
+        this.activeOrders.delete(orderId);
 
-    // For TWAP orders, check if we've completed all intervals or reached end date
-    if (order.type === OrderType.TWAP && order.params) {
-      const params = order.params as any;
-      if (params.endDate && now >= params.endDate) {
-        return true; // Past end date
+        await saveOrderEvent({
+          orderId: order.id,
+          status: OrderStatus.EXPIRED,
+          timestamp: Date.now(),
+        });
+        return;
       }
 
-      if (params.interval && params.endDate && params.startDate) {
-        const totalDuration = params.endDate - params.startDate;
-        const intervalMs = params.interval;
-        const totalIntervals = Math.ceil(totalDuration / intervalMs);
+      logger.info(`Checking if order ${order.id} should trigger...`);
+      const shouldTrigger = await watcher.shouldTrigger(order);
+      logger.info(`Order ${order.id} shouldTrigger result: ${shouldTrigger}`);
+      if (!shouldTrigger) return;
 
-        if ((order.triggerCount || 0) >= totalIntervals) {
-          return true; // Completed all intervals
+      // Execute the order
+      try {
+        logger.info(
+          `🚀 Triggering order ${order.id.slice(0, 8)}... (${orderType})`,
+        );
+
+        // Calculate amounts for this trigger
+        const amounts = await this.calculateTriggerAmounts(order);
+
+        // Let the watcher handle the execution (creates 1inch order and submits)
+        await watcher.trigger(
+          order,
+          amounts.makingAmount,
+          amounts.takingAmount,
+        );
+
+        // Order state is updated within the trigger method
+
+        // Let watcher update next trigger if needed
+        if (watcher.updateNextTrigger) {
+          watcher.updateNextTrigger(order);
         }
+
+        // Create order event
+        await saveOrderEvent({
+          orderId: order.id,
+          status: OrderStatus.SUBMITTED,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        logger.error(`❌ Failed to execute order ${order.id}:`, error);
+
+        // Mark as failed
+        order.status = OrderStatus.FAILED;
+        await saveOrder(order);
+
+        // Remove from active orders
+        this.activeOrders.delete(orderId);
+
+        // Create failed event
+        await saveOrderEvent({
+          orderId: order.id,
+          status: OrderStatus.FAILED,
+          timestamp: Date.now(),
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
-
-    // For Range orders, check if we've completed all steps or reached expiry
-    if (order.type === OrderType.RANGE && order.params) {
-      const params = order.params as RangeOrderParams;
-
-      // Check expiry
-      if (params.expiry) {
-        const expiryTime =
-          order.createdAt + params.expiry * 24 * 60 * 60 * 1000;
-        if (now >= expiryTime) {
-          return true; // Past expiry
-        }
-      }
-
-      // Check if all steps completed
-      const priceRange = Math.abs(params.endPrice - params.startPrice);
-      const stepSize = priceRange * (params.stepPct / 100);
-      const totalSteps = Math.ceil(priceRange / stepSize);
-
-      if ((order.triggerCount || 0) >= totalSteps) {
-        return true; // Completed all steps
-      }
-    }
-
-    // For other order types, implement similar logic as needed
-    return false; // Continue watching by default
   }
 
-  private calculateOrderAmounts(order: Order): {
-    makerAmount: string;
-    takerAmount: string;
-  } {
-    // Calculate amounts based on order type
-    switch (order.type) {
-      case OrderType.TWAP: {
+  private async calculateTriggerAmounts(order: Order): Promise<{
+    makingAmount: string;
+    takingAmount: string;
+  }> {
+    // For orders with specific makingAmount params, calculate based on type
+    if (order.params?.makingAmount) {
+      const totalMakingAmount = order.params.makingAmount;
+
+      // Calculate how much to execute for this trigger
+      let triggerRatio = 1; // Default to full amount
+
+      if (order.params.type === OrderType.TWAP) {
         const params = order.params as TwapParams;
-        if (!params) {
-          throw new Error("Invalid TWAP order params");
+        const duration = params.endDate - params.startDate;
+        if (duration > 0 && params.interval > 0) {
+          const intervals = Math.ceil(duration / params.interval);
+          triggerRatio = 1 / intervals;
         }
-
-        // Calculate total intervals and amount per interval
-        const totalDuration = params.endDate - params.startDate;
-        const intervalMs = params.interval;
-        const totalIntervals = Math.ceil(totalDuration / intervalMs);
-        const amountPerInterval = parseFloat(params.amount) / totalIntervals;
-
-        // Calculate taking amount based on making amount ratio
-        const originalMaking = parseFloat(order.makingAmount);
-        const ratio = amountPerInterval / parseFloat(params.amount);
-        const takerAmountForInterval = (
-          parseFloat(order.takingAmount) * ratio
-        ).toString();
-
-        return {
-          makerAmount: amountPerInterval.toString(),
-          takerAmount: takerAmountForInterval,
-        };
-      }
-
-      case OrderType.RANGE: {
+      } else if (order.params.type === OrderType.RANGE) {
         const params = order.params as RangeOrderParams;
-        if (!params) {
-          throw new Error("Invalid Range order params");
-        }
-
-        // Calculate total steps and amount per step
         const priceRange = Math.abs(params.endPrice - params.startPrice);
         const stepSize = priceRange * (params.stepPct / 100);
-        const totalSteps = Math.ceil(priceRange / stepSize);
-        const amountPerStep = parseFloat(params.amount) / totalSteps;
-
-        // Calculate taking amount based on making amount ratio
-        const ratio = amountPerStep / parseFloat(params.amount);
-        const takerAmountForStep = (
-          parseFloat(order.takingAmount) * ratio
-        ).toString();
-
-        return {
-          makerAmount: amountPerStep.toString(),
-          takerAmount: takerAmountForStep,
-        };
+        const steps = Math.ceil(priceRange / stepSize);
+        triggerRatio = 1 / steps;
       }
 
-      case OrderType.STOP_LIMIT:
-      default: {
-        // For stop-limit and other orders, use the full amounts
-        return {
-          makerAmount: order.size,
-          takerAmount: order.takingAmount,
-        };
-      }
+      const triggerMakingAmount = totalMakingAmount * triggerRatio;
+
+      // For now, return string representation for 1inch integration
+      // We'll calculate takingAmount dynamically in the watcher based on current price
+      return {
+        makingAmount: triggerMakingAmount.toString(),
+        takingAmount: "0", // Will be calculated dynamically based on current price
+      };
     }
+
+    // Fallback: use remaining amount
+    return {
+      makingAmount: order.remainingMakerAmount.toString(),
+      takingAmount: "0", // Will be calculated dynamically
+    };
   }
 
   private async startHttpServer() {
@@ -563,19 +509,14 @@ class OrderRegistryService {
   }
 
   private validateOrderSignature(order: Order): boolean {
-    if (!order.userSignedPayload || !order.signature) {
-      logger.warn("Order missing signature or payload");
+    if (!order.signature || !order.params) {
+      logger.warn("Order missing signature or params");
       return false;
     }
 
     try {
-      let messageToSign: string;
-
-      if (typeof order.userSignedPayload === "string") {
-        messageToSign = order.userSignedPayload;
-      } else {
-        messageToSign = JSON.stringify(order.userSignedPayload);
-      }
+      // The user signs the OrderParams directly
+      const messageToSign = JSON.stringify(order.params);
 
       logger.debug(`Message to verify: ${messageToSign}`);
       const signerAddress = ethers.verifyMessage(
@@ -583,15 +524,17 @@ class OrderRegistryService {
         order.signature,
       );
 
+      const expectedMaker = order.params.maker;
       logger.debug(
-        `Recovered signer: ${signerAddress}, Expected maker: ${order.maker}`,
+        `Recovered signer: ${signerAddress}, Expected maker: ${expectedMaker}`,
       );
 
-      const isValid = signerAddress.toLowerCase() === order.maker.toLowerCase();
+      const isValid =
+        signerAddress.toLowerCase() === expectedMaker.toLowerCase();
 
       if (!isValid) {
         logger.warn(
-          `Invalid signature: expected ${order.maker}, got ${signerAddress}`,
+          `Invalid signature: expected ${expectedMaker}, got ${signerAddress}`,
         );
       } else {
         logger.info(`✅ Valid signature for order ${order.id}`);

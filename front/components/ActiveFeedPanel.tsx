@@ -15,7 +15,7 @@ import { fetcher } from "../utils/fetcher";
 import { useWebSocketContext } from "../contexts/WebSocketContext";
 import { API_URL, THEME } from "@common/constants";
 import type { TickerFeed, ApiResponse } from "@common/types";
-import { roundSig } from "@common/utils";
+import { roundSig, parseFeedSymbol } from "@common/utils";
 import { Badge } from "@/components/ui/badge";
 import { PanelWrapper } from "./common/Panel";
 import {
@@ -64,72 +64,7 @@ interface ActiveFeedPanelProps {
   onFeedSelect: (feedId: string) => void;
 }
 
-/**
- * Parses a feed symbol into its main part and tags.
- * @param symbol - The feed symbol string.
- * @returns An object with main and tags properties.
- */
-function parseFeedSymbol(symbol: string) {
-  if (!symbol) return { main: "N/A", tags: [], base: "", quote: "" };
-
-  const parts = symbol.split(":");
-  let main: string;
-  let tags: string[];
-
-  if (parts.length === 3) {
-    // e.g., agg:spot:BTCUSD -> main: BTCUSD, tags: [agg, spot]
-    main = parts[2];
-    tags = [parts[0], parts[1]];
-  } else if (parts.length === 2) {
-    // e.g., binance:BTCUSDT -> main: BTCUSDT, tags: [binance]
-    main = parts[1];
-    tags = [parts[0]];
-  } else if (parts.length === 1 && parts[0].includes("-")) {
-    // e.g. BTC-USD -> main: BTC-USD, tags: [] (could be from coinbase, treat as main)
-    main = parts[0];
-    tags = [];
-  } else {
-    // Default fallback if parsing fails or format is unexpected
-    main = symbol;
-    tags = [];
-  }
-
-  // Extract base and quote tokens from main symbol
-  let base = "";
-  let quote = "";
-
-  if (main.includes("-")) {
-    // Format: BTC-USD
-    const tokenParts = main.split("-");
-    base = tokenParts[0] || "";
-    quote = tokenParts[1] || "";
-  } else {
-    // Format: BTCUSDT, ETHUSDC, etc.
-    // Common quote currencies to try matching
-    const commonQuotes = ["USDT", "USDC", "USD", "BTC", "ETH"];
-    for (const commonQuote of commonQuotes) {
-      if (main.endsWith(commonQuote)) {
-        quote = commonQuote;
-        base = main.slice(0, -commonQuote.length);
-        break;
-      }
-    }
-
-    // Fallback if no common quote found
-    if (!base && !quote && main.length > 3) {
-      // Assume last 3-4 chars are quote
-      if (main.length > 6) {
-        quote = main.slice(-4);
-        base = main.slice(0, -4);
-      } else {
-        quote = main.slice(-3);
-        base = main.slice(0, -3);
-      }
-    }
-  }
-
-  return { main, tags, base, quote };
-}
+// Note: parseFeedSymbol is now imported from @common/utils
 
 /**
  * Renders a tag badge for a feed symbol.

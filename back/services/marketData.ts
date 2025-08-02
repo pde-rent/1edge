@@ -4,7 +4,7 @@ import {
   AggregatedTicker,
   AggregatedTickerConfig,
   FeedStatus,
-  Symbol,
+  PairSymbol,
   TickerConfig,
   TickerFeed,
   TickerOHLCV,
@@ -17,14 +17,14 @@ import ccxt from "ccxt";
 import { analyse } from "./analysis";
 
 // In-memory stores
-const aggregatedDataStore: Record<Symbol, AggregatedTicker> = {};
+const aggregatedDataStore: Record<PairSymbol, AggregatedTicker> = {};
 const activeExchanges: Record<string, any> = {};
 
 /**
  * Parses a Symbol string into its components.
  */
 function parseSymbol(
-  symbolInput: Symbol,
+  symbolInput: PairSymbol,
 ):
   | { exchangeId: string; marketType?: string; tickerSymbol: string }
   | undefined {
@@ -46,7 +46,7 @@ function parseSymbol(
  * Fetch ticker data on an exchange REST API.
  */
 export async function getCexTicker(
-  symbolInput: Symbol,
+  symbolInput: PairSymbol,
 ): Promise<CcxtTicker | undefined> {
   const parsed = parseSymbol(symbolInput);
   if (!parsed) return undefined;
@@ -141,7 +141,7 @@ export async function getExchange(exchangeId: string): Promise<any> {
 /**
  * Update the weighted average for a destination ticker.
  */
-function updateWeightedAvg(aggSymbol: Symbol): void {
+function updateWeightedAvg(aggSymbol: PairSymbol): void {
   const aggTicker = aggregatedDataStore[aggSymbol];
   if (!aggTicker || !aggTicker.sources) return;
 
@@ -149,7 +149,7 @@ function updateWeightedAvg(aggSymbol: Symbol): void {
   let totalWeight = 0;
 
   for (const [srcSymbol, srcFeed] of Object.entries(aggTicker.sources)) {
-    const config = aggTicker.sources[srcSymbol as Symbol];
+    const config = aggTicker.sources[srcSymbol as PairSymbol];
     if (config && srcFeed.last?.mid) {
       const weight = (config as any).weight || 1;
       totalMid += srcFeed.last.mid * weight;
@@ -172,7 +172,7 @@ function updateWeightedAvg(aggSymbol: Symbol): void {
  * Fetch OHLCV data for a ticker.
  */
 async function fetchOHLCV(
-  symbol: Symbol,
+  symbol: PairSymbol,
   timeframe: TimeFrame,
   limit: number = 100,
 ): Promise<TickerOHLCV | undefined> {
@@ -236,7 +236,7 @@ async function fetchOHLCV(
  * Initialize ticker feed with data.
  */
 async function initializeTickerFeed(
-  symbol: Symbol,
+  symbol: PairSymbol,
   config: TickerConfig | AggregatedTickerConfig,
 ): Promise<TickerFeed> {
   const ticker = await getCexTicker(symbol);
@@ -272,7 +272,7 @@ async function initializeTickerFeed(
  * Update a single source ticker.
  */
 async function updateSourceTicker(
-  symbol: Symbol,
+  symbol: PairSymbol,
   config: TickerConfig,
 ): Promise<TickerFeed | undefined> {
   try {
@@ -299,7 +299,7 @@ async function updateSourceTicker(
  * Update an aggregated ticker.
  */
 export async function updateAggregatedTicker(
-  aggSymbol: Symbol,
+  aggSymbol: PairSymbol,
   config: AggregatedTickerConfig,
 ): Promise<AggregatedTicker> {
   // Initialize if not exists
@@ -322,11 +322,12 @@ export async function updateAggregatedTicker(
   const updatePromises = Object.entries(config.sources).map(
     async ([srcSymbol, srcConfig]) => {
       const feed = await updateSourceTicker(
-        srcSymbol as Symbol,
+        srcSymbol as PairSymbol,
         {
-          id: srcSymbol as Symbol,
+          id: srcSymbol as PairSymbol,
           name: srcSymbol,
-          exchange: parseSymbol(srcSymbol as Symbol)?.exchangeId || "unknown",
+          exchange:
+            parseSymbol(srcSymbol as PairSymbol)?.exchangeId || "unknown",
           tf: config.tf,
           lookback: config.lookback,
           ttl: 60, // 1 minute cache for sources
@@ -335,7 +336,7 @@ export async function updateAggregatedTicker(
       );
 
       if (feed) {
-        aggTicker.sources[srcSymbol as Symbol] = feed;
+        aggTicker.sources[srcSymbol as PairSymbol] = feed;
       }
     },
   );
@@ -363,7 +364,7 @@ export async function updateAggregatedTicker(
  * Get current ticker data.
  */
 export async function getTicker(
-  symbol: Symbol,
+  symbol: PairSymbol,
 ): Promise<TickerFeed | AggregatedTicker | null> {
   // Check if it's an aggregated ticker
   if (symbol.startsWith("agg:")) {
@@ -378,7 +379,7 @@ export async function getTicker(
  * Initialize aggregated ticker in store if not exists.
  */
 function initAgg(
-  aggSymbol: Symbol,
+  aggSymbol: PairSymbol,
   aggCfg: AggregatedTickerConfig,
 ): AggregatedTicker {
   if (!aggregatedDataStore[aggSymbol]) {
@@ -474,9 +475,9 @@ function buildFullSrcCfg(
   srcConfig: any,
   aggCfg: AggregatedTickerConfig,
 ): TickerConfig {
-  const parsed = parseSymbol(srcSymbol as Symbol);
+  const parsed = parseSymbol(srcSymbol as PairSymbol);
   return {
-    id: srcSymbol as Symbol,
+    id: srcSymbol as PairSymbol,
     name: srcSymbol,
     exchange: parsed?.exchangeId || "unknown",
     tf: aggCfg.tf,
@@ -489,7 +490,10 @@ function buildFullSrcCfg(
 /**
  * Ensure aggregated ticker exists in store.
  */
-function ensureAggStore(dest: Symbol, aggCfg: AggregatedTickerConfig): void {
+function ensureAggStore(
+  dest: PairSymbol,
+  aggCfg: AggregatedTickerConfig,
+): void {
   if (!aggregatedDataStore[dest]) {
     aggregatedDataStore[dest] = {
       id: dest,
@@ -511,7 +515,7 @@ interface BatchedConnection {
   subscriptions: Map<
     string,
     {
-      aggSymbol: Symbol;
+      aggSymbol: PairSymbol;
       srcCfg: TickerConfig;
       aggCfg: AggregatedTickerConfig;
     }
@@ -527,7 +531,7 @@ const batchedConnections = new Map<string, BatchedConnection>();
  */
 async function getBatchedConnection(
   exchangeId: string,
-  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onUpdate: (dest: PairSymbol, data: AggregatedTicker) => void,
   onError: (err: any) => void,
   reconnectMs: number,
 ): Promise<BatchedConnection> {
@@ -573,7 +577,7 @@ async function getBatchedConnection(
 async function startBatchedTickerLoop(
   exchangeId: string,
   connection: BatchedConnection,
-  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onUpdate: (dest: PairSymbol, data: AggregatedTicker) => void,
   onError: (err: any) => void,
   reconnectMs: number,
 ): Promise<void> {
@@ -747,7 +751,7 @@ async function startBatchedTickerLoop(
 async function handleWebSocketFallback(
   exchangeId: string,
   connection: BatchedConnection,
-  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onUpdate: (dest: PairSymbol, data: AggregatedTicker) => void,
   onError: (err: any) => void,
 ): Promise<void> {
   try {
@@ -826,9 +830,9 @@ async function handleWebSocketFallback(
  */
 async function addBatchedSubscription(
   srcCfg: TickerConfig,
-  aggSymbol: Symbol,
+  aggSymbol: PairSymbol,
   aggCfg: AggregatedTickerConfig,
-  onUpdate: (dest: Symbol, data: AggregatedTicker) => void,
+  onUpdate: (dest: PairSymbol, data: AggregatedTicker) => void,
   onError: (err: any) => void,
   reconnectMs: number,
 ): Promise<void> {
@@ -889,8 +893,8 @@ function removeBatchedSubscription(srcCfg: TickerConfig): void {
  * Subscribe to all ticker feeds with batched WebSocket streaming.
  */
 export function subToTickerFeeds(
-  config: Record<Symbol, AggregatedTickerConfig>,
-  onUpdate: (destSymbol: Symbol, data: AggregatedTicker) => void,
+  config: Record<PairSymbol, AggregatedTickerConfig>,
+  onUpdate: (destSymbol: PairSymbol, data: AggregatedTicker) => void,
   onError: (err: any) => void = (err) =>
     logger.error("General subscription error", err),
   reconnectMs = 5000,
@@ -901,7 +905,7 @@ export function subToTickerFeeds(
   const exchangeGroups = new Map<
     string,
     Array<{
-      dest: Symbol;
+      dest: PairSymbol;
       srcKey: string;
       srcConfig: any;
       aggCfg: AggregatedTickerConfig;
@@ -909,7 +913,7 @@ export function subToTickerFeeds(
   >();
 
   for (const [destStr, aggCfg] of Object.entries(config)) {
-    const dest = destStr as Symbol;
+    const dest = destStr as PairSymbol;
     if (!aggCfg.sources || !Object.keys(aggCfg.sources).length) {
       logger.warn(`No sources for ${dest}.`);
       continue;
@@ -995,7 +999,7 @@ export function subToTickerFeeds(
  * Subscribe to ticker updates (WebSocket implementation).
  */
 export function subscribeTicker(
-  symbol: Symbol,
+  symbol: PairSymbol,
   callback: (ticker: TickerTick) => void,
 ): () => void {
   // For now, return a placeholder unsubscribe function
@@ -1009,7 +1013,7 @@ export function subscribeTicker(
  * Get all active tickers.
  */
 export function getActiveTickers(): Record<
-  Symbol,
+  PairSymbol,
   TickerFeed | AggregatedTicker
 > {
   return { ...aggregatedDataStore };

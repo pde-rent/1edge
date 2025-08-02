@@ -50,22 +50,22 @@ class RangeBreakoutOrderWatcher extends PriceBasedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const priceInfo = this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
-    order.triggerPrice = priceInfo.price;
+    order.nextTriggerValue = priceInfo.price;
 
     this.logExecution({
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {

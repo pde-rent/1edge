@@ -35,8 +35,8 @@ class DCAOrderWatcher extends TimeBasedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const params = this.validateParams<DCAParams>(order);
     if (!params) throw new Error("Invalid DCA parameters");
@@ -50,11 +50,11 @@ class DCAOrderWatcher extends TimeBasedOrderWatcher {
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
     // Execute the order
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {

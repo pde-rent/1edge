@@ -34,7 +34,8 @@
     "common/**/*.ts",
     "back/**/*.ts",
     "front/**/*.ts",
-    "package.json"
+    "package.json",
+    "deployments.json"
   ],
   "exclude": ["node_modules", "dist", "build", "contracts"]
 }

@@ -1,5 +1,5 @@
 import { logger } from "@back/utils/logger";
-import type { Symbol } from "@common/types";
+import type { PairSymbol } from "@common/types";
 import { PubSubClient } from "./pubSubClient";
 
 /**
@@ -8,7 +8,7 @@ import { PubSubClient } from "./pubSubClient";
  */
 class PriceCacheService {
   private static instance: PriceCacheService;
-  private priceCache: Map<Symbol, any> = new Map();
+  private priceCache: Map<PairSymbol, any> = new Map();
   private pubSubClient: PubSubClient;
   private isConnected: boolean = false;
 
@@ -36,7 +36,7 @@ class PriceCacheService {
       // Subscribe to all price updates
       logger.info(`📡 Price cache subscribing to all price updates (prices.*)`);
       this.pubSubClient.subscribeToAllPrices(
-        (symbol: Symbol, priceData: any) => {
+        (symbol: PairSymbol, priceData: any) => {
           this.handlePriceUpdate(symbol, priceData);
         },
       );
@@ -60,7 +60,7 @@ class PriceCacheService {
     }
   }
 
-  private handlePriceUpdate(symbol: Symbol, priceData: any) {
+  private handlePriceUpdate(symbol: PairSymbol, priceData: any) {
     try {
       // Get existing data to preserve history
       const existingData = this.priceCache.get(symbol);
@@ -93,15 +93,15 @@ class PriceCacheService {
   /**
    * Get current price data for a symbol
    */
-  getPrice(symbol: Symbol): any {
+  getPrice(symbol: PairSymbol): any {
     return this.priceCache.get(symbol);
   }
 
   /**
    * Get all active prices
    */
-  getAllPrices(): Record<Symbol, any> {
-    const prices: Record<Symbol, any> = {};
+  getAllPrices(): Record<PairSymbol, any> {
+    const prices: Record<PairSymbol, any> = {};
     for (const [symbol, data] of this.priceCache) {
       prices[symbol] = data;
     }
@@ -111,7 +111,7 @@ class PriceCacheService {
   /**
    * Get list of available symbols
    */
-  getAvailableSymbols(): Symbol[] {
+  getAvailableSymbols(): PairSymbol[] {
     return Array.from(this.priceCache.keys());
   }
 }

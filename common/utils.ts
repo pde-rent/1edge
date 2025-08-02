@@ -26,16 +26,23 @@ export function formatNumber(num: number): string {
 }
 
 /**
+ * Comprehensive symbol parsing utilities
+ */
+
+/**
  * Parse a symbol string into components
+ * Handles formats like: "exchange:type:pair", "exchange:pair", "pair"
  */
 export function parseSymbol(
   symbol: string,
 ): { exchange: string; type?: string; pair: string } | null {
+  if (!symbol) return null;
+
   const parts = symbol.split(":");
   if (parts.length === 3) {
     return {
       exchange: parts[0],
-      type: parts[1],
+      type: parts[1] === "undefined" ? undefined : parts[1],
       pair: parts[2],
     };
   } else if (parts.length === 2) {
@@ -43,8 +50,123 @@ export function parseSymbol(
       exchange: parts[0],
       pair: parts[1],
     };
+  } else if (parts.length === 1) {
+    // Single part - treat as pair only
+    return {
+      exchange: "",
+      pair: parts[0],
+    };
   }
   return null;
+}
+
+/**
+ * Enhanced feed symbol parser for frontend components
+ * Returns parsed components including base/quote token extraction
+ */
+export function parseFeedSymbol(symbol: string): {
+  main: string;
+  tags: string[];
+  base: string;
+  quote: string;
+  exchange?: string;
+  type?: string;
+} {
+  if (!symbol) return { main: "N/A", tags: [], base: "", quote: "" };
+
+  const parts = symbol.split(":");
+  let main: string;
+  let tags: string[];
+  let exchange: string | undefined;
+  let type: string | undefined;
+
+  if (parts.length === 3) {
+    // e.g., agg:spot:BTCUSD -> main: BTCUSD, tags: [agg, spot]
+    [exchange, type, main] = parts;
+    tags = [exchange, type];
+  } else if (parts.length === 2) {
+    // e.g., binance:BTCUSDT -> main: BTCUSDT, tags: [binance]
+    [exchange, main] = parts;
+    tags = [exchange];
+  } else if (parts.length === 1 && parts[0].includes("-")) {
+    // e.g., BTC-USD -> main: BTC-USD, tags: []
+    main = parts[0];
+    tags = [];
+  } else {
+    // Default fallback
+    main = symbol;
+    tags = [];
+  }
+
+  // Extract base and quote tokens from main symbol
+  const { base, quote } = extractBaseQuote(main);
+
+  return { main, tags, base, quote, exchange, type };
+}
+
+/**
+ * Extract base and quote tokens from a trading pair string
+ * Handles formats like "BTCUSDT", "BTC-USD", "ETHUSDC"
+ */
+export function extractBaseQuote(pair: string): {
+  base: string;
+  quote: string;
+} {
+  if (!pair) return { base: "", quote: "" };
+
+  if (pair.includes("-")) {
+    // Format: BTC-USD
+    const tokenParts = pair.split("-");
+    return {
+      base: tokenParts[0] || "",
+      quote: tokenParts[1] || "",
+    };
+  } else {
+    // Format: BTCUSDT, ETHUSDC, etc.
+    // Common quote currencies to try matching (in order of priority)
+    const commonQuotes = ["USDT", "USDC", "USD", "WETH", "WBTC", "BTC", "ETH"];
+
+    for (const commonQuote of commonQuotes) {
+      if (pair.endsWith(commonQuote)) {
+        const base = pair.slice(0, -commonQuote.length);
+        if (base.length > 0) {
+          return { base, quote: commonQuote };
+        }
+      }
+    }
+
+    // Fallback if no common quote found
+    if (pair.length > 3) {
+      if (pair.length > 6) {
+        // Assume last 4 chars are quote for longer symbols
+        return {
+          base: pair.slice(0, -4),
+          quote: pair.slice(-4),
+        };
+      } else {
+        // Assume last 3 chars are quote for shorter symbols
+        return {
+          base: pair.slice(0, -3),
+          quote: pair.slice(-3),
+        };
+      }
+    }
+  }
+
+  return { base: pair, quote: "" };
+}
+
+/**
+ * Trading pair parsing - parse symbol into base and quote tokens
+ * @param pairSymbol - Trading pair symbol (e.g., "BTCUSDT", "ETHUSDC")
+ * @returns Object with base and quote token symbols
+ */
+export function parseTradingPair(
+  pairSymbol: string,
+): { base: string; quote: string } | null {
+  // Remove common prefixes/suffixes if they exist
+  const cleanSymbol = pairSymbol.replace(/^agg:spot:/, "");
+  return extractBaseQuote(cleanSymbol);
 }
 
 /**
@@ -229,6 +351,35 @@ export function ema(values: number[], period: number): number[] {
 }
 
 /**
+ * Token and price formatting utilities
+ */
+
+/**
+ * Format price with appropriate precision
+ * Uses scientific notation for very small values
+ */
+export function formatPrice(price: number): string {
+  if (price === undefined || price === null) return "-";
+  if (price === 0) return "0";
+
+  // Use scientific notation for very small numbers
+  if (Math.abs(price) < 0.000001) {
+    return price.toExponential(3);
+  }
+
+  // Use roundSig for normal numbers
+  return roundSig(price, 6).toString();
+}
+
+/**
+ * Format mid value for display (alias for formatPrice)
+ */
+export function formatMidValue(value: number | undefined): string {
+  if (value === undefined || value === null) return "-";
+  return formatPrice(value);
+}
+
+/**
  * Format token amount with decimals
  */
 export function formatTokenAmount(amount: string, decimals: number): string {
@@ -252,6 +403,90 @@ export function parseTokenAmount(amount: string, decimals: number): string {
   const [whole, fraction = ""] = amount.split(".");
   const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
   return BigInt(whole + paddedFraction).toString();
+}
+
+/**
+ * Address and symbol mapping utilities
+ * Note: These require a token mapping config to be passed in
+ */
+
+/**
+ * Convert asset address to token symbol using provided token mapping
+ */
+export function addressToSymbol(
+  address: string,
+  tokenMapping: Record<string, Record<string, string>>,
+  chainId: number = 1,
+): string {
+  const lowercaseAddress = address.toLowerCase();
+  const chainStr = chainId.toString();
+
+  for (const [symbol, chains] of Object.entries(tokenMapping)) {
+    const chainAddress = chains[chainStr];
+    if (chainAddress && chainAddress.toLowerCase() === lowercaseAddress) {
+      return symbol;
+    }
+  }
+
+  return "UNKNOWN";
+}
+
+/**
+ * Convert token symbol to asset address using provided token mapping
+ */
+export function symbolToAddress(
+  symbol: string,
+  tokenMapping: Record<string, Record<string, string>>,
+  chainId: number = 1,
+): string | undefined {
+  const chainStr = chainId.toString();
+  const tokenConfig = tokenMapping[symbol];
+
+  if (!tokenConfig) {
+    return undefined;
+  }
+
+  return tokenConfig[chainStr];
+}
+
+/**
+ * Create price feed symbol from maker and taker asset addresses
+ */
+export function getSymbolFromAssets(
+  makerAsset: string,
+  takerAsset: string,
+  tokenMapping: Record<string, Record<string, string>>,
+  chainId: number = 1,
+): `${string}:${string}:${string}` {
+  const makerSymbol = addressToSymbol(makerAsset, tokenMapping, chainId);
+  const takerSymbol = addressToSymbol(takerAsset, tokenMapping, chainId);
+
+  return `agg:spot:${makerSymbol}${takerSymbol}`;
+}
+
+/**
+ * Get display symbol for logging purposes
+ */
+export function getAssetSymbol(
+  assetAddress: string,
+  tokenMapping: Record<string, Record<string, string>>,
+  chainId: number = 1,
+): string {
+  return addressToSymbol(assetAddress, tokenMapping, chainId);
+}
+
+/**
+ * Map symbol for price feeds (WETH -> ETH, WBTC -> BTC for feeds)
+ */
+export function mapSymbolForFeed(symbol: string): string {
+  switch (symbol) {
+    case "WETH":
+      return "ETH";
+    case "WBTC":
+      return "BTC";
+    default:
+      return symbol;
+  }
 }
 
 /**
@@ -307,4 +542,51 @@ export function formatDuration(ms: number): string {
 export function truncateAddress(address: string, chars = 4): string {
   if (!address) return "";
   return `${address.substring(0, chars + 2)}...${address.substring(address.length - chars)}`;
+}
+
+/**
+ * Simple HTTP connector for 1inch API compatibility
+ */
+export class FetchProviderConnector {
+  async get(url: string, headers?: Record<string, string>): Promise<any> {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: headers || {},
+    });
+
+    if (response.status === 401) {
+      throw new Error("Authentication failed");
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  async post(
+    url: string,
+    body?: any,
+    headers?: Record<string, string>,
+  ): Promise<any> {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...headers,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+
+    if (response.status === 401) {
+      throw new Error("Authentication failed");
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
+  }
 }

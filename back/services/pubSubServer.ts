@@ -1,5 +1,5 @@
 import { logger } from "@back/utils/logger";
-import type { Symbol } from "@common/types";
+import type { PairSymbol } from "@common/types";
 import { INTRACO_PORT } from "@common/constants";
 
 interface ClientState {
@@ -160,7 +160,7 @@ export class PubSubServer {
   /**
    * Publish price update for a symbol
    */
-  publishPrice(symbol: Symbol, priceData: any) {
+  publishPrice(symbol: PairSymbol, priceData: any) {
     this.publish(`prices.${symbol}`, {
       type: "price_update",
       symbol,

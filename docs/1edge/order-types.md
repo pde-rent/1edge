@@ -10,16 +10,23 @@
 
 **Recommended Pricing Strategy:**
 
-- **Limit Buy Orders**: Set price at `spot - 0.05%` (slightly below market, within book spread)
-- **Limit Sell Orders**: Set price at `spot + 0.05%` (slightly above market, within book spread)
-- **Maximum Deviation**: Stay within ±0.2% of spot price for optimal execution
-- **Rationale**: Orders priced inside the spread get filled immediately by market makers and arbitrageurs
+- **Sell Orders (WETH→USDT)**: Dynamic pricing between spot and best ask
+  - Primary: `spot + 0.05%` for competitive execution
+  - Fallback: `bestAsk - (spread/4)` to stay within bid-ask spread
+  - Final: `max(primary, spot * 0.9995)` to ensure minimum 0.05% below spot
+- **Buy Orders (USDT→WETH)**: Dynamic pricing between spot and best bid
+  - Primary: `spot - 0.05%` for competitive execution
+  - Fallback: `bestBid + (spread/4)` to stay within bid-ask spread
+  - Final: `min(primary, spot * 1.0005)` to ensure maximum 0.05% above spot
+- **Order Types Using Dynamic Pricing**: TWAP, Iceberg, DCA, Momentum Reversal, Range Breakout
+- **Order Types Using Fixed Pricing**: Stop-Limit, Chase-Limit, Range, Grid Trading
 
 **Implementation Notes:**
 
-- All order watchers should apply this pricing when creating 1inch limit orders
-- Price adjustments should be calculated dynamically based on current spot price
-- Consider slippage tolerance based on order size and market conditions
+- Dynamic pricing is calculated in `BaseOrderWatcher.calculateLimitPrice()`
+- Price adjustments use real-time bid/ask data from the collector service
+- Orders are positioned for immediate fills while avoiding excessive slippage
+- All time-based order types benefit from market-responsive pricing
 
 ## One-off Orders
 

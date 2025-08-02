@@ -257,7 +257,7 @@ interface OrderWatcher {
   shouldTrigger(order: Order): Promise<boolean>;
   trigger(
     order: Order,
-    makerAmount: string,
+    makingAmount: string,
     takerAmount: string,
   ): Promise<void>;
   updateNextTrigger?(order: Order): void;

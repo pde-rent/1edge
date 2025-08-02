@@ -51,8 +51,8 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const params = this.validateParams<IcebergParams>(order);
     if (!params) throw new Error("Invalid iceberg parameters");
@@ -69,11 +69,11 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
       symbol: priceInfo.symbol,
       step: currentStep + 1,
       totalSteps: params.steps,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
     // Execute the order
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {

@@ -31,8 +31,8 @@ class GridTradingOrderWatcher extends SteppedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const params = this.validateOrderState<GridTradingParams>(order);
     const priceInfo = this.getPriceInfo(order);
@@ -54,10 +54,10 @@ class GridTradingOrderWatcher extends SteppedOrderWatcher {
       symbol: priceInfo.symbol,
       step: currentLevel,
       totalSteps: totalLevels,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {

@@ -41,7 +41,7 @@ describe("DelegateProxy", function () {
     const ownerAddress = await owner.getAddress();
     delegateProxy = await DelegateProxy.connect(owner).deploy(
       await _1inch.getAddress(),
-      ownerAddress
+      ownerAddress,
     );
 
     // Owner (keeper) approves themselves
@@ -56,8 +56,7 @@ describe("DelegateProxy", function () {
     });
 
     it("Should set keeper correctly", async function () {
-      expect(await delegateProxy.keepers(await owner.getAddress())).to.be
-        .true;
+      expect(await delegateProxy.keepers(await owner.getAddress())).to.be.true;
     });
   });
 
@@ -185,25 +184,21 @@ describe("DelegateProxy", function () {
       await delegateProxy
         .connect(owner)
         .setKeeper(await newKeeper.getAddress(), true);
-      expect(await delegateProxy.keepers(await newKeeper.getAddress()))
-        .to.be.true;
+      expect(await delegateProxy.keepers(await newKeeper.getAddress())).to.be
+        .true;
     });
 
     it("Should allow owner to remove keeper", async function () {
       await delegateProxy
         .connect(owner)
         .setKeeper(await owner.getAddress(), false);
-      expect(await delegateProxy.keepers(await owner.getAddress())).to.be
-        .false;
+      expect(await delegateProxy.keepers(await owner.getAddress())).to.be.false;
     });
 
     it("Should not allow non-owner to manage keepers", async function () {
       await expect(
         delegateProxy.connect(user).setKeeper(await alice.getAddress(), true),
-      ).to.be.revertedWithCustomError(
-        delegateProxy,
-        "Unauthorized",
-      );
+      ).to.be.revertedWithCustomError(delegateProxy, "Unauthorized");
     });
   });
 
@@ -231,7 +226,7 @@ describe("DelegateProxy", function () {
 
       // Cancel order
       await expect(
-        delegateProxy.connect(owner).cancel1inchOrder(order)
+        delegateProxy.connect(owner).cancel1inchOrder(order),
       ).to.emit(delegateProxy, "OrderCancelled");
     });
 
@@ -245,28 +240,29 @@ describe("DelegateProxy", function () {
       const orders = [];
       const makers = [];
       for (let i = 0; i < 3; i++) {
-        orders.push(buildMockOrder({
-          maker: await delegateProxy.getAddress(),
-          receiver: await user.getAddress(),
-          makerAsset: await weth.getAddress(),
-          makingAmount: wethAmount,
-          takerAsset: await inch.getAddress(),
-          takingAmount: parseEther("1"),
-          makerTraits: 1n << 252n,
-          salt: BigInt(i), // Different salt for each order
-        }));
+        orders.push(
+          buildMockOrder({
+            maker: await delegateProxy.getAddress(),
+            receiver: await user.getAddress(),
+            makerAsset: await weth.getAddress(),
+            makingAmount: wethAmount,
+            takerAsset: await inch.getAddress(),
+            takingAmount: parseEther("1"),
+            makerTraits: 1n << 252n,
+            salt: BigInt(i), // Different salt for each order
+          }),
+        );
         makers.push(await user.getAddress());
       }
 
       // Create orders first
-      await delegateProxy
-        .connect(owner)
-        .create1inchOrderBatch(orders, makers);
+      await delegateProxy.connect(owner).create1inchOrderBatch(orders, makers);
 
       // Cancel all orders in batch - should emit 3 OrderCancelled events
-      await expect(
-        delegateProxy.connect(owner).cancel1inchOrderBatch(orders)
-      ).to.emit(delegateProxy, "OrderCancelled").and.to.emit(delegateProxy, "OrderCancelled").and.to.emit(delegateProxy, "OrderCancelled");
+      await expect(delegateProxy.connect(owner).cancel1inchOrderBatch(orders))
+        .to.emit(delegateProxy, "OrderCancelled")
+        .and.to.emit(delegateProxy, "OrderCancelled")
+        .and.to.emit(delegateProxy, "OrderCancelled");
     });
   });
 
@@ -318,7 +314,16 @@ describe("DelegateProxy", function () {
       await expect(
         delegateProxy
           .connect(user)
-          .preInteraction(order, "0x", orderHash, ZeroAddress, parseEther("1"), 0, 0, "0x")
+          .preInteraction(
+            order,
+            "0x",
+            orderHash,
+            ZeroAddress,
+            parseEther("1"),
+            0,
+            0,
+            "0x",
+          ),
       ).to.be.revertedWithCustomError(delegateProxy, "Unauthorized");
     });
 
@@ -336,7 +341,7 @@ describe("DelegateProxy", function () {
       await expect(
         delegateProxy
           .connect(user)
-          .postInteraction(order, "0x", orderHash, ZeroAddress, 0, 0, 0, "0x")
+          .postInteraction(order, "0x", orderHash, ZeroAddress, 0, 0, 0, "0x"),
       ).to.be.revertedWithCustomError(delegateProxy, "Unauthorized");
     });
   });
@@ -352,16 +357,17 @@ describe("DelegateProxy", function () {
         value: ethAmount,
       });
 
-
       await expect(
-        delegateProxy.connect(owner).rescue(ETH_ADDRESS)
+        delegateProxy.connect(owner).rescue(ETH_ADDRESS),
       ).to.changeEtherBalance(owner, ethAmount);
     });
 
     it("Should rescue stuck ERC20 tokens", async function () {
       // Send tokens to the contract
       const tokenAmount = parseEther("5");
-      await weth.connect(user).transfer(await delegateProxy.getAddress(), tokenAmount);
+      await weth
+        .connect(user)
+        .transfer(await delegateProxy.getAddress(), tokenAmount);
 
       const ownerBalanceBefore = await weth.balanceOf(await owner.getAddress());
 
@@ -373,13 +379,13 @@ describe("DelegateProxy", function () {
 
     it("Should revert when rescuing zero ETH balance", async function () {
       await expect(
-        delegateProxy.connect(owner).rescue(ETH_ADDRESS)
+        delegateProxy.connect(owner).rescue(ETH_ADDRESS),
       ).to.be.revertedWithCustomError(delegateProxy, "InsufficientBalance");
     });
 
     it("Should revert when rescuing zero token balance", async function () {
       await expect(
-        delegateProxy.connect(owner).rescue(await weth.getAddress())
+        delegateProxy.connect(owner).rescue(await weth.getAddress()),
       ).to.be.revertedWithCustomError(delegateProxy, "InsufficientBalance");
     });
 
@@ -391,7 +397,7 @@ describe("DelegateProxy", function () {
       });
 
       await expect(
-        delegateProxy.connect(user).rescue(ETH_ADDRESS)
+        delegateProxy.connect(user).rescue(ETH_ADDRESS),
       ).to.be.revertedWithCustomError(delegateProxy, "Unauthorized");
     });
   });
@@ -432,8 +438,10 @@ describe("DelegateProxy", function () {
       // Create comprehensive order
       const wethAmount = parseEther("10");
       const inchAmount = parseEther("1000");
-      
-      await weth.connect(user).approve(await delegateProxy.getAddress(), wethAmount);
+
+      await weth
+        .connect(user)
+        .approve(await delegateProxy.getAddress(), wethAmount);
 
       const order = buildMockOrder({
         maker: await delegateProxy.getAddress(),
@@ -465,39 +473,50 @@ describe("DelegateProxy", function () {
 
       // 4. Simulate partial fill via postInteraction
       const protocolAddress = await _1inch.getAddress();
-      await ethers.provider.send("hardhat_impersonateAccount", [protocolAddress]);
-      await ethers.provider.send("hardhat_setBalance", [protocolAddress, "0x1000000000000000000"]);
+      await ethers.provider.send("hardhat_impersonateAccount", [
+        protocolAddress,
+      ]);
+      await ethers.provider.send("hardhat_setBalance", [
+        protocolAddress,
+        "0x1000000000000000000",
+      ]);
       const protocolSigner = await ethers.getSigner(protocolAddress);
 
       const halfAmount = wethAmount / 2n;
-      await delegateProxy.connect(protocolSigner).postInteraction(
-        order,
-        "0x",
-        orderHash,
-        await user.getAddress(),
-        halfAmount,
-        inchAmount / 2n,
-        halfAmount,
-        "0x"
-      );
+      await delegateProxy
+        .connect(protocolSigner)
+        .postInteraction(
+          order,
+          "0x",
+          orderHash,
+          await user.getAddress(),
+          halfAmount,
+          inchAmount / 2n,
+          halfAmount,
+          "0x",
+        );
 
       // Verify partial fill
       const updatedData = await delegateProxy.getOrderData([orderHash]);
       expect(updatedData[0].remainingAmount).to.equal(halfAmount);
 
       // 5. Complete the fill
-      await delegateProxy.connect(protocolSigner).postInteraction(
-        order,
-        "0x",
-        orderHash,
-        await user.getAddress(),
-        0n,
-        0n,
-        0n,
-        "0x"
-      );
+      await delegateProxy
+        .connect(protocolSigner)
+        .postInteraction(
+          order,
+          "0x",
+          orderHash,
+          await user.getAddress(),
+          0n,
+          0n,
+          0n,
+          "0x",
+        );
 
-      await ethers.provider.send("hardhat_stopImpersonatingAccount", [protocolAddress]);
+      await ethers.provider.send("hardhat_stopImpersonatingAccount", [
+        protocolAddress,
+      ]);
 
       // Verify order cleanup
       const finalData = await delegateProxy.getOrderData([orderHash]);
@@ -509,20 +528,24 @@ describe("DelegateProxy", function () {
       const orders = [];
       const makers = [];
       const orderCount = 3;
-      
-      await weth.connect(user).approve(await delegateProxy.getAddress(), parseEther("3"));
+
+      await weth
+        .connect(user)
+        .approve(await delegateProxy.getAddress(), parseEther("3"));
 
       // Create multiple orders
       for (let i = 0; i < orderCount; i++) {
-        orders.push(buildMockOrder({
-          maker: await delegateProxy.getAddress(),
-          receiver: await user.getAddress(),
-          makerAsset: await weth.getAddress(),
-          makingAmount: parseEther("1"),
-          takerAsset: await inch.getAddress(),
-          takingAmount: parseEther("100"),
-          salt: BigInt(i),
-        }));
+        orders.push(
+          buildMockOrder({
+            maker: await delegateProxy.getAddress(),
+            receiver: await user.getAddress(),
+            makerAsset: await weth.getAddress(),
+            makingAmount: parseEther("1"),
+            takerAsset: await inch.getAddress(),
+            takingAmount: parseEther("100"),
+            salt: BigInt(i),
+          }),
+        );
         makers.push(await user.getAddress());
       }
 
@@ -531,10 +554,10 @@ describe("DelegateProxy", function () {
 
       // Verify all orders were created
       const orderHashes = await Promise.all(
-        orders.map(order => _1inch.hashOrder(order))
+        orders.map((order) => _1inch.hashOrder(order)),
       );
       const orderData = await delegateProxy.getOrderData(orderHashes);
-      
+
       for (let i = 0; i < orderCount; i++) {
         expect(orderData[i].maker).to.equal(await user.getAddress());
         expect(orderData[i].signed).to.be.true;

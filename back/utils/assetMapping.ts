@@ -1,8 +1,17 @@
 import { getConfig } from "@back/services/config";
+import {
+  addressToSymbol as commonAddressToSymbol,
+  symbolToAddress as commonSymbolToAddress,
+  getSymbolFromAssets as commonGetSymbolFromAssets,
+  getAssetSymbol as commonGetAssetSymbol,
+} from "@common/utils";
 
 /**
  * Utility functions for converting between asset addresses and symbols
  * using the centralized token mapping configuration
+ *
+ * These are convenience wrappers that automatically get the config
+ * and call the consolidated utilities from common/utils
  */
 
 /**
@@ -10,16 +19,7 @@ import { getConfig } from "@back/services/config";
  */
 export function addressToSymbol(address: string, chainId: number = 1): string {
   const config = getConfig();
-  const lowercaseAddress = address.toLowerCase();
-
-  for (const [symbol, chains] of Object.entries(config.tokenMapping)) {
-    const chainAddress = chains[chainId.toString()];
-    if (chainAddress && chainAddress.toLowerCase() === lowercaseAddress) {
-      return symbol;
-    }
-  }
-
-  return "UNKNOWN";
+  return commonAddressToSymbol(address, config.tokenMapping, chainId);
 }
 
 /**
@@ -30,13 +30,7 @@ export function symbolToAddress(
   chainId: number = 1,
 ): string | undefined {
   const config = getConfig();
-  const tokenMapping = config.tokenMapping[symbol];
-
-  if (!tokenMapping) {
-    return undefined;
-  }
-
-  return tokenMapping[chainId.toString()];
+  return commonSymbolToAddress(symbol, config.tokenMapping, chainId);
 }
 
 /**
@@ -47,10 +41,13 @@ export function getSymbolFromAssets(
   takerAsset: string,
   chainId: number = 1,
 ): `${string}:${string}:${string}` {
-  const makerSymbol = addressToSymbol(makerAsset, chainId);
-  const takerSymbol = addressToSymbol(takerAsset, chainId);
-
-  return `agg:spot:${makerSymbol}${takerSymbol}`;
+  const config = getConfig();
+  return commonGetSymbolFromAssets(
+    makerAsset,
+    takerAsset,
+    config.tokenMapping,
+    chainId,
+  );
 }
 
 /**
@@ -60,5 +57,6 @@ export function getAssetSymbol(
   assetAddress: string,
   chainId: number = 1,
 ): string {
-  return addressToSymbol(assetAddress, chainId);
+  const config = getConfig();
+  return commonGetAssetSymbol(assetAddress, config.tokenMapping, chainId);
 }

@@ -164,7 +164,7 @@ Creates a new order with EVM signature verification.
   "makerAsset": "0xA0b86a33E6409c26C5E1d7D35644C7a9A6BdF4fE",
   "takerAsset": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
   "params": {
-    "triggerPrice": 2500.0,
+    "nextTriggerValue": 2500.0,
     "limitPrice": 2490.0
   },
   "signature": "0x...",
@@ -288,8 +288,12 @@ async function getOrderStatuses(orderHashes: string[]): Promise<OrderStatus[]> {
     maker: data.maker,
     remainingAmount: data.remainingAmount,
     signed: data.signed,
-    status: data.remainingAmount === 0n ? "FILLED" : 
-            data.maker === "0x0000000000000000000000000000000000000000" ? "CANCELLED" : "ACTIVE",
+    status:
+      data.remainingAmount === 0n
+        ? "FILLED"
+        : data.maker === "0x0000000000000000000000000000000000000000"
+          ? "CANCELLED"
+          : "ACTIVE",
   }));
 }
 ```
@@ -301,14 +305,18 @@ The DelegateProxy contract provides the following key functions for order manage
 ### Order Creation Functions
 
 #### `create1inchOrder(order, maker)`
+
 Creates a single 1inch limit order with the following flow:
+
 - Validates that `order.maker` equals the DelegateProxy contract address
 - Stores order information in `orders[orderHash]` mapping with the original user as `maker`
 - Approves tokens for the 1inch protocol if needed
 - Emits `OrderCreated` event
 
 #### `create1inchOrderBatch(orders, makers)`
+
 Creates multiple 1inch limit orders in a single transaction:
+
 - Validates array lengths match
 - Processes each order with the same logic as single order creation
 - More gas-efficient for creating multiple orders simultaneously
@@ -316,21 +324,27 @@ Creates multiple 1inch limit orders in a single transaction:
 ### Order Management Functions
 
 #### `cancel1inchOrder(order)`
+
 Cancels a single existing order:
+
 - Only callable by approved keepers
 - Deletes order from storage
 - Calls 1inch protocol's `cancelOrder` function
 - Emits `OrderCancelled` event
 
 #### `cancel1inchOrderBatch(orders[])`
+
 Cancels multiple orders in a single transaction:
+
 - Only callable by approved keepers
 - Processes each order with the same logic as single order cancellation
 - More gas-efficient for cancelling multiple orders simultaneously
 - Emits one `OrderCancelled` event per order
 
 #### `getOrderData(orderIds[])`
+
 Batch query function for order status:
+
 - Returns `OrderInfo[]` array with current order state
 - Used for efficient multi-call status checking
 - View function (no gas cost)
@@ -338,14 +352,18 @@ Batch query function for order status:
 ### Interaction Hooks (1inch Protocol Integration)
 
 #### `preInteraction(order, orderHash, makingAmount, ...)`
+
 Called by 1inch protocol before order execution:
+
 - Transfers `makingAmount` from original user (`info.maker`) to DelegateProxy using `safeTransferFrom()`
 - Updates `info.remainingAmount` by subtracting the `makingAmount`
 - Only callable by 1inch protocol (protected by `only1inch` modifier)
 - Protected by `nonReentrant` modifier
 
 #### `postInteraction(order, orderHash, remainingMakingAmount, ...)`
+
 Called by 1inch protocol after order execution:
+
 - If `remainingMakingAmount == 0`: Deletes order from storage (`delete orders[orderHash]`) for gas optimization
 - If `remainingMakingAmount > 0`: Updates `orders[orderHash].remainingAmount` with the actual remaining amount
 - Only callable by 1inch protocol (protected by `only1inch` modifier)
@@ -353,12 +371,16 @@ Called by 1inch protocol after order execution:
 ### Administrative Functions
 
 #### `setKeeper(keeper, approved)`
+
 Manages keeper permissions:
+
 - Only callable by contract owner
 - Controls who can create/cancel orders
 
 #### `rescue(token)`
+
 Emergency function to recover stuck funds:
+
 - Only callable by contract owner
 - Supports both native ETH (`0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`) and ERC20 tokens
 - For ETH: Uses `payable(owner()).transfer(balance)` to send entire contract balance
@@ -367,7 +389,9 @@ Emergency function to recover stuck funds:
 - Protected by `nonReentrant` modifier
 
 #### `isValidSignature(hash, signature)`
+
 EIP-1271 signature validation:
+
 - Returns magic value `0x1626ba7e` for valid orders
 - Returns `0xffffffff` for invalid orders
 - Used by 1inch protocol to validate contract signatures
@@ -376,13 +400,13 @@ EIP-1271 signature validation:
 
 ## Involved Components
 
-| Component                  | Path                              | Responsibility                                    | Status |
-| -------------------------- | --------------------------------- | ------------------------------------------------- | ------ |
-| Frontend                   | `front/`                          | Order creation UI, multi-call batching for status |        |
-| API Server                 | `back/services/apiServer.ts`      | REST endpoints                                    |        |
-| Order Registry             | `back/services/orderRegistry.ts`  | Lifecycle management, watcher spawning            |        |
-| Order Watchers             | `back/orders/`                    | Modular trigger implementations                   |        |
-| Storage Layer              | `back/services/storage.ts`        | Database persistence                              |        |
-| Type Definitions           | `common/types.ts`                 | Shared interfaces                                 |        |
-| DelegateProxy Contract     | `contracts/src/DelegateProxy.sol` | JIT order funding, pre/post interaction hooks, rescue function     |        |
-| 1inch Limit Order Protocol | External                          | Order execution and filling                       |        |
+| Component                  | Path                              | Responsibility                                                 | Status |
+| -------------------------- | --------------------------------- | -------------------------------------------------------------- | ------ |
+| Frontend                   | `front/`                          | Order creation UI, multi-call batching for status              |        |
+| API Server                 | `back/services/apiServer.ts`      | REST endpoints                                                 |        |
+| Order Registry             | `back/services/orderRegistry.ts`  | Lifecycle management, watcher spawning                         |        |
+| Order Watchers             | `back/orders/`                    | Modular trigger implementations                                |        |
+| Storage Layer              | `back/services/storage.ts`        | Database persistence                                           |        |
+| Type Definitions           | `common/types.ts`                 | Shared interfaces                                              |        |
+| DelegateProxy Contract     | `contracts/src/DelegateProxy.sol` | JIT order funding, pre/post interaction hooks, rescue function |        |
+| 1inch Limit Order Protocol | External                          | Order execution and filling                                    |        |

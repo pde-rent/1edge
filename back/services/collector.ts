@@ -8,7 +8,11 @@ import {
   subToTickerFeeds,
 } from "./marketData";
 import { logger } from "@back/utils/logger";
-import type { CollectorConfig, Symbol, AggregatedTicker } from "@common/types";
+import type {
+  CollectorConfig,
+  PairSymbol,
+  AggregatedTicker,
+} from "@common/types";
 import { sleep } from "@common/utils";
 import { pubSubServer } from "./pubSubServer";
 import { initOHLCStorage, getOHLCStorage } from "./ohlcStorage";
@@ -38,9 +42,9 @@ class CollectorService {
   private config: CollectorConfig;
   private isRunning: boolean = false;
   private wsSubscription: { close: () => void } | null = null;
-  private priceCache: Map<Symbol, AggregatedTicker> = new Map();
+  private priceCache: Map<PairSymbol, AggregatedTicker> = new Map();
   private lastStatsLog: number = 0;
-  private indexData: Map<Symbol, IndexData> = new Map();
+  private indexData: Map<PairSymbol, IndexData> = new Map();
   private publishInterval: any = null;
   private readonly PUBLISH_INTERVAL_MS = 1000; // 1000ms = 1 time per second
   private metrics: PerformanceMetrics = {
@@ -54,7 +58,7 @@ class CollectorService {
   private calculationTimes: number[] = [];
   private publishTimes: number[] = [];
   private readonly MAX_METRIC_SAMPLES = 1000;
-  private processingQueue: Map<Symbol, number> = new Map(); // Track pending updates per symbol
+  private processingQueue: Map<PairSymbol, number> = new Map(); // Track pending updates per symbol
   private readonly MAX_PENDING_PER_SYMBOL = 3; // Max pending updates per symbol
 
   constructor() {
@@ -79,7 +83,7 @@ class CollectorService {
     }
 
     // Run OHLC data sanity check and fill historical data if needed
-    const symbols = tickerKeys as Symbol[];
+    const symbols = tickerKeys as PairSymbol[];
     await getOHLCStorage().runDataSanityCheck(symbols);
 
     // Start WebSocket subscriptions
@@ -123,7 +127,7 @@ class CollectorService {
     logger.info("Collector service stopped");
   }
 
-  private onTickerUpdate(symbol: Symbol, data: AggregatedTicker) {
+  private onTickerUpdate(symbol: PairSymbol, data: AggregatedTicker) {
     if (!this.isRunning) return;
 
     // Check if we have too many pending updates for this symbol
@@ -199,7 +203,7 @@ class CollectorService {
   }
 
   private calculateWeightedAverages(
-    symbol: Symbol,
+    symbol: PairSymbol,
     data: AggregatedTicker,
     indexData: IndexData,
   ) {
@@ -217,7 +221,7 @@ class CollectorService {
     for (const [srcSymbol, srcData] of Object.entries(data.sources)) {
       if (srcData.status !== "active" || !srcData.last?.mid) continue;
 
-      const sourceConfig = config.sources[srcSymbol as Symbol];
+      const sourceConfig = config.sources[srcSymbol as PairSymbol];
       const weight = sourceConfig?.weight || 1;
       const bid = srcData.last.bid || srcData.last.mid;
       const ask = srcData.last.ask || srcData.last.mid;
@@ -389,7 +393,7 @@ class CollectorService {
     // Update all tickers in parallel
     const updatePromises = tickers.map(async ([symbol, config]) => {
       try {
-        await updateAggregatedTicker(symbol as Symbol, config);
+        await updateAggregatedTicker(symbol as PairSymbol, config);
       } catch (error) {
         logger.error(`Failed to update ${symbol}:`, error);
       }

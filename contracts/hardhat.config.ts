@@ -75,12 +75,12 @@ export const ETHERSCAN_NETWORKS: Record<number, string> = {
   137: "polygon",
   8453: "base",
   42161: "arbitrumOne",
-  43114: "avalanche"
+  43114: "avalanche",
 };
 
 // Generate etherscan API key config
 const etherscanApiKeys: Record<string, string> = {};
-Object.values(ETHERSCAN_NETWORKS).forEach(networkName => {
+Object.values(ETHERSCAN_NETWORKS).forEach((networkName) => {
   etherscanApiKeys[networkName] = process.env.ETHERSCAN_API_KEY || "";
 });
 

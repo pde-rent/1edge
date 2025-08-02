@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { PanelWrapper } from './common/Panel';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { roundSig, formatPrice } from '../lib/utils';
+import { roundSig, formatPrice, parseFeedSymbol, formatMidValue } from '../lib/utils';
 import { Layers, TrendingUp, Loader2, Wifi } from 'lucide-react';
 
 /**
@@ -25,44 +25,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-interface ParsedSymbol {
-  main: string;
-  tags: string[];
-}
-
-/**
- * Parses a feed symbol into its main part and tags.
- * @param symbol - The feed symbol string.
- * @returns An object with main and tags properties.
- */
-function parseFeedSymbol(symbol: string): ParsedSymbol {
-  if (!symbol) return { main: 'N/A', tags: [] };
-  const parts = symbol.split(':');
-  if (parts.length === 3) {
-    // e.g., agg:spot:BTCUSD -> main: BTCUSD, tags: [agg, spot]
-    return { main: parts[2], tags: [parts[0], parts[1]] };
-  }
-  if (parts.length === 2) {
-    // e.g., binance:BTCUSDT -> main: BTCUSDT, tags: [binance]
-    return { main: parts[1], tags: [parts[0]] };
-  }
-  if (parts.length === 1 && parts[0].includes('-')){
-    // e.g. BTC-USD -> main: BTC-USD, tags: [] (could be from coinbase, treat as main)
-    return { main: parts[0], tags: [] };
-  }
-  // Default fallback if parsing fails or format is unexpected
-  return { main: symbol, tags: [] };
-}
-
-/**
- * Formats the mid value for display, using scientific notation for small values.
- * @param value - The mid value to format.
- * @returns The formatted string.
- */
-function formatMidValue(value: number | undefined): string {
-  if (value === undefined || value === null) return '-';
-  return formatPrice(value);
-}
+// Note: parseFeedSymbol and formatMidValue are now imported from common/utils
 
 /**
  * FeedsPanel displays a list of available feeds with spread and mid values.

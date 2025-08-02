@@ -3,7 +3,16 @@ import * as dotenv from "dotenv";
 import { resolve } from "path";
 import * as fs from "fs";
 import * as path from "path";
-import { createTable, formatHash, formatLongHex, formatGasCost, getNetworkDisplay, getBalanceStatus, askUser, guardSalt } from "../tests/utils";
+import {
+  createTable,
+  formatHash,
+  formatLongHex,
+  formatGasCost,
+  getNetworkDisplay,
+  getBalanceStatus,
+  askUser,
+  guardSalt,
+} from "../tests/utils";
 import { exec } from "child_process";
 import { promisify } from "util";
 
@@ -20,14 +29,23 @@ const defaultConfig = JSON.parse(fs.readFileSync(defaultConfigPath, "utf8"));
 import { ETHERSCAN_NETWORKS } from "../hardhat.config";
 
 // Check if contract is verified on Etherscan
-async function isContractVerified(address: string, chainId: number, constructorArg: string): Promise<boolean> {
+async function isContractVerified(
+  address: string,
+  chainId: number,
+  constructorArg: string,
+): Promise<boolean> {
   const network = ETHERSCAN_NETWORKS[chainId];
   if (!network) return false;
 
   try {
     const command = `npx hardhat verify --network ${network} ${address} "${constructorArg}"`;
-    const { stdout: result } = await execAsync(command, { cwd: path.join(__dirname, "..") });
-    return result.includes("Already verified") || result.includes("Successfully verified");
+    const { stdout: result } = await execAsync(command, {
+      cwd: path.join(__dirname, ".."),
+    });
+    return (
+      result.includes("Already verified") ||
+      result.includes("Successfully verified")
+    );
   } catch (error: any) {
     if (error.stdout?.includes("Already verified")) return true;
     return false;
@@ -35,7 +53,11 @@ async function isContractVerified(address: string, chainId: number, constructorA
 }
 
 // Verify contract on Etherscan
-async function verifyContract(address: string, chainId: number, constructorArgs: string[]): Promise<boolean> {
+async function verifyContract(
+  address: string,
+  chainId: number,
+  constructorArgs: string[],
+): Promise<boolean> {
   const network = ETHERSCAN_NETWORKS[chainId];
   if (!network) {
     console.log(`⚠️  Verification not supported for chain ID ${chainId}`);
@@ -44,11 +66,15 @@ async function verifyContract(address: string, chainId: number, constructorArgs:
 
   try {
     console.log(`🔍 Verifying contract on ${network}...`);
-    console.log(`🔑 Using API key: ${process.env.ETHERSCAN_API_KEY ? process.env.ETHERSCAN_API_KEY.slice(0, 8) + '...' + process.env.ETHERSCAN_API_KEY.slice(-4) : 'NOT_SET'}`);
-    const argsString = constructorArgs.join(' ');
+    console.log(
+      `🔑 Using API key: ${process.env.ETHERSCAN_API_KEY ? process.env.ETHERSCAN_API_KEY.slice(0, 8) + "..." + process.env.ETHERSCAN_API_KEY.slice(-4) : "NOT_SET"}`,
+    );
+    const argsString = constructorArgs.join(" ");
     const command = `npx hardhat verify --network ${network} ${address} ${argsString}`;
     console.log(`📝 Running command: ${command}`);
-    const { stdout } = await execAsync(command, { cwd: path.join(__dirname, "..") });
+    const { stdout } = await execAsync(command, {
+      cwd: path.join(__dirname, ".."),
+    });
 
     if (stdout.includes("Already verified")) {
       console.log("✅ Contract was already verified");
@@ -74,7 +100,7 @@ async function verifyContract(address: string, chainId: number, constructorArgs:
 function getCreateXContract(address: string, signer: any) {
   const createXInterface = new ethers.Interface([
     "function deployCreate2(bytes32 salt, bytes memory initCode) external payable returns (address newContract)",
-    "function computeCreate2Address(bytes32 salt, bytes32 initCodeHash) external view returns (address computedAddress)"
+    "function computeCreate2Address(bytes32 salt, bytes32 initCodeHash) external view returns (address computedAddress)",
   ]);
   return new ethers.Contract(address, createXInterface, signer);
 }
@@ -114,7 +140,11 @@ async function main() {
     _1inch = ethereumConfig.aggregatorV6;
     createXFactory = ethereumConfig.createXFactory;
     console.log("  Using Ethereum mainnet addresses for hardhat local testing");
-  } else if (!networkConfig || !networkConfig.aggregatorV6 || !networkConfig.createXFactory) {
+  } else if (
+    !networkConfig ||
+    !networkConfig.aggregatorV6 ||
+    !networkConfig.createXFactory
+  ) {
     throw new Error(
       `No 1inch LOP (AggregatorV6) or CreateX factory address configured for chain ID ${chainId}`,
     );
@@ -130,13 +160,19 @@ async function main() {
   console.log("\n🔮 Calculating CREATE2 deterministic address...");
 
   try {
-    const DelegateProxy = await ethers.getContractFactory("DelegateProxy", keeper);
+    const DelegateProxy = await ethers.getContractFactory(
+      "DelegateProxy",
+      keeper,
+    );
 
     // Get raw contract bytecode from artifacts (without constructor args)
     const contractBytecode = DelegateProxy.bytecode;
 
     // Encode constructor arguments (_1inch, _owner)
-    const constructorArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [_1inch, keeper.address]);
+    const constructorArgs = ethers.AbiCoder.defaultAbiCoder().encode(
+      ["address", "address"],
+      [_1inch, keeper.address],
+    );
 
     // Create the complete initCode (bytecode + constructor args)
     const initCode = contractBytecode + constructorArgs.slice(2); // Remove 0x prefix from args
@@ -147,7 +183,10 @@ async function main() {
 
     // Calculate the deterministic CREATE2 address using CreateX with guarded salt
     const createXContract = getCreateXContract(createXFactory, keeper);
-    const predictedAddress = await createXContract.computeCreate2Address(guardedSalt, initCodeHash);
+    const predictedAddress = await createXContract.computeCreate2Address(
+      guardedSalt,
+      initCodeHash,
+    );
 
     // Check if contract already exists at this address
     const existingCode = await provider.getCode(predictedAddress);
@@ -162,16 +201,27 @@ async function main() {
         console.log("👑 Existing Owner:", existingOwner);
 
         if (existingOwner.toLowerCase() === keeper.address.toLowerCase()) {
-          console.log("✅ Contract already deployed with correct owner. Skipping deployment.");
+          console.log(
+            "✅ Contract already deployed with correct owner. Skipping deployment.",
+          );
 
           // Check verification status
           console.log("\n🔍 Checking contract verification status...");
-          const isVerified = await isContractVerified(predictedAddress, chainId, `${_1inch} ${keeper.address}`);
+          const isVerified = await isContractVerified(
+            predictedAddress,
+            chainId,
+            `${_1inch} ${keeper.address}`,
+          );
 
           if (!isVerified) {
-            const shouldVerify = await askUser("Contract is not verified. Would you like to verify it now? (yes/no): ");
+            const shouldVerify = await askUser(
+              "Contract is not verified. Would you like to verify it now? (yes/no): ",
+            );
             if (shouldVerify === "yes" || shouldVerify === "y") {
-              await verifyContract(predictedAddress, chainId, [_1inch, keeper.address]);
+              await verifyContract(predictedAddress, chainId, [
+                _1inch,
+                keeper.address,
+              ]);
             }
           } else {
             console.log("✅ Contract is already verified");
@@ -183,7 +233,9 @@ async function main() {
           process.exit(1);
         }
       } catch (error) {
-        console.log("❌ Contract exists but is not a DelegateProxy. Salt collision!");
+        console.log(
+          "❌ Contract exists but is not a DelegateProxy. Salt collision!",
+        );
         process.exit(1);
       }
     }
@@ -221,32 +273,46 @@ async function main() {
     }
 
     // Step 2: Display deployment table and ask for confirmation
-    const deploymentTable = createTable([
-      ["Network", getNetworkDisplay(network, chainId)],
-      ["Deployer/Owner", keeper.address],
-      ["Initial Keeper", keeper.address],
-      ["1inch LOP Address", _1inch],
-      ["CreateX Factory", createXFactory],
-      ["Salt (original)", `${UNHASHED_SALT} (${formatHash(DELEGATE_PROXY_SALT)})`],
-      ["Salt (guarded)", formatHash(guardedSalt)],
-      ["InitCode", formatLongHex(initCode)],
-      ["InitCodeHash", formatHash(initCodeHash)],
-      ["Target Address (CREATE2)", predictedAddress],
-      ["Current Gas Price", `${ethers.formatUnits(currentGasPrice, "gwei")} gwei`],
-      ["Deployment Gas", estimatedGas.toString()],
-      ["SetKeeper Gas", setKeeperGas.toString()],
-      ["Total Gas", totalGas.toString()],
-      ["Cost @ 1 gwei", `${formatGasCost(totalGas, lowGasPrice)} ETH`],
-      ["Cost @ 10 gwei", `${formatGasCost(totalGas, medGasPrice)} ETH`],
-      ["Cost @ 100 gwei", `${formatGasCost(totalGas, highGasPrice)} ETH`],
-      ["Cost @ current price", `${estimatedCost} ETH`],
-      ["Keeper Balance", `${ethers.formatEther(keeperBalance)} ETH`],
-      ["Balance Warning", getBalanceStatus(keeperBalance, ethers.parseEther("0.01"))]
-    ], "DEPLOYMENT CONFIRMATION");
+    const deploymentTable = createTable(
+      [
+        ["Network", getNetworkDisplay(network, chainId)],
+        ["Deployer/Owner", keeper.address],
+        ["Initial Keeper", keeper.address],
+        ["1inch LOP Address", _1inch],
+        ["CreateX Factory", createXFactory],
+        [
+          "Salt (original)",
+          `${UNHASHED_SALT} (${formatHash(DELEGATE_PROXY_SALT)})`,
+        ],
+        ["Salt (guarded)", formatHash(guardedSalt)],
+        ["InitCode", formatLongHex(initCode)],
+        ["InitCodeHash", formatHash(initCodeHash)],
+        ["Target Address (CREATE2)", predictedAddress],
+        [
+          "Current Gas Price",
+          `${ethers.formatUnits(currentGasPrice, "gwei")} gwei`,
+        ],
+        ["Deployment Gas", estimatedGas.toString()],
+        ["SetKeeper Gas", setKeeperGas.toString()],
+        ["Total Gas", totalGas.toString()],
+        ["Cost @ 1 gwei", `${formatGasCost(totalGas, lowGasPrice)} ETH`],
+        ["Cost @ 10 gwei", `${formatGasCost(totalGas, medGasPrice)} ETH`],
+        ["Cost @ 100 gwei", `${formatGasCost(totalGas, highGasPrice)} ETH`],
+        ["Cost @ current price", `${estimatedCost} ETH`],
+        ["Keeper Balance", `${ethers.formatEther(keeperBalance)} ETH`],
+        [
+          "Balance Warning",
+          getBalanceStatus(keeperBalance, ethers.parseEther("0.01")),
+        ],
+      ],
+      "DEPLOYMENT CONFIRMATION",
+    );
 
     console.log(`\n${deploymentTable}\n`);
 
-    const confirmation = await askUser("< Do you want to proceed with deployment? (yes/no): ");
+    const confirmation = await askUser(
+      "< Do you want to proceed with deployment? (yes/no): ",
+    );
 
     if (confirmation !== "yes" && confirmation !== "y") {
       console.log("\n> ❌ Deployment cancelled by user.");
@@ -260,13 +326,19 @@ async function main() {
     // Verify CreateX factory exists on this network
     const createXBytecode = await provider.getCode(createXFactory);
     if (createXBytecode === "0x") {
-      throw new Error(`CreateX factory not deployed at ${createXFactory} on chain ${chainId}`);
+      throw new Error(
+        `CreateX factory not deployed at ${createXFactory} on chain ${chainId}`,
+      );
     }
 
     // Deploy DelegateProxy using CreateX CREATE2 function
-    const deployTx = await createXContract.deployCreate2(DELEGATE_PROXY_SALT, initCode, {
-      gasLimit: estimatedGas + 50000n // Add buffer for CreateX overhead
-    });
+    const deployTx = await createXContract.deployCreate2(
+      DELEGATE_PROXY_SALT,
+      initCode,
+      {
+        gasLimit: estimatedGas + 50000n, // Add buffer for CreateX overhead
+      },
+    );
 
     const receipt = await deployTx.wait();
 
@@ -278,7 +350,7 @@ async function main() {
       for (const log of receipt.logs) {
         try {
           const createXInterface = new ethers.Interface([
-            "event ContractCreation(address indexed newContract, bytes32 indexed salt)"
+            "event ContractCreation(address indexed newContract, bytes32 indexed salt)",
           ]);
           const parsedLog = createXInterface.parseLog(log);
           if (parsedLog && parsedLog.name === "ContractCreation") {
@@ -297,14 +369,15 @@ async function main() {
     console.log("📤 CREATE2 transaction confirmed!");
 
     const address = deployedAddress;
-    const addressMatches = address.toLowerCase() === predictedAddress.toLowerCase();
+    const addressMatches =
+      address.toLowerCase() === predictedAddress.toLowerCase();
 
     // Verify deployment with better error handling
     let owner: string;
     let ownerIsDeployer = false;
     try {
       // Wait a bit for the contract to be available
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Check if contract has code at the deployed address
       const deployedCode = await provider.getCode(deployedAddress);
@@ -339,27 +412,43 @@ async function main() {
       ["Salt Used", formatHash(DELEGATE_PROXY_SALT)],
       ["Address Prediction", addressMatches ? "✅ Correct" : "❌ Mismatch"],
       ["Owner Verification", ownerIsDeployer ? "✅ Correct" : "❌ Incorrect"],
-      ["Keeper Setup", "✅ Complete"]
+      ["Keeper Setup", "✅ Complete"],
     ];
 
     if (deploymentTx) {
       const deploymentReceipt = await deploymentTx.wait();
       const setKeeperReceipt = await setKeeperTx.wait();
-      const totalGasUsed = deploymentReceipt!.gasUsed + setKeeperReceipt!.gasUsed;
-      const actualCost = formatGasCost(totalGasUsed, deploymentTx.gasPrice || currentGasPrice);
+      const totalGasUsed =
+        deploymentReceipt!.gasUsed + setKeeperReceipt!.gasUsed;
+      const actualCost = formatGasCost(
+        totalGasUsed,
+        deploymentTx.gasPrice || currentGasPrice,
+      );
       resultRows.push(["Actual Gas Used", totalGasUsed.toString()]);
       resultRows.push(["Actual Cost", `${actualCost} ETH`]);
     }
 
     // Step 7: Contract verification
     console.log("\n🔍 Checking contract verification status...");
-    const isVerified = await isContractVerified(address, chainId, `${_1inch} ${keeper.address}`);
+    const isVerified = await isContractVerified(
+      address,
+      chainId,
+      `${_1inch} ${keeper.address}`,
+    );
 
     if (!isVerified) {
-      const shouldVerify = await askUser("Contract is not verified. Would you like to verify it now? (yes/no): ");
+      const shouldVerify = await askUser(
+        "Contract is not verified. Would you like to verify it now? (yes/no): ",
+      );
       if (shouldVerify === "yes" || shouldVerify === "y") {
-        const verificationSuccess = await verifyContract(address, chainId, [_1inch, keeper.address]);
-        resultRows.push(["Verification", verificationSuccess ? "✅ Successful" : "❌ Failed"]);
+        const verificationSuccess = await verifyContract(address, chainId, [
+          _1inch,
+          keeper.address,
+        ]);
+        resultRows.push([
+          "Verification",
+          verificationSuccess ? "✅ Successful" : "❌ Failed",
+        ]);
       } else {
         resultRows.push(["Verification", "⏭️ Skipped"]);
       }
@@ -372,7 +461,6 @@ async function main() {
     resultRows.push(["", "3. Set up monitoring and alerts"]);
 
     console.log(`\n${createTable(resultRows, "🎉 DEPLOYMENT SUCCESSFUL!")}`);
-
   } catch (error) {
     console.error("\n❌ Deployment simulation failed:", error);
     process.exit(1);

@@ -1,5 +1,5 @@
 import { OrderType } from "@common/types";
-import type { Order, TWAPParams } from "@common/types";
+import type { Order, TwapParams } from "@common/types";
 import { logger } from "@back/utils/logger";
 import {
   TimeBasedOrderWatcher,
@@ -11,56 +11,65 @@ import {
  * Time-Weighted Average Price (TWAP) order watcher
  * Executes trades evenly over a specified time period
  */
-class TWAPOrderWatcher extends TimeBasedOrderWatcher {
-  constructor() {
-    super(true); // Always use mock mode for TWAP
+export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
+  constructor(mockMode: boolean = false) {
+    super(mockMode);
   }
 
   async shouldTrigger(order: Order): Promise<boolean> {
-    const params = this.validateParams<TWAPParams>(order);
+    const params = this.validateParams<TwapParams>(order);
     if (!params) return false;
+
+    const now = Date.now();
 
     // Check if we have a valid next trigger time
     if (!order.nextTriggerValue || typeof order.nextTriggerValue !== "number") {
+      logger.info(`TWAP order ${order.id} has no valid nextTriggerValue`);
       return false;
     }
 
-    // Check duration limit
-    const elapsedTime = Date.now() - order.createdAt;
-    const durationMs = params.duration * MS_PER_HOUR;
+    // Check if start time has passed
+    if (now < params.startDate) {
+      logger.info(`TWAP order ${order.id} start time not reached yet. Now: ${now}, Start: ${params.startDate}`);
+      return false;
+    }
 
-    if (elapsedTime >= durationMs) {
-      logger.debug(`TWAP order ${order.id} completed - duration reached`);
+    // Check if end time has passed
+    if (now >= params.endDate) {
+      logger.info(`TWAP order ${order.id} completed - end time reached. Now: ${now}, End: ${params.endDate}`);
       return false;
     }
 
     // Check max price constraint
     if (this.exceedsMaxPrice(order, params.maxPrice)) {
-      logger.debug(
+      logger.info(
         `TWAP order ${order.id} skipped - price exceeds max price ${params.maxPrice}`,
       );
       return false;
     }
 
-    // Check time interval
-    return this.checkTimeInterval(order.nextTriggerValue, 0);
+    // Check if it's time to trigger
+    const shouldTrigger = now >= order.nextTriggerValue;
+    logger.info(`TWAP order ${order.id} trigger check: now=${now}, nextTrigger=${order.nextTriggerValue}, shouldTrigger=${shouldTrigger}`);
+    
+    return shouldTrigger;
   }
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
-    const params = this.validateParams<TWAPParams>(order);
+    const params = this.validateParams<TwapParams>(order);
     if (!params) throw new Error("Invalid TWAP parameters");
 
     const priceInfo = this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Calculate progress
-    const elapsedTime = Date.now() - order.createdAt;
-    const durationMs = params.duration * MS_PER_HOUR;
-    const progress = (elapsedTime / durationMs) * 100;
+    const elapsedTime = Date.now() - params.startDate;
+    const durationMs = params.endDate - params.startDate;
+    const progress = durationMs > 0 ? (elapsedTime / durationMs) * 100 : 0;
 
     logger.info(`TWAP execution at ${progress.toFixed(1)}% of duration`);
 
@@ -69,30 +78,23 @@ class TWAPOrderWatcher extends TimeBasedOrderWatcher {
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
     // Execute the order
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {
-    const params = this.validateParams<TWAPParams>(order);
+    const params = this.validateParams<TwapParams>(order);
     if (!params) return;
 
-    // Calculate interval based on remaining time and slices
-    const remainingSlices = params.slices - (order.triggerCount || 0) - 1;
-    if (remainingSlices <= 0) {
-      logger.debug(
-        `TWAP order ${order.id} completed all ${params.slices} slices`,
-      );
+    // For simple TWAP, just use the interval from params
+    const intervalMs = params.interval;
+    if (intervalMs <= 0) {
+      logger.debug(`TWAP order ${order.id} has no interval set`);
       return;
     }
-
-    const elapsedTime = Date.now() - order.createdAt;
-    const durationMs = params.duration * MS_PER_HOUR;
-    const remainingTime = durationMs - elapsedTime;
-    const intervalMs = remainingTime / remainingSlices;
 
     const lastTriggerTime = (order.nextTriggerValue as number) || Date.now();
     order.nextTriggerValue = this.getNextTriggerTime(
@@ -109,13 +111,13 @@ class TWAPOrderWatcher extends TimeBasedOrderWatcher {
    * Get the amount to execute for the current slice
    */
   getTriggerAmount(order: Order): string {
-    const params = this.validateParams<TWAPParams>(order);
-    if (!params) return "0";
+    const params = this.validateParams<TwapParams>(order);
+    if (!params || !params.makingAmount) return "0";
 
-    const sliceAmount = parseFloat(params.amount) / params.slices;
-    return sliceAmount.toFixed(8);
+    // For simple TWAP, use full amount
+    return params.makingAmount.toString();
   }
 }
 
-// Register the watcher
-registerOrderWatcher(OrderType.TWAP, new TWAPOrderWatcher());
+// Register the watcher (default to non-mock mode)
+registerOrderWatcher(OrderType.TWAP, new TWAPOrderWatcher(false));

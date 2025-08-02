@@ -76,7 +76,7 @@ describe("Chase Limit Order Lifecycle Test", () => {
     );
     logOrderState(updatedOrder, "After first movement");
     expect(updatedOrder.triggerCount).toBeGreaterThan(0);
-    expect(updatedOrder.triggerPrice).toBe(newPrice);
+    expect(updatedOrder.nextTriggerValue).toBe(newPrice);
 
     // Test another price movement - Another 3.5% movement
     const secondMovement = (newPrice * (DISTANCE_PCT + 0.5)) / 100;

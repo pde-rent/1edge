@@ -13,6 +13,11 @@ export {
   formatTimestamp as formatDateTime,
   percentChange,
   truncateAddress,
+  formatPrice,
+  formatMidValue,
+  parseFeedSymbol,
+  extractBaseQuote,
+  parseTradingPair,
 } from "@common/utils";
 
 // Import roundSig for local use
@@ -23,13 +28,6 @@ import { roundSig } from "@common/utils";
  */
 export function formatPercent(num: number): string {
   return `${num >= 0 ? "+" : ""}${roundSig(num, 6)}%`;
-}
-
-/**
- * Format price with 6 significant digits
- */
-export function formatPrice(price: number): string {
-  return roundSig(price, 6).toString();
 }
 
 export function getStatusColor(status: string): string {

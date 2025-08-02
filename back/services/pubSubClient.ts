@@ -1,5 +1,5 @@
 import { logger } from "@back/utils/logger";
-import type { Symbol } from "@common/types";
+import type { PairSymbol } from "@common/types";
 import { INTRACO_PORT } from "@common/constants";
 
 interface PubSubMessage {
@@ -137,7 +137,10 @@ export class PubSubClient {
   /**
    * Subscribe to price updates for a specific symbol
    */
-  subscribeToPrices(symbol: Symbol, callback: (priceData: any) => void): void {
+  subscribeToPrices(
+    symbol: PairSymbol,
+    callback: (priceData: any) => void,
+  ): void {
     this.subscribe(`prices.${symbol}`, callback);
   }
 
@@ -145,7 +148,7 @@ export class PubSubClient {
    * Subscribe to all price updates
    */
   subscribeToAllPrices(
-    callback: (symbol: Symbol, priceData: any) => void,
+    callback: (symbol: PairSymbol, priceData: any) => void,
   ): void {
     this.subscribe("prices.*", (data) => {
       if (data.type === "price_update") {

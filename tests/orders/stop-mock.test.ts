@@ -61,16 +61,16 @@ describe("Stop Limit Order Lifecycle Test", () => {
     expect(updatedOrder!.triggerCount).toBe(0);
 
     // Simulate price movement above stop price
-    const triggerPrice = STOP_PRICE + 50; // Move price above stop price
+    const nextTriggerValue = STOP_PRICE + 50; // Move price above stop price
     console.log(
-      `Price moved from ${INITIAL_ETH_PRICE} to ${triggerPrice} (above stop price ${STOP_PRICE})`,
+      `Price moved from ${INITIAL_ETH_PRICE} to ${nextTriggerValue} (above stop price ${STOP_PRICE})`,
     );
 
     // Test price movement trigger
     updatedOrder = await TestScenarios.priceTrigger(
       priceMock,
       order.id,
-      triggerPrice,
+      nextTriggerValue,
       TEST_TIMEOUTS.MEDIUM,
     );
     logOrderState(updatedOrder, "After price movement");

@@ -307,7 +307,7 @@ export class OrderFactory {
     const order: Order = {
       ...baseOrder,
       params,
-      triggerPrice: price,
+      nextTriggerValue: price,
       signature: await wallet.signMessage(
         JSON.stringify({
           type: OrderType.CHASE_LIMIT,
@@ -493,8 +493,8 @@ export function logOrderState(order: Order | null, context: string = ""): void {
     `${context} Order state - ID: ${order.id.slice(0, 8)}..., Type: ${order.type}, Status: ${order.status}, Triggers: ${order.triggerCount}`,
   );
 
-  if (order.triggerPrice) {
-    console.log(`  Trigger Price: ${order.triggerPrice}`);
+  if (order.nextTriggerValue) {
+    console.log(`  Trigger Price: ${order.nextTriggerValue}`);
   }
 
   if (order.nextTriggerValue) {
@@ -834,5 +834,263 @@ export class TestAssertions {
   static expectActive(order: Order): void {
     expect(order.status).toBe(OrderStatus.ACTIVE);
     expect(order.triggerCount).toBeGreaterThan(0);
+  }
+}
+
+// Generic ERC20 token contract interface
+export interface ERC20 extends ethers.Contract {
+  // View functions
+  balanceOf(address: string): Promise<bigint>;
+  allowance(owner: string, spender: string): Promise<bigint>;
+  decimals(): Promise<number>;
+  symbol(): Promise<string>;
+  name(): Promise<string>;
+
+  // State-changing functions
+  approve(
+    spender: string,
+    amount: bigint,
+  ): Promise<ethers.ContractTransactionResponse>;
+  transfer(
+    to: string,
+    amount: bigint,
+  ): Promise<ethers.ContractTransactionResponse>;
+  transferFrom(
+    from: string,
+    to: string,
+    amount: bigint,
+  ): Promise<ethers.ContractTransactionResponse>;
+}
+
+// ERC20 contract factory
+export function erc20(
+  address: string,
+  signerOrProvider: ethers.Signer | ethers.Provider,
+): ERC20 {
+  const abi = [
+    // View functions
+    "function balanceOf(address owner) view returns (uint256)",
+    "function allowance(address owner, address spender) view returns (uint256)",
+    "function decimals() view returns (uint8)",
+    "function symbol() view returns (string)",
+    "function name() view returns (string)",
+    "function totalSupply() view returns (uint256)",
+
+    // State-changing functions
+    "function approve(address spender, uint256 amount) returns (bool)",
+    "function transfer(address to, uint256 amount) returns (bool)",
+    "function transferFrom(address from, address to, uint256 amount) returns (bool)",
+
+    // Events
+    "event Transfer(address indexed from, address indexed to, uint256 value)",
+    "event Approval(address indexed owner, address indexed spender, uint256 value)",
+  ];
+
+  return new ethers.Contract(address, abi, signerOrProvider) as ERC20;
+}
+
+// Token helper utilities
+export class TokenUtils {
+  // Get token balance in human-readable format
+  static async getBalance(
+    token: ERC20,
+    address: string,
+    decimals?: number,
+  ): Promise<string> {
+    const balance = await token.balanceOf(address);
+    const dec = decimals ?? (await token.decimals());
+    return ethers.formatUnits(balance, dec);
+  }
+
+  // Check and approve token spending if needed
+  static async ensureApproval(
+    token: ERC20,
+    spender: string,
+    amount: bigint,
+    signer: ethers.Signer,
+  ): Promise<void> {
+    const signerAddress = await signer.getAddress();
+    const currentAllowance = await token.allowance(signerAddress, spender);
+
+    if (currentAllowance < amount) {
+      console.log(
+        `Approving ${spender} to spend ${ethers.formatUnits(amount, await token.decimals())} ${await token.symbol()}`,
+      );
+      const tx = await token.connect(signer).approve(spender, amount);
+      await tx.wait();
+    }
+  }
+
+  // Format token amount with proper decimals
+  static async formatAmount(token: ERC20, amount: bigint): Promise<string> {
+    const decimals = await token.decimals();
+    const symbol = await token.symbol();
+    return `${ethers.formatUnits(amount, decimals)} ${symbol}`;
+  }
+
+  // Parse token amount from string
+  static async parseAmount(token: ERC20, amount: string): Promise<bigint> {
+    const decimals = await token.decimals();
+    return ethers.parseUnits(amount, decimals);
+  }
+}
+
+// Multicall3 contract interface for batching RPC calls
+const MULTICALL3_ADDRESS = "0xcA11bde05977b3631167028862bE2a173976CA11";
+const MULTICALL3_ABI = [
+  "function aggregate3(tuple(address target, bool allowFailure, bytes callData)[] calls) public payable returns (tuple(bool success, bytes returnData)[] returnData)",
+  "function getEthBalance(address addr) public view returns (uint256 balance)"
+];
+
+export class Multicall3Utils {
+  private multicall: ethers.Contract;
+  private provider: ethers.Provider;
+
+  constructor(provider: ethers.Provider) {
+    this.provider = provider;
+    this.multicall = new ethers.Contract(MULTICALL3_ADDRESS, MULTICALL3_ABI, provider);
+  }
+
+  /**
+   * Execute multiple calls in a single RPC request using Multicall3
+   */
+  async execute(calls: Array<{
+    target: string;
+    allowFailure: boolean;
+    callData: string;
+  }>): Promise<Array<{ success: boolean; returnData: string }>> {
+    // Use staticCall for read-only operations (no gas cost)
+    const results = await this.multicall.aggregate3.staticCall(calls);
+    return results.map((result: any) => ({
+      success: result.success,
+      returnData: result.returnData
+    }));
+  }
+
+  /**
+   * Batch multiple balance checks (ETH/BNB + ERC20 tokens)
+   */
+  async batchBalanceChecks(addresses: string[], tokens: Array<{ address: string; decimals: number; symbol: string }>): Promise<{
+    ethBalances: string[];
+    tokenBalances: { [tokenSymbol: string]: string[] };
+  }> {
+    const calls: Array<{ target: string; allowFailure: boolean; callData: string }> = [];
+
+    // Add ETH/BNB balance calls
+    for (const address of addresses) {
+      calls.push({
+        target: MULTICALL3_ADDRESS,
+        allowFailure: false,
+        callData: this.multicall.interface.encodeFunctionData("getEthBalance", [address])
+      });
+    }
+
+    // Add ERC20 balance calls
+    const erc20Interface = new ethers.Interface([
+      "function balanceOf(address owner) view returns (uint256)"
+    ]);
+
+    for (const token of tokens) {
+      for (const address of addresses) {
+        calls.push({
+          target: token.address,
+          allowFailure: false,
+          callData: erc20Interface.encodeFunctionData("balanceOf", [address])
+        });
+      }
+    }
+
+    // Execute all calls in single RPC request
+    const results = await this.execute(calls);
+
+    // Parse ETH balances
+    const ethBalances: string[] = [];
+    for (let i = 0; i < addresses.length; i++) {
+      if (results[i].success) {
+        const balance = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], results[i].returnData)[0];
+        ethBalances.push(ethers.formatEther(balance));
+      } else {
+        ethBalances.push("0");
+      }
+    }
+
+    // Parse token balances
+    const tokenBalances: { [tokenSymbol: string]: string[] } = {};
+    let resultIndex = addresses.length; // Start after ETH balance results
+
+    for (const token of tokens) {
+      tokenBalances[token.symbol] = [];
+      for (let i = 0; i < addresses.length; i++) {
+        if (results[resultIndex].success) {
+          const balance = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], results[resultIndex].returnData)[0];
+          tokenBalances[token.symbol].push(ethers.formatUnits(balance, token.decimals));
+        } else {
+          tokenBalances[token.symbol].push("0");
+        }
+        resultIndex++;
+      }
+    }
+
+    return { ethBalances, tokenBalances };
+  }
+
+  /**
+   * Batch allowance checks for multiple tokens and spenders
+   */
+  async batchAllowanceChecks(
+    owner: string,
+    checks: Array<{ tokenAddress: string; spender: string; symbol: string; decimals: number }>
+  ): Promise<Array<{ symbol: string; spender: string; allowance: string; needsApproval: boolean; amount?: bigint }>> {
+    const erc20Interface = new ethers.Interface([
+      "function allowance(address owner, address spender) view returns (uint256)"
+    ]);
+
+    const calls = checks.map(check => ({
+      target: check.tokenAddress,
+      allowFailure: false,
+      callData: erc20Interface.encodeFunctionData("allowance", [owner, check.spender])
+    }));
+
+    const results = await this.execute(calls);
+
+    return checks.map((check, index) => {
+      if (results[index].success) {
+        const allowance = ethers.AbiCoder.defaultAbiCoder().decode(["uint256"], results[index].returnData)[0];
+        return {
+          symbol: check.symbol,
+          spender: check.spender,
+          allowance: ethers.formatUnits(allowance, check.decimals),
+          needsApproval: allowance < (check.amount || 0n), // Compare if amount provided
+          amount: check.amount
+        };
+      }
+      return {
+        symbol: check.symbol,
+        spender: check.spender,
+        allowance: "0",
+        needsApproval: true,
+        amount: check.amount
+      };
+    });
+  }
+
+  /**
+   * Batch network info checks (block number, chain ID, etc.)
+   */
+  async batchNetworkInfo(): Promise<{
+    blockNumber: number;
+    chainId: number;
+  }> {
+    // These calls don't go through multicall since they're provider-level
+    // But we can still batch them efficiently
+    const [blockNumber, network] = await Promise.all([
+      this.provider.getBlockNumber(),
+      this.provider.getNetwork()
+    ]);
+
+    return {
+      blockNumber,
+      chainId: Number(network.chainId)
+    };
   }
 }

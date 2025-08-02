@@ -5,7 +5,7 @@ export interface Network {
   chainId: number;
   name: string;
   rpcUrl: string;
-  limitOrderContract: string;
+  aggregatorV6: string;
   nativeSymbol: string;
   blockExplorer: string;
 }
@@ -26,8 +26,9 @@ export const CONFIG: FrontendConfig = {
     "1": {
       "chainId": 1,
       "name": "Ethereum",
-      "rpcUrl": "https://eth.llamarpc.com",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "rpcUrl": "https://1rpc.io/eth",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "ETH",
       "blockExplorer": "https://etherscan.io"
     },
@@ -35,7 +36,8 @@ export const CONFIG: FrontendConfig = {
       "chainId": 10,
       "name": "Optimism",
       "rpcUrl": "https://mainnet.optimism.io",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "ETH",
       "blockExplorer": "https://optimistic.etherscan.io"
     },
@@ -43,7 +45,8 @@ export const CONFIG: FrontendConfig = {
       "chainId": 56,
       "name": "BSC",
       "rpcUrl": "https://bsc-dataseed.binance.org",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "BNB",
       "blockExplorer": "https://bscscan.com"
     },
@@ -51,7 +54,8 @@ export const CONFIG: FrontendConfig = {
       "chainId": 137,
       "name": "Polygon",
       "rpcUrl": "https://polygon-rpc.com",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "MATIC",
       "blockExplorer": "https://polygonscan.com"
     },
@@ -59,7 +63,8 @@ export const CONFIG: FrontendConfig = {
       "chainId": 8453,
       "name": "Base",
       "rpcUrl": "https://mainnet.base.org",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "ETH",
       "blockExplorer": "https://basescan.org"
     },
@@ -67,7 +72,8 @@ export const CONFIG: FrontendConfig = {
       "chainId": 42161,
       "name": "Arbitrum",
       "rpcUrl": "https://arb1.arbitrum.io/rpc",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "ETH",
       "blockExplorer": "https://arbiscan.io"
     },
@@ -75,7 +81,8 @@ export const CONFIG: FrontendConfig = {
       "chainId": 43114,
       "name": "Avalanche",
       "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
-      "limitOrderContract": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "AVAX",
       "blockExplorer": "https://snowtrace.io"
     }
@@ -98,6 +105,7 @@ export const CONFIG: FrontendConfig = {
     "USDT": {
       "1": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
       "56": "0x55d398326f99059fF775485246999027B3197955",
+      "8453": "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
       "42161": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
       "43114": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7"
     },

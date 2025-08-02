@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { fetcher } from "../utils/fetcher";
 import { useWebSocketContext } from "../contexts/WebSocketContext";
-import { roundSig } from "@common/utils";
+import { roundSig, extractBaseQuote } from "@common/utils";
 import type { OneInchOrderBook, OrderbookLevel } from "@common/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PanelWrapper } from "./common/Panel";
@@ -46,7 +46,7 @@ const normalizeTokenSymbol = (symbol: string): string => {
   return symbol;
 };
 
-// Parse feed symbol to extract token pair
+// Parse feed symbol to extract token pair - using consolidated utility
 const parseFeedSymbol = (
   feedSymbol: string | null,
 ): { base: string; quote: string } | null => {
@@ -56,24 +56,7 @@ const parseFeedSymbol = (
   const parts = feedSymbol.split(":");
   const pair = parts[parts.length - 1];
 
-  // Extract base and quote from pair (e.g., "ETHUSDT" -> "ETH", "USDT")
-  // Common patterns:
-  // - ETHUSDT, BTCUSDT, etc.
-  // - ETHUSD, BTCUSD, etc.
-  const quoteTokens = ["USDT", "USDC", "USD", "DAI", "EUR", "GBP"];
-  for (const quote of quoteTokens) {
-    if (pair.endsWith(quote)) {
-      const base = pair.slice(0, -quote.length);
-      return { base, quote };
-    }
-  }
-
-  // Default: assume last 3-4 chars are quote
-  if (pair.length > 6) {
-    return { base: pair.slice(0, 3), quote: pair.slice(3) };
-  }
-
-  return null;
+  return extractBaseQuote(pair);
 };
 
 // Function to aggregate levels based on price steps

@@ -31,7 +31,7 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
     }
 
     // Get current trigger price or use current price
-    const currentTriggerPrice = order.triggerPrice || priceInfo.price;
+    const currentTriggerPrice = order.nextTriggerValue || priceInfo.price;
 
     // Calculate distance threshold
     const distanceThreshold = this.calculatePercentage(
@@ -54,29 +54,29 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const priceInfo = this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Update trigger price to current market price
-    order.triggerPrice = priceInfo.price;
+    order.nextTriggerValue = priceInfo.price;
 
     // Log execution
     this.logExecution({
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
     // Execute the order
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {
-    // Chase limit orders update triggerPrice in the trigger method
+    // Chase limit orders update nextTriggerValue in the trigger method
     // No additional updates needed here
   }
 }

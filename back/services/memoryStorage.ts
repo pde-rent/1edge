@@ -3,12 +3,12 @@
  * This matches bet-bot's Redis approach but uses simple in-memory storage
  */
 
-import type { TickerFeed, AggregatedTicker, Symbol } from "@common/types";
+import type { TickerFeed, AggregatedTicker, PairSymbol } from "@common/types";
 import { logger } from "@back/utils/logger";
 
 class MemoryStorage {
-  private tickers: Map<Symbol, TickerFeed | AggregatedTicker> = new Map();
-  private ttls: Map<Symbol, number> = new Map();
+  private tickers: Map<PairSymbol, TickerFeed | AggregatedTicker> = new Map();
+  private ttls: Map<PairSymbol, number> = new Map();
 
   // Clean up expired entries every 30 seconds
   constructor() {
@@ -26,7 +26,7 @@ class MemoryStorage {
   }
 
   cacheTicker(
-    symbol: Symbol,
+    symbol: PairSymbol,
     ticker: TickerFeed | AggregatedTicker,
     ttlSeconds = 300,
   ) {
@@ -35,7 +35,7 @@ class MemoryStorage {
     logger.debug(`Cached ticker ${symbol} with TTL ${ttlSeconds}s`);
   }
 
-  getCachedTicker(symbol: Symbol): (TickerFeed | AggregatedTicker) | null {
+  getCachedTicker(symbol: PairSymbol): (TickerFeed | AggregatedTicker) | null {
     const expiry = this.ttls.get(symbol);
     if (expiry && expiry < Date.now()) {
       // Expired
@@ -46,8 +46,8 @@ class MemoryStorage {
     return this.tickers.get(symbol) || null;
   }
 
-  getActiveTickers(): Record<Symbol, TickerFeed | AggregatedTicker> {
-    const result: Record<Symbol, TickerFeed | AggregatedTicker> = {};
+  getActiveTickers(): Record<PairSymbol, TickerFeed | AggregatedTicker> {
+    const result: Record<PairSymbol, TickerFeed | AggregatedTicker> = {};
     const now = Date.now();
 
     for (const [symbol, ticker] of this.tickers) {
@@ -71,7 +71,7 @@ const memoryStorage = new MemoryStorage();
 
 // Export functions that match the existing storage interface
 export const cacheTicker = (
-  symbol: Symbol,
+  symbol: PairSymbol,
   ticker: TickerFeed | AggregatedTicker,
   ttlSeconds = 300,
 ) => {
@@ -79,13 +79,13 @@ export const cacheTicker = (
 };
 
 export const getCachedTicker = (
-  symbol: Symbol,
+  symbol: PairSymbol,
 ): (TickerFeed | AggregatedTicker) | null => {
   return memoryStorage.getCachedTicker(symbol);
 };
 
 export const getActiveTickers = (): Record<
-  Symbol,
+  PairSymbol,
   TickerFeed | AggregatedTicker
 > => {
   return memoryStorage.getActiveTickers();

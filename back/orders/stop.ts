@@ -44,8 +44,8 @@ class StopLimitOrderWatcher extends PriceBasedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const params = this.validateParams<StopLimitParams>(order);
     if (!params) throw new Error("Invalid stop limit parameters");
@@ -58,7 +58,7 @@ class StopLimitOrderWatcher extends PriceBasedOrderWatcher {
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
     logger.info(
@@ -66,7 +66,7 @@ class StopLimitOrderWatcher extends PriceBasedOrderWatcher {
     );
 
     // Execute the order
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {

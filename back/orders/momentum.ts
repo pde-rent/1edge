@@ -64,8 +64,8 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
 
   async trigger(
     order: Order,
-    makerAmount: string,
-    takerAmount: string,
+    makingAmount: string,
+    takingAmount: string,
   ): Promise<void> {
     const params = this.validateParams<MomentumReversalParams>(order);
     if (!params) throw new Error("Invalid momentum reversal parameters");
@@ -74,7 +74,7 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Store entry price for TP/SL calculation
-    order.triggerPrice = priceInfo.price;
+    order.nextTriggerValue = priceInfo.price;
 
     // Calculate take profit and stop loss levels
     const tpLevel = priceInfo.price * (1 + params.tpPct / 100);
@@ -89,11 +89,11 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount,
+      triggerAmount: makingAmount,
     });
 
     // Execute the order
-    await super.trigger(order, makerAmount, takerAmount);
+    await super.trigger(order, makingAmount, takingAmount);
   }
 
   updateNextTrigger(order: Order): void {
