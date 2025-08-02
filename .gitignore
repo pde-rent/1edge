@@ -56,6 +56,12 @@ data/
 # Next.js build output
 front/.next
 
+# Generated config files
+front/config/generated.ts
+
+# Generated search index
+front/public/search-index.json
+
 # Scripts/data
 scripts/data/
 
