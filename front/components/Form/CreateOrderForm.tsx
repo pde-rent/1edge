@@ -163,7 +163,6 @@ const CreateOrderForm = () => {
       // Set the order type from orderbook click
       if (orderDefaults.orderType) {
         setOrderType(orderDefaults.orderType);
-
       }
 
       // Pre-fill form values from orderbook click
@@ -187,6 +186,45 @@ const CreateOrderForm = () => {
   }, [orderType, setCurrentOrderType]);
 
   useEffect(() => {
+    if (orderDefaults) {
+      // Set the order type from chart click
+      if (orderDefaults.orderType) {
+        setOrderType(orderDefaults.orderType);
+      }
+
+      // Pre-fill form values from chart click
+      applyOrderDefaults(orderDefaults, setValue);
+
+      // Show notification - check what parameters were set from chart
+      const chartParams = Object.keys(orderDefaults).filter(key => 
+        !['orderType', 'price', 'isBuy', 'fromCoin', 'toCoin', 'timestamp', 'currentPair', 'makerAsset', 'takerAsset'].includes(key)
+      );
+      
+      if (chartParams.length > 0) {
+        toast.success(
+          `Set from chart: ${chartParams.join(', ')}`,
+          {
+            action: {
+              label: "Clear",
+              onClick: () => clearOrderDefaults(),
+            },
+          },
+        );
+      } else if (orderDefaults.price && orderDefaults.price !== '0') {
+        toast.success(
+          `Pre-filled ${orderDefaults.orderType} order at ${orderDefaults.price}`,
+          {
+            action: {
+              label: "Clear",
+              onClick: () => clearOrderDefaults(),
+            },
+          },
+        );
+      }
+    }
+  }, [orderDefaults, setValue, clearOrderDefaults, setOrderType]);
+
+  useEffect(() => {
     const subscription = watch((data) => {
       // Only sync non-empty values to avoid unnecessary updates
       const filteredData = Object.entries(data).reduce((acc, [key, value]) => {
@@ -201,6 +239,7 @@ const CreateOrderForm = () => {
 
     return () => subscription.unsubscribe();
   }, [watch, updateFormData]);
+
 
   const orderTypes: Record<"Order" | "Strategy", OrderType[]> = {
     Order: [
@@ -518,22 +557,34 @@ const CreateOrderForm = () => {
 
         <div className="flex-1" />
 
-        {/* Show indicator if order was triggered from orderbook */}
         {orderDefaults && (
-          <div className="flex items-center gap-2">
-            <div className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full border border-yellow-500/30">
-              From Orderbook
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearOrderbookData}
-              className="text-slate-400 hover:text-white p-1 h-auto"
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        )}
+  <div className="flex items-center gap-2">
+    {/* Check if order has chart-specific parameters */}
+    {Object.keys(orderDefaults).some(key => 
+      !['orderType', 'price', 'isBuy', 'fromCoin', 'toCoin', 'timestamp', 'currentPair', 'makerAsset', 'takerAsset'].includes(key)
+    ) ? (
+      // Show "From Chart" badge if chart parameters exist
+      <div className="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full border border-blue-500/30">
+        From Chart
+      </div>
+    ) : (
+      // Show "From Orderbook" badge if only basic parameters exist
+      <div className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full border border-yellow-500/30">
+        From Orderbook
+      </div>
+    )}
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleClearOrderbookData}
+      className="text-slate-400 hover:text-white p-1 h-auto"
+    >
+      <X className="w-3 h-3" />
+    </Button>
+  </div>
+)}
+
+    
       </div>
 
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-background backdrop-blur-xl">
@@ -585,6 +636,15 @@ const CreateOrderForm = () => {
                     })()} Parameters
                     <div className="w-1 h-1 bg-success"></div>
                   </span>
+                  {orderDefaults && Object.keys(orderDefaults).some(key => 
+                    !['orderType', 'price', 'isBuy', 'fromCoin', 'toCoin', 'timestamp', 'currentPair', 'makerAsset', 'takerAsset'].includes(key)
+                  ) && (
+                    <span className="text-xs text-blue-400">
+                      {Object.keys(orderDefaults).filter(key => 
+                        !['orderType', 'price', 'isBuy', 'fromCoin', 'toCoin', 'timestamp', 'currentPair', 'makerAsset', 'takerAsset'].includes(key)
+                      ).length} field(s) set from chart
+                    </span>
+                  )}
                 </div>
 
                 {renderForm()}
@@ -616,6 +676,11 @@ const CreateOrderForm = () => {
                     : orderCategory === "Order"
                       ? "Executed based on market conditions and parameters"
                       : "Runs continuously with automated strategy execution"}
+                  {orderDefaults && Object.keys(orderDefaults).some(key => 
+                    !['orderType', 'price', 'isBuy', 'fromCoin', 'toCoin', 'timestamp', 'currentPair', 'makerAsset', 'takerAsset'].includes(key)
+                  ) && (
+                    <span className="text-blue-300"> • Parameters set from chart click</span>
+                  )}
                 </div>
               </div>
             </div>

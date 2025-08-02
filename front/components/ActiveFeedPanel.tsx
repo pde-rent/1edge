@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import useSWR from "swr";
 import {
   createChart,
@@ -28,6 +28,10 @@ import {
 import { TrendingUp, BarChart3, Activity, ChevronDown } from "lucide-react";
 import StatusIndicator from "./StatusIndicator";
 import AuthComponent from "./AuthComponent";
+import { ChartOverlays } from './ChartOverlays';
+import { useOrderStore } from "@/stores/orderStore";
+import { toast } from "sonner";
+import { EnhancedChartContextMenu } from "./ChartContextMenu";
 
 // Custom candlestick icon component
 function CandlestickIcon({ className }: { className?: string }) {
@@ -164,6 +168,25 @@ export default function ActiveFeedPanel({
   const [timeframe, setTimeframe] = useState("20"); // Default 20 seconds as string for ToggleGroup
   const tickBufferRef = useRef({}); // Store ticks per candle period
   const [isChartInitialized, setIsChartInitialized] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    price: number;
+    time: number;
+  } | null>(null);
+  const [showClickHint, setShowClickHint] = useState(false);
+  
+  // Overlay management state
+  const [overlaysVisible, setOverlaysVisible] = useState(true);
+  const [shouldShowOverlays, setShouldShowOverlays] = useState(false);
+  
+  // Fixed: Use the correct store methods
+  const { 
+    setOrderDefaults, 
+    currentOrderType,
+    currentFormData,
+    updateFormData 
+  } = useOrderStore();
 
   const { data: apiResponse, error } = useSWR<ApiResponse<TickerFeed>>(
     feedId ? `/api/feeds/${feedId}` : null,
@@ -182,6 +205,104 @@ export default function ActiveFeedPanel({
   );
 
   const { subscribe, unsubscribe, isConnected } = useWebSocketContext();
+
+  // Effect to control overlay visibility based on order type and form data
+  useEffect(() => {
+    // Show overlays if we have an order type and relevant form data
+    const hasRelevantData = currentOrderType && (
+      currentFormData?.startPrice || 
+      currentFormData?.endPrice || 
+      currentFormData?.maxPrice ||
+      currentFormData?.stopPrice ||
+      currentFormData?.limitPrice ||
+      currentFormData?.startDate ||
+      currentFormData?.endDate ||
+      currentFormData?.expiry
+    );
+    
+    setShouldShowOverlays(!!hasRelevantData);
+  }, [currentOrderType, currentFormData]);
+
+  // Add overlay toggle function
+  const handleToggleOverlays = useCallback((visible: boolean) => {
+    setOverlaysVisible(visible);
+    toast.info(visible ? 'Order levels shown' : 'Order levels hidden', {
+      duration: 1500,
+    });
+  }, []);
+
+  // Enhanced parameter handling function
+  const handleSetParameter = useCallback((param: string, value: any) => {
+    console.log(`Setting parameter: ${param} = ${value}`);
+    
+    try {
+      // Update form data using the store's updateFormData method
+      const updatedData = {
+        [param]: value,
+        timestamp: Date.now(),
+      };
+      
+      updateFormData(updatedData);
+      
+      // Also set order defaults for compatibility
+      const parsedSymbol = feedId ? parseFeedSymbol(feedId) : { base: "ETH", quote: "USDC" };
+      
+      const orderDefaults = {
+        orderType: currentOrderType || 'Iceberg',
+        price: param.includes('Price') ? value : '0',
+        isBuy: true,
+        fromCoin: parsedSymbol.base || 'ETH',
+        toCoin: parsedSymbol.quote || 'USDC',
+        timestamp: Date.now(),
+        currentPair: feedId || '',
+        makerAsset: '', // You may need to set this based on your token mapping
+        takerAsset: '', // You may need to set this based on your token mapping
+        [param]: value,
+      };
+      
+      setOrderDefaults(orderDefaults);
+      
+      // Show success toast
+      toast.success(`Set ${param} to ${value}`, {
+        duration: 2000,
+      });
+      
+      console.log("Parameter set successfully", { param, value, currentFormData });
+    } catch (error) {
+      console.error("Error setting parameter:", error);
+      toast.error("Failed to set parameter");
+    }
+  }, [currentOrderType, setOrderDefaults, updateFormData, feedId, currentFormData]);
+
+  // Close context menu when clicking outside or pressing escape
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      // Check if click is outside the context menu
+      if (!target.closest('[data-context-menu]')) {
+        setContextMenu(null);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setContextMenu(null);
+      }
+    };
+
+    // Add slight delay to prevent immediate closing
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }, 100);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [contextMenu]);
 
   // Set default feed if none selected
   useEffect(() => {
@@ -265,7 +386,7 @@ export default function ActiveFeedPanel({
     }
   }, [feedId, isConnected, subscribe, unsubscribe, chartType, timeframe]);
 
-  // Chart creation
+  // Chart creation with improved click handler
   useEffect(() => {
     if (!chartContainerRef.current || chartRef.current) return;
 
@@ -318,20 +439,100 @@ export default function ActiveFeedPanel({
         },
       });
 
+      // Enhanced click handler
+      chart.subscribeClick((param) => {
+        console.log("Chart clicked!", { param, currentOrderType });
+        
+        // Only show context menu if we have an order type selected
+        if (!currentOrderType) {
+          console.log("No order type selected");
+          return;
+        }
+
+        // Check if we have valid click data
+        if (!param.point) {
+          console.log("No point data");
+          return;
+        }
+
+        console.log("Processing click...", param);
+
+        // Get price from series data or calculate from coordinates
+        let price = null;
+        
+        // Try to get price from series data first (most accurate)
+        if (param.seriesData && param.seriesData.size > 0) {
+          const seriesData = param.seriesData.values().next().value;
+          console.log("Series data:", seriesData);
+          if (seriesData) {
+            price = seriesData.close || seriesData.value || seriesData;
+            console.log("Price from series data:", price);
+          }
+        }
+        
+        // Fallback: calculate price from coordinates
+        if (!price && seriesRef.current) {
+          try {
+            const priceScale = chart.priceScale('right');
+            const visibleRange = priceScale.getVisibleRange();
+            const chartHeight = container.clientHeight;
+            
+            if (visibleRange && chartHeight) {
+              const priceRange = visibleRange.to - visibleRange.from;
+              const yRatio = (chartHeight - param.point.y) / chartHeight;
+              price = visibleRange.from + (priceRange * yRatio);
+              console.log("Price from coordinates:", price);
+            }
+          } catch (error) {
+            console.warn("Could not get price from coordinates:", error);
+          }
+        }
+
+        // Final fallback: use current price
+        if (!price && realtimePrice?.mid) {
+          price = realtimePrice.mid;
+          console.log("Using current price as fallback:", price);
+        }
+
+        // Default price if all else fails
+        if (!price || price <= 0) {
+          price = 50000; // Default fallback price
+          console.log("Using default price:", price);
+        }
+
+        // Get time - use current time if not available from click
+        const time = param.time ? (param.time as number) : Math.floor(Date.now() / 1000);
+
+        // Get container position for absolute positioning
+        const rect = container.getBoundingClientRect();
+        
+        const menuData = {
+          x: rect.left + param.point.x,
+          y: rect.top + param.point.y,
+          price: price,
+          time: time
+        };
+        
+        console.log("Setting context menu:", menuData);
+        setContextMenu(menuData);
+      });
+
       chartRef.current = chart;
       setIsChartInitialized(true);
+
+      // Cleanup function
+      return () => {
+        if (chartRef.current) {
+          chartRef.current.remove();
+          chartRef.current = null;
+          setIsChartInitialized(false);
+        }
+      };
     } catch (error) {
       console.error("Error creating chart:", error);
+      setIsChartInitialized(false);
     }
-
-    return () => {
-      if (chartRef.current) {
-        chartRef.current.remove();
-        chartRef.current = null;
-        setIsChartInitialized(false);
-      }
-    };
-  }, []);
+  }, []); // Remove currentOrderType from dependencies to prevent recreation
 
   // Series creation and historical data loading
   useEffect(() => {
@@ -641,7 +842,7 @@ export default function ActiveFeedPanel({
             </div>
           )}
 
-          {/* Right: Chart Type and Timeframe */}
+          {/* Right: Chart Type, Timeframe, and Overlay Toggle */}
           <div className="flex items-center gap-3">
             {/* Chart Type Selector */}
             <Select
@@ -725,6 +926,27 @@ export default function ActiveFeedPanel({
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Overlay Toggle Button */}
+            {shouldShowOverlays && (
+              <button
+                onClick={() => handleToggleOverlays(!overlaysVisible)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
+                  overlaysVisible 
+                    ? 'bg-primary/30 text-primary border border-primary/50' 
+                    : 'bg-black/70 text-slate-400 border border-slate-600 hover:bg-black/80'
+                }`}
+                title={overlaysVisible ? 'Hide order levels' : 'Show order levels'}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M3 3v18h18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="hidden sm:inline">
+                  {overlaysVisible ? 'Hide' : 'Show'} Levels
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -732,9 +954,32 @@ export default function ActiveFeedPanel({
         <div className="flex-1 w-full relative bg-background/95 backdrop-blur-xl">
           <div
             ref={chartContainerRef}
-            className="w-full h-full bg-background/60 backdrop-blur-sm"
+            className="w-full h-full bg-background/60 backdrop-blur-sm cursor-crosshair relative"
             style={{ minHeight: "400px", borderRadius: "0" }}
+            onMouseEnter={() => currentOrderType && setShowClickHint(true)}
+            onMouseLeave={() => setShowClickHint(false)}
           >
+            {/* Add the ChartOverlays component */}
+            <ChartOverlays
+              chart={chartRef.current}
+              series={seriesRef.current}
+              orderType={currentOrderType || ''}
+              formData={currentFormData}
+              isVisible={overlaysVisible && shouldShowOverlays && isChartInitialized}
+            />
+
+            {/* Click hint overlay */}
+            {showClickHint && currentOrderType && (
+              <div className="absolute top-2 right-2 z-20 text-xs text-primary/80 bg-black/60 px-2 py-1 rounded">
+                <div>Click to set {currentOrderType} parameters</div>
+                {shouldShowOverlays && (
+                  <div className="text-slate-400 mt-1">
+                    📊 Order levels {overlaysVisible ? 'visible' : 'hidden'}
+                  </div>
+                )}
+              </div>
+            )}
+
             {feedId && (error || historyError) && (
               <div className="p-4">
                 <div className="p-3 bg-red-500/10 border border-red-500/50 backdrop-blur-sm">
@@ -825,8 +1070,23 @@ export default function ActiveFeedPanel({
           {/* Status indicator positioned at bottom right */}
           <div className="absolute bottom-4 right-4 z-10">
             <StatusIndicator />
-          </div>
+          </div> 
         </div>
+
+        {/* Enhanced Context Menu */}
+        {contextMenu && currentOrderType && (
+          <EnhancedChartContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            price={contextMenu.price}
+            time={contextMenu.time}
+            orderType={currentOrderType}
+            onClose={() => setContextMenu(null)}
+            onSetParameter={handleSetParameter}
+            onToggleOverlays={shouldShowOverlays ? handleToggleOverlays : undefined}
+            overlaysVisible={overlaysVisible}
+          />
+        )}
       </div>
     </PanelWrapper>
   );

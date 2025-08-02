@@ -106,6 +106,7 @@ export const useOrderStore = create<OrderStore>()(
 
         // Form sync methods
         updateFormData: (formData) => {
+          console.log("Updating form data:", formData);
           const state = get();
           set(
             {

@@ -309,43 +309,67 @@ export const getRelevantParams = (
 /**
  * Apply order defaults to form data
  */
+/**
+ * Apply order defaults to form data - FIXED VERSION
+ */
 export const applyOrderDefaults = (
   orderDefaults: any,
   setValue: (key: keyof FormData, value: string | boolean) => void,
 ): Partial<FormData> => {
   const updates: Partial<FormData> = {};
 
-  // Common price fields
-  if (orderDefaults.price) {
+  console.log("Applying order defaults:", orderDefaults);
+
+  // Common price fields mapping
+  if (orderDefaults.price && orderDefaults.price !== '0') {
     updates.maxPrice = orderDefaults.price;
     updates.stopPrice = orderDefaults.price;
     updates.limitPrice = orderDefaults.price;
   }
 
-  // Specific field mappings
-  const fieldMappings: Record<string, keyof FormData> = {
-    startPrice: "startPrice",
-    endPrice: "endPrice",
-    steps: "steps",
-    expiry: "expiry",
-    distancePct: "distancePct",
-    startDate: "startDate",
-    endDate: "endDate",
-    interval: "interval",
-    stepPct: "stepPct",
-    fromCoin: "fromCoin",
-    toCoin: "toCoin",
-    size: "size", // Changed from amount to size
-  };
+  // Direct field mappings - these map exactly to FormData fields
+  const directMappings: (keyof FormData)[] = [
+    'startPrice', 'endPrice', 'steps', 'expiry', 'distancePct',
+    'startDate', 'endDate', 'interval', 'stepPct', 'maxPrice',
+    'stopPrice', 'limitPrice', 'fromCoin', 'toCoin', 'size',
+    'amount', 'tpPct', 'slPct', 'stepMultiplier', 'rsiPeriod',
+    'rsimaPeriod', 'adxPeriod', 'adxmaPeriod', 'emaPeriod'
+  ];
 
-  Object.entries(fieldMappings).forEach(([defaultKey, formKey]) => {
-    if (orderDefaults[defaultKey] !== undefined) {
-      updates[formKey] = orderDefaults[defaultKey];
+  // Apply direct mappings
+  directMappings.forEach(field => {
+    if (orderDefaults[field] !== undefined && orderDefaults[field] !== null && orderDefaults[field] !== '') {
+      updates[field] = orderDefaults[field];
+      console.log(`Mapping ${field}: ${orderDefaults[field]}`);
     }
   });
 
+  // Handle boolean field
+  if (orderDefaults.singleSide !== undefined) {
+    updates.singleSide = orderDefaults.singleSide;
+  }
+
+  // Special handling for expiry if it's a number (days from now)
+  if (orderDefaults.expiry && typeof orderDefaults.expiry === 'number') {
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + orderDefaults.expiry);
+    updates.expiry = expiryDate.toISOString().slice(0, 16);
+    console.log(`Converting expiry ${orderDefaults.expiry} days to date: ${updates.expiry}`);
+  }
+
+  // Special handling for dates if they're timestamps
+  if (orderDefaults.startDate && typeof orderDefaults.startDate === 'number') {
+    updates.startDate = new Date(orderDefaults.startDate).toISOString().slice(0, 16);
+  }
+  if (orderDefaults.endDate && typeof orderDefaults.endDate === 'number') {
+    updates.endDate = new Date(orderDefaults.endDate).toISOString().slice(0, 16);
+  }
+
+  console.log("Final updates to apply:", updates);
+
   // Apply updates to form
   Object.entries(updates).forEach(([key, value]) => {
+    console.log(`Setting form field ${key} = ${value}`);
     setValue(key as keyof FormData, value);
   });
 
