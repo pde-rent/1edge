@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/tooltip";
 import { OrderDetailsModal } from "./OrderDetailsModal";
 import { Order, OrderStatus, OrderType } from "@common/types";
-import { roundSig } from "@common/utils";
 import { Settings, BarChart3, Edit2, X } from "lucide-react";
+import { API_ENDPOINTS } from "../config/api";
 
 /**
  * OrdersPanel displays a table of orders and strategies across the platform.
@@ -26,7 +26,7 @@ export default function OrdersPanel() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const response = await fetch("http://localhost:40005/orders");
+        const response = await fetch(API_ENDPOINTS.ORDERS);
         if (response.ok) {
           const data = await response.json();
           setOrders(data.data || []);
@@ -181,7 +181,7 @@ export default function OrdersPanel() {
   const handleCancel = async (orderId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:40005/orders/${orderId}/cancel`,
+        API_ENDPOINTS.CANCEL_ORDER(orderId),
         {
           method: "POST",
         },
