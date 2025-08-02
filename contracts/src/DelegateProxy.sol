@@ -45,9 +45,9 @@ contract DelegateProxy is IERC1271, Ownable, ReentrancyGuard, IPreInteraction, I
     _;
   }
 
-  constructor(IOrderMixin _1inch) {
+  constructor(IOrderMixin _1inch, address _owner) {
     _1INCH = _1inch;
-    _initializeOwner(msg.sender);
+    _initializeOwner(_owner);
   }
 
   /// @notice Allow contract to receive ETH

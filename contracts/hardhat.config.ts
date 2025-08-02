@@ -67,6 +67,23 @@ hardhatNetworks.localhost = {
   chainId: 31337,
 };
 
+// Network to Etherscan API mapping
+export const ETHERSCAN_NETWORKS: Record<number, string> = {
+  1: "mainnet",
+  10: "optimism",
+  56: "bsc",
+  137: "polygon",
+  8453: "base",
+  42161: "arbitrumOne",
+  43114: "avalanche"
+};
+
+// Generate etherscan API key config
+const etherscanApiKeys: Record<string, string> = {};
+Object.values(ETHERSCAN_NETWORKS).forEach(networkName => {
+  etherscanApiKeys[networkName] = process.env.ETHERSCAN_API_KEY || "";
+});
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.30",
@@ -85,6 +102,10 @@ const config: HardhatUserConfig = {
   },
   // Set default network for tests
   defaultNetwork: "hardhat",
+  // Etherscan verification configuration
+  etherscan: {
+    apiKey: etherscanApiKeys,
+  },
 };
 
 export default config;

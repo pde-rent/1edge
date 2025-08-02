@@ -38,8 +38,11 @@ describe("DelegateProxy", function () {
 
     // Deploy DelegateProxy with owner as deployer
     const DelegateProxy = await ethers.getContractFactory("DelegateProxy");
-    delegateProxy =
-      await DelegateProxy.connect(owner).deploy(_1inch);
+    const ownerAddress = await owner.getAddress();
+    delegateProxy = await DelegateProxy.connect(owner).deploy(
+      await _1inch.getAddress(),
+      ownerAddress
+    );
 
     // Owner (keeper) approves themselves
     await delegateProxy
@@ -349,7 +352,6 @@ describe("DelegateProxy", function () {
         value: ethAmount,
       });
 
-      const ownerBalanceBefore = await ethers.provider.getBalance(await owner.getAddress());
 
       await expect(
         delegateProxy.connect(owner).rescue(ETH_ADDRESS)

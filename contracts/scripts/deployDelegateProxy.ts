@@ -16,16 +16,8 @@ dotenv.config({ path: resolve(__dirname, "../../../.env") });
 const defaultConfigPath = path.join(__dirname, "../../1edge.config.json");
 const defaultConfig = JSON.parse(fs.readFileSync(defaultConfigPath, "utf8"));
 
-// Network to Etherscan API mapping
-const ETHERSCAN_NETWORKS: Record<number, string> = {
-  1: "mainnet",
-  10: "optimism",
-  56: "bsc",
-  137: "polygon",
-  8453: "base",
-  42161: "arbitrum",
-  43114: "avalanche"
-};
+// Import network mapping from hardhat config
+import { ETHERSCAN_NETWORKS } from "../hardhat.config";
 
 // Check if contract is verified on Etherscan
 async function isContractVerified(address: string, chainId: number, constructorArg: string): Promise<boolean> {
@@ -52,8 +44,10 @@ async function verifyContract(address: string, chainId: number, constructorArgs:
 
   try {
     console.log(`🔍 Verifying contract on ${network}...`);
+    console.log(`🔑 Using API key: ${process.env.ETHERSCAN_API_KEY ? process.env.ETHERSCAN_API_KEY.slice(0, 8) + '...' + process.env.ETHERSCAN_API_KEY.slice(-4) : 'NOT_SET'}`);
     const argsString = constructorArgs.join(' ');
     const command = `npx hardhat verify --network ${network} ${address} ${argsString}`;
+    console.log(`📝 Running command: ${command}`);
     const { stdout } = await execAsync(command, { cwd: path.join(__dirname, "..") });
 
     if (stdout.includes("Already verified")) {
@@ -77,7 +71,7 @@ async function verifyContract(address: string, chainId: number, constructorArgs:
 }
 
 // Helper function to get CreateX contract instance
-function getCreateXContract(address: string, signer: ethers.Wallet) {
+function getCreateXContract(address: string, signer: any) {
   const createXInterface = new ethers.Interface([
     "function deployCreate2(bytes32 salt, bytes memory initCode) external payable returns (address newContract)",
     "function computeCreate2Address(bytes32 salt, bytes32 initCodeHash) external view returns (address computedAddress)"
@@ -141,8 +135,8 @@ async function main() {
     // Get raw contract bytecode from artifacts (without constructor args)
     const contractBytecode = DelegateProxy.bytecode;
 
-    // Encode constructor arguments
-    const constructorArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address"], [_1inch]);
+    // Encode constructor arguments (_1inch, _owner)
+    const constructorArgs = ethers.AbiCoder.defaultAbiCoder().encode(["address", "address"], [_1inch, keeper.address]);
 
     // Create the complete initCode (bytecode + constructor args)
     const initCode = contractBytecode + constructorArgs.slice(2); // Remove 0x prefix from args
@@ -150,7 +144,7 @@ async function main() {
 
     // Apply CreateX salt guarding (this is what CreateX does internally)
     const guardedSalt = guardSalt(DELEGATE_PROXY_SALT, keeper.address, chainId);
-    
+
     // Calculate the deterministic CREATE2 address using CreateX with guarded salt
     const createXContract = getCreateXContract(createXFactory, keeper);
     const predictedAddress = await createXContract.computeCreate2Address(guardedSalt, initCodeHash);
@@ -172,12 +166,12 @@ async function main() {
 
           // Check verification status
           console.log("\n🔍 Checking contract verification status...");
-          const isVerified = await isContractVerified(predictedAddress, chainId, _1inch);
+          const isVerified = await isContractVerified(predictedAddress, chainId, `${_1inch} ${keeper.address}`);
 
           if (!isVerified) {
             const shouldVerify = await askUser("Contract is not verified. Would you like to verify it now? (yes/no): ");
             if (shouldVerify === "yes" || shouldVerify === "y") {
-              await verifyContract(predictedAddress, chainId, [_1inch]);
+              await verifyContract(predictedAddress, chainId, [_1inch, keeper.address]);
             }
           } else {
             console.log("✅ Contract is already verified");
@@ -320,10 +314,10 @@ async function main() {
 
       owner = await delegateProxy.owner();
       ownerIsDeployer = owner.toLowerCase() === keeper.address.toLowerCase();
-      console.log("✅ Contract verification successful");
+      console.log("✅ Contract deployment successful");
     } catch (error) {
-      console.log("⚠️  Contract verification failed:", error);
-      owner = "Verification failed";
+      console.log("⚠️  Contract deployment failed:", error);
+      owner = "Deployment failed";
       ownerIsDeployer = false;
     }
 
@@ -359,12 +353,12 @@ async function main() {
 
     // Step 7: Contract verification
     console.log("\n🔍 Checking contract verification status...");
-    const isVerified = await isContractVerified(address, chainId, _1inch);
+    const isVerified = await isContractVerified(address, chainId, `${_1inch} ${keeper.address}`);
 
     if (!isVerified) {
       const shouldVerify = await askUser("Contract is not verified. Would you like to verify it now? (yes/no): ");
       if (shouldVerify === "yes" || shouldVerify === "y") {
-        const verificationSuccess = await verifyContract(address, chainId, [_1inch]);
+        const verificationSuccess = await verifyContract(address, chainId, [_1inch, keeper.address]);
         resultRows.push(["Verification", verificationSuccess ? "✅ Successful" : "❌ Failed"]);
       } else {
         resultRows.push(["Verification", "⏭️ Skipped"]);
