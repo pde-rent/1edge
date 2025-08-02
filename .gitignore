@@ -5,6 +5,11 @@ out/
 coverage/
 coverage-final.json
 
+# Hardhat build artifacts
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+
 # Dependency directories
 node_modules/
 .pnp/
