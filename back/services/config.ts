@@ -14,7 +14,7 @@ class ConfigService {
   private loadConfig(): Config {
     try {
       // Load default config
-      const defaultConfigPath = join(process.cwd(), "back/default-config.json");
+      const defaultConfigPath = join(process.cwd(), "1edge.config.json");
       const defaultConfig = JSON.parse(
         readFileSync(defaultConfigPath, "utf-8"),
       ) as Config;
@@ -57,32 +57,32 @@ class ConfigService {
     }
 
     // Network RPC URLs
-    if (process.env.ETH_RPC_URL && config.services.keeper.networks[1]) {
-      config.services.keeper.networks[1].rpcUrl = process.env.ETH_RPC_URL;
+    if (process.env.ETH_RPC_URL && config.networks[1]) {
+      config.networks[1].rpcUrl = process.env.ETH_RPC_URL;
     }
 
-    if (process.env.POLYGON_RPC_URL && config.services.keeper.networks[137]) {
-      config.services.keeper.networks[137].rpcUrl = process.env.POLYGON_RPC_URL;
+    if (process.env.POLYGON_RPC_URL && config.networks[137]) {
+      config.networks[137].rpcUrl = process.env.POLYGON_RPC_URL;
     }
 
-    if (process.env.BSC_RPC_URL && config.services.keeper.networks[56]) {
-      config.services.keeper.networks[56].rpcUrl = process.env.BSC_RPC_URL;
+    if (process.env.BSC_RPC_URL && config.networks[56]) {
+      config.networks[56].rpcUrl = process.env.BSC_RPC_URL;
     }
 
-    if (process.env.ARBITRUM_RPC_URL && config.services.keeper.networks[42161]) {
-      config.services.keeper.networks[42161].rpcUrl = process.env.ARBITRUM_RPC_URL;
+    if (process.env.ARBITRUM_RPC_URL && config.networks[42161]) {
+      config.networks[42161].rpcUrl = process.env.ARBITRUM_RPC_URL;
     }
 
-    if (process.env.OPTIMISM_RPC_URL && config.services.keeper.networks[10]) {
-      config.services.keeper.networks[10].rpcUrl = process.env.OPTIMISM_RPC_URL;
+    if (process.env.OPTIMISM_RPC_URL && config.networks[10]) {
+      config.networks[10].rpcUrl = process.env.OPTIMISM_RPC_URL;
     }
 
-    if (process.env.AVALANCHE_RPC_URL && config.services.keeper.networks[43114]) {
-      config.services.keeper.networks[43114].rpcUrl = process.env.AVALANCHE_RPC_URL;
+    if (process.env.AVALANCHE_RPC_URL && config.networks[43114]) {
+      config.networks[43114].rpcUrl = process.env.AVALANCHE_RPC_URL;
     }
 
-    if (process.env.BASE_RPC_URL && config.services.keeper.networks[8453]) {
-      config.services.keeper.networks[8453].rpcUrl = process.env.BASE_RPC_URL;
+    if (process.env.BASE_RPC_URL && config.networks[8453]) {
+      config.networks[8453].rpcUrl = process.env.BASE_RPC_URL;
     }
 
     // Keeper private key
@@ -117,7 +117,7 @@ class ConfigService {
 
   // Helper methods for common access patterns
   getNetworkConfig(chainId: number) {
-    return this.config.services.keeper.networks[chainId];
+    return this.config.networks[chainId];
   }
 
   getTickerConfig(symbol: string) {
@@ -127,7 +127,8 @@ class ConfigService {
   }
 
   getStrategyConfig(id: string) {
-    return this.config.services.orderExecutor.strategies[id];
+    // orderExecutor removed - strategies now managed differently
+    return undefined;
   }
 }
 

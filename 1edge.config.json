@@ -3,6 +3,71 @@
     "defaultTtl": 300,
     "dbPath": "./data/1edge.db"
   },
+  "networks": {
+    "1": {
+      "chainId": 1,
+      "name": "Ethereum",
+      "rpcUrl": "https://1rpc.io/eth",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "ETH",
+      "blockExplorer": "https://etherscan.io"
+    },
+    "10": {
+      "chainId": 10,
+      "name": "Optimism",
+      "rpcUrl": "https://mainnet.optimism.io",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "ETH",
+      "blockExplorer": "https://optimistic.etherscan.io"
+    },
+    "56": {
+      "chainId": 56,
+      "name": "BSC",
+      "rpcUrl": "https://bsc-dataseed.binance.org",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "BNB",
+      "blockExplorer": "https://bscscan.com"
+    },
+    "137": {
+      "chainId": 137,
+      "name": "Polygon",
+      "rpcUrl": "https://polygon-rpc.com",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "MATIC",
+      "blockExplorer": "https://polygonscan.com"
+    },
+    "8453": {
+      "chainId": 8453,
+      "name": "Base",
+      "rpcUrl": "https://mainnet.base.org",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "ETH",
+      "blockExplorer": "https://basescan.org"
+    },
+    "42161": {
+      "chainId": 42161,
+      "name": "Arbitrum",
+      "rpcUrl": "https://arb1.arbitrum.io/rpc",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "ETH",
+      "blockExplorer": "https://arbiscan.io"
+    },
+    "43114": {
+      "chainId": 43114,
+      "name": "Avalanche",
+      "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
+      "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
+      "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
+      "nativeSymbol": "AVAX",
+      "blockExplorer": "https://snowtrace.io"
+    }
+  },
   "tokenMapping": {
     "WBTC": {
       "1": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
@@ -111,77 +176,8 @@
         }
       }
     },
-    "orderExecutor": {
-      "strategies": {},
-      "defaultNetwork": 1
-    },
     "keeper": {
       "pollIntervalMs": 5000,
-      "networks": {
-        "1": {
-          "chainId": 1,
-          "name": "Ethereum",
-          "rpcUrl": "https://eth.llamarpc.com",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "ETH",
-          "blockExplorer": "https://etherscan.io"
-        },
-        "137": {
-          "chainId": 137,
-          "name": "Polygon",
-          "rpcUrl": "https://polygon-rpc.com",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "MATIC",
-          "blockExplorer": "https://polygonscan.com"
-        },
-        "56": {
-          "chainId": 56,
-          "name": "BSC",
-          "rpcUrl": "https://bsc-dataseed.binance.org",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "BNB",
-          "blockExplorer": "https://bscscan.com"
-        },
-        "42161": {
-          "chainId": 42161,
-          "name": "Arbitrum",
-          "rpcUrl": "https://arb1.arbitrum.io/rpc",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "ETH",
-          "blockExplorer": "https://arbiscan.io"
-        },
-        "10": {
-          "chainId": 10,
-          "name": "Optimism",
-          "rpcUrl": "https://mainnet.optimism.io",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "ETH",
-          "blockExplorer": "https://optimistic.etherscan.io"
-        },
-        "43114": {
-          "chainId": 43114,
-          "name": "Avalanche",
-          "rpcUrl": "https://api.avax.network/ext/bc/C/rpc",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "AVAX",
-          "blockExplorer": "https://snowtrace.io"
-        },
-        "8453": {
-          "chainId": 8453,
-          "name": "Base",
-          "rpcUrl": "https://mainnet.base.org",
-          "limitOrderContract": "0x119c71D3BbAC22029622cbaEc24854d3D32D2828",
-          "settlementContract": "0x12e6FD1B180EbF67c3b452D4f893dC69Fcd2D652",
-          "nativeSymbol": "ETH",
-          "blockExplorer": "https://basescan.org"
-        }
-      },
       "maxGasPrice": "100"
     },
     "statusChecker": {

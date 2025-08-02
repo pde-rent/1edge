@@ -1,4 +1,3 @@
-
 /** API server port number */
 export const API_PORT = Number(process.env.API_PORT) || 40005;
 
@@ -109,7 +108,7 @@ export const THEME = {
   status: {
     /** Online/active status */
     online: "#22c55e", // green-500
-    /** Offline/inactive status */  
+    /** Offline/inactive status */
     offline: "#ef4444", // red-500
     /** Warning status */
     warning: "#f59e0b", // amber-500
@@ -248,7 +247,7 @@ export function syncThemeWithCSSVars() {
     "--error-color": THEME.error,
     "--success-color": THEME.success,
     "--border-color": THEME.border,
-    
+
     // Chart colors
     "--chart-up-color": THEME.chart.upColor,
     "--chart-down-color": THEME.chart.downColor,
@@ -257,19 +256,19 @@ export function syncThemeWithCSSVars() {
     "--chart-border-color": THEME.chart.borderColor,
     "--chart-label-bg": THEME.chart.labelBg,
     "--chart-volume-color": THEME.chart.volumeColor,
-    
+
     // Status colors
     "--status-online": THEME.status.online,
     "--status-offline": THEME.status.offline,
     "--status-warning": THEME.status.warning,
-    
+
     // Scrollbar colors
     "--scrollbar-track": THEME.scrollbar.track,
     "--scrollbar-thumb": THEME.scrollbar.thumb,
     "--scrollbar-thumb-hover": THEME.scrollbar.thumbHover,
     "--scrollbar-thumb-active": THEME.scrollbar.thumbActive,
     "--scrollbar-full": THEME.scrollbar.full,
-    
+
     // Mermaid colors
     "--mermaid-primary": THEME.mermaid.primaryColor,
     "--mermaid-primary-text": THEME.mermaid.primaryTextColor,
@@ -280,7 +279,7 @@ export function syncThemeWithCSSVars() {
     "--mermaid-grid": THEME.mermaid.gridColor,
     "--mermaid-secondary": THEME.mermaid.secondaryColor,
     "--mermaid-tertiary": THEME.mermaid.tertiaryColor,
-    
+
     // Syntax highlighting colors
     "--syntax-comment": THEME.syntax.comment,
     "--syntax-default": THEME.syntax.default,
@@ -295,12 +294,12 @@ export function syncThemeWithCSSVars() {
     "--syntax-punctuation": THEME.syntax.punctuation,
     "--syntax-tag": THEME.syntax.tag,
     "--syntax-attribute": THEME.syntax.attribute,
-    
+
     // Shadows and effects
     "--shadow-light": THEME.shadow.light,
     "--shadow-medium": THEME.shadow.medium,
     "--shadow-dark": THEME.shadow.dark,
-    
+
     // Typography
     "--font-family": THEME.font.family,
     "--font-size-xs": THEME.font.size.xs,
@@ -312,7 +311,7 @@ export function syncThemeWithCSSVars() {
     "--font-weight-medium": THEME.font.weight.medium,
     "--font-weight-bold": THEME.font.weight.bold,
     "--radius": THEME.radius,
-    
+
     // Shadcn/UI variables for proper theming
     "--background": THEME.background.main,
     "--foreground": THEME.text.primary,
@@ -333,7 +332,7 @@ export function syncThemeWithCSSVars() {
     "--border": THEME.border,
     "--input": THEME.border,
     "--ring": THEME.primary,
-    
+
     // MUI specific variables
     "--mui-tooltip-bg": THEME.background.paper,
     "--mui-shadow-opacity": "0.3",
@@ -360,35 +359,125 @@ export const GRID_CONFIG = {
     md: 40,
     sm: 72,
     xs: 80,
-    xxs: 100
+    xxs: 100,
   },
   initialLayouts: {
     lg: [
       // Top row: Expanded chart and narrower order book
-      { i: "activeFeed", x: 0, y: 0, w: 7, h: 20, static: true, minW: 6, minH: 12 },
-      { i: "services", x: 7, y: 0, w: 2, h: 20, static: true, minW: 2, minH: 20 },
+      {
+        i: "activeFeed",
+        x: 0,
+        y: 0,
+        w: 7,
+        h: 20,
+        static: true,
+        minW: 6,
+        minH: 12,
+      },
+      {
+        i: "services",
+        x: 7,
+        y: 0,
+        w: 2,
+        h: 20,
+        static: true,
+        minW: 2,
+        minH: 20,
+      },
       { i: "config", x: 9, y: 0, w: 3, h: 32, static: true, minW: 3, minH: 20 },
       // Bottom row: Positions panel spans under both chart and orderbook
-      { i: "positions", x: 0, y: 20, w: 9, h: 12, static: true, minW: 9, minH: 8 },
-    ], md: [
+      {
+        i: "positions",
+        x: 0,
+        y: 20,
+        w: 9,
+        h: 12,
+        static: true,
+        minW: 9,
+        minH: 8,
+      },
+    ],
+    md: [
       // Top row: Expanded chart and narrower order book
-      { i: "activeFeed", x: 0, y: 0, w: 6, h: 16, static: true, minW: 5, minH: 10 },
-      { i: "services", x: 6, y: 0, w: 2, h: 16, static: true, minW: 2, minH: 16 },
+      {
+        i: "activeFeed",
+        x: 0,
+        y: 0,
+        w: 6,
+        h: 16,
+        static: true,
+        minW: 5,
+        minH: 10,
+      },
+      {
+        i: "services",
+        x: 6,
+        y: 0,
+        w: 2,
+        h: 16,
+        static: true,
+        minW: 2,
+        minH: 16,
+      },
       { i: "config", x: 8, y: 0, w: 2, h: 28, static: true, minW: 2, minH: 20 },
       // Bottom row: Positions panel spans under both chart and orderbook
-      { i: "positions", x: 0, y: 16, w: 8, h: 12, static: true, minW: 8, minH: 8 },
+      {
+        i: "positions",
+        x: 0,
+        y: 16,
+        w: 8,
+        h: 12,
+        static: true,
+        minW: 8,
+        minH: 8,
+      },
     ],
 
     sm: [
       // Mobile/small screen - vertical stack
-      { i: "activeFeed", x: 0, y: 0, w: 6, h: 16, static: true, minW: 6, minH: 12 },
-      { i: "services", x: 0, y: 16, w: 6, h: 16, static: true, minW: 6, minH: 12 },
-      { i: "positions", x: 0, y: 32, w: 6, h: 12, static: true, minW: 6, minH: 8 },
-      { i: "config", x: 0, y: 44, w: 6, h: 16, static: true, minW: 6, minH: 12 },
+      {
+        i: "activeFeed",
+        x: 0,
+        y: 0,
+        w: 6,
+        h: 16,
+        static: true,
+        minW: 6,
+        minH: 12,
+      },
+      {
+        i: "services",
+        x: 0,
+        y: 16,
+        w: 6,
+        h: 16,
+        static: true,
+        minW: 6,
+        minH: 12,
+      },
+      {
+        i: "positions",
+        x: 0,
+        y: 32,
+        w: 6,
+        h: 12,
+        static: true,
+        minW: 6,
+        minH: 8,
+      },
+      {
+        i: "config",
+        x: 0,
+        y: 44,
+        w: 6,
+        h: 16,
+        static: true,
+        minW: 6,
+        minH: 12,
+      },
     ],
   } as Record<string, any[]>,
 };
-
 
 /**
  * 1inch API configuration
@@ -398,7 +487,6 @@ export const ONEINCH_API = {
   AUTH_HEADER: "Authorization",
   API_KEY: process.env.ONE_INCH_API_KEY || "",
 };
-
 
 /**
  * Time constants
