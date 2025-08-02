@@ -1,7 +1,12 @@
 import { OrderType } from "@common/types";
 import type { Order, MomentumReversalParams } from "@common/types";
 import { logger } from "@back/utils/logger";
-import { PriceBasedOrderWatcher, registerOrderWatcher, RSI_OVERSOLD, RSI_OVERBOUGHT } from "./base";
+import {
+  PriceBasedOrderWatcher,
+  registerOrderWatcher,
+  RSI_OVERSOLD,
+  RSI_OVERBOUGHT,
+} from "./base";
 
 /**
  * Momentum Reversal order watcher
@@ -15,41 +20,53 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
     // Get price info with analysis data
     const priceInfo = this.getPriceInfo(order);
     if (!priceInfo?.priceData?.analysis?.rsi) {
-      logger.debug(`No RSI data available for momentum reversal order ${order.id}`);
+      logger.debug(
+        `No RSI data available for momentum reversal order ${order.id}`,
+      );
       return false;
     }
 
     const rsiData = priceInfo.priceData.analysis.rsi;
-    
+
     // Need enough data for RSI and its moving average
     const requiredDataPoints = params.rsiPeriod + params.rsimaPeriod;
     if (rsiData.length < requiredDataPoints) {
-      logger.debug(`Insufficient RSI data: ${rsiData.length} < ${requiredDataPoints}`);
+      logger.debug(
+        `Insufficient RSI data: ${rsiData.length} < ${requiredDataPoints}`,
+      );
       return false;
     }
 
     // Get current RSI
     const currentRSI = rsiData[rsiData.length - 1];
-    
+
     // Calculate RSI moving average
     const rsiMAStart = rsiData.length - params.rsimaPeriod;
     const recentRSIValues = rsiData.slice(rsiMAStart);
-    const rsiMA = recentRSIValues.reduce((sum, val) => sum + val, 0) / params.rsimaPeriod;
+    const rsiMA =
+      recentRSIValues.reduce((sum, val) => sum + val, 0) / params.rsimaPeriod;
 
     // Check for reversal conditions
     const isOversoldReversal = currentRSI < RSI_OVERSOLD && currentRSI > rsiMA;
-    const isOverboughtReversal = currentRSI > RSI_OVERBOUGHT && currentRSI < rsiMA;
+    const isOverboughtReversal =
+      currentRSI > RSI_OVERBOUGHT && currentRSI < rsiMA;
 
     if (isOversoldReversal || isOverboughtReversal) {
       const reversalType = isOversoldReversal ? "oversold" : "overbought";
-      logger.info(`Momentum reversal detected: ${reversalType} condition (RSI: ${currentRSI}, MA: ${rsiMA})`);
+      logger.info(
+        `Momentum reversal detected: ${reversalType} condition (RSI: ${currentRSI}, MA: ${rsiMA})`,
+      );
       return true;
     }
 
     return false;
   }
 
-  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
+  async trigger(
+    order: Order,
+    makerAmount: string,
+    takerAmount: string,
+  ): Promise<void> {
     const params = this.validateParams<MomentumReversalParams>(order);
     if (!params) throw new Error("Invalid momentum reversal parameters");
 
@@ -63,14 +80,16 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
     const tpLevel = priceInfo.price * (1 + params.tpPct / 100);
     const slLevel = priceInfo.price * (1 - params.slPct / 100);
 
-    logger.info(`Momentum reversal entry at ${priceInfo.price}, TP: ${tpLevel}, SL: ${slLevel}`);
+    logger.info(
+      `Momentum reversal entry at ${priceInfo.price}, TP: ${tpLevel}, SL: ${slLevel}`,
+    );
 
     // Log execution
     this.logExecution({
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount
+      triggerAmount: makerAmount,
     });
 
     // Execute the order
@@ -84,4 +103,7 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
 }
 
 // Register the watcher
-registerOrderWatcher(OrderType.MOMENTUM_REVERSAL, new MomentumReversalOrderWatcher());
+registerOrderWatcher(
+  OrderType.MOMENTUM_REVERSAL,
+  new MomentumReversalOrderWatcher(),
+);

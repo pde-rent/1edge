@@ -427,7 +427,7 @@ class OrderRegistryService {
 
   private async startHttpServer() {
     const port = SERVICE_PORTS.ORDER_REGISTRY;
-    
+
     this.server = Bun.serve({
       port,
       fetch: async (request: Request): Promise<Response> => {
@@ -450,84 +450,111 @@ class OrderRegistryService {
         try {
           // Health check endpoint
           if (path === "/ping" && method === "GET") {
-            return new Response(JSON.stringify({ status: "ok", service: "order-registry" }), {
-              headers: { "Content-Type": "application/json", ...corsHeaders }
-            });
+            return new Response(
+              JSON.stringify({ status: "ok", service: "order-registry" }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
           }
 
           // Create order
           if (path === "/orders" && method === "POST") {
-            const order = await request.json() as Order;
+            const order = (await request.json()) as Order;
             await this.createOrder(order);
-            return new Response(JSON.stringify({ success: true, orderId: order.id }), {
-              headers: { "Content-Type": "application/json", ...corsHeaders }
-            });
+            return new Response(
+              JSON.stringify({ success: true, orderId: order.id }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
           }
 
           // Get orders (with optional maker filter)
           if (path === "/orders" && method === "GET") {
             const makerAddress = url.searchParams.get("maker");
             let orders;
-            
+
             if (makerAddress) {
               orders = await getOrdersByMaker(makerAddress);
             } else {
               orders = await getActiveOrders();
             }
-            
-            return new Response(JSON.stringify({ success: true, data: orders }), {
-              headers: { "Content-Type": "application/json", ...corsHeaders }
-            });
+
+            return new Response(
+              JSON.stringify({ success: true, data: orders }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
           }
 
           // Get specific order
           if (path.startsWith("/orders/") && method === "GET") {
             const orderId = path.split("/")[2];
             const order = await getOrder(orderId);
-            
+
             if (!order) {
-              return new Response(JSON.stringify({ success: false, error: "Order not found" }), {
-                status: 404,
-                headers: { "Content-Type": "application/json", ...corsHeaders }
-              });
+              return new Response(
+                JSON.stringify({ success: false, error: "Order not found" }),
+                {
+                  status: 404,
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...corsHeaders,
+                  },
+                },
+              );
             }
-            
-            return new Response(JSON.stringify({ success: true, data: order }), {
-              headers: { "Content-Type": "application/json", ...corsHeaders }
-            });
+
+            return new Response(
+              JSON.stringify({ success: true, data: order }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
           }
 
           // Cancel order
-          if (path.startsWith("/orders/") && path.endsWith("/cancel") && method === "POST") {
+          if (
+            path.startsWith("/orders/") &&
+            path.endsWith("/cancel") &&
+            method === "POST"
+          ) {
             const orderId = path.split("/")[2];
             await this.cancelOrder(orderId);
             return new Response(JSON.stringify({ success: true }), {
-              headers: { "Content-Type": "application/json", ...corsHeaders }
+              headers: { "Content-Type": "application/json", ...corsHeaders },
             });
           }
 
           // Modify order
           if (path.startsWith("/orders/") && method === "PUT") {
             const orderId = path.split("/")[2];
-            const newOrderData = await request.json() as Partial<Order>;
+            const newOrderData = (await request.json()) as Partial<Order>;
             const newOrderId = await this.modifyOrder(orderId, newOrderData);
             return new Response(JSON.stringify({ success: true, newOrderId }), {
-              headers: { "Content-Type": "application/json", ...corsHeaders }
+              headers: { "Content-Type": "application/json", ...corsHeaders },
             });
           }
 
           // 404 for unknown endpoints
-          return new Response(JSON.stringify({ success: false, error: "Not found" }), {
-            status: 404,
-            headers: { "Content-Type": "application/json", ...corsHeaders }
-          });
-
+          return new Response(
+            JSON.stringify({ success: false, error: "Not found" }),
+            {
+              status: 404,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            },
+          );
         } catch (error: any) {
           logger.error("Order Registry HTTP error:", error);
-          return new Response(JSON.stringify({ success: false, error: error.message }), {
-            status: 500,
-            headers: { "Content-Type": "application/json", ...corsHeaders }
-          });
+          return new Response(
+            JSON.stringify({ success: false, error: error.message }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json", ...corsHeaders },
+            },
+          );
         }
       },
     });

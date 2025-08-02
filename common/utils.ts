@@ -105,7 +105,7 @@ export function generateId(): string {
 export function generateOrderId(userAddress: string): string {
   const timestamp = Date.now().toString();
   const input = timestamp + userAddress.toLowerCase();
-  
+
   // Use Bun's built-in crypto to create MD5 hash
   const hasher = new Bun.CryptoHasher("md5");
   hasher.update(input);
@@ -305,6 +305,6 @@ export function formatDuration(ms: number): string {
  * Truncate an address for display
  */
 export function truncateAddress(address: string, chars = 4): string {
-  if (!address) return '';
+  if (!address) return "";
   return `${address.substring(0, chars + 2)}...${address.substring(address.length - chars)}`;
 }

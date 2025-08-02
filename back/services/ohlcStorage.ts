@@ -11,7 +11,7 @@ import ccxt from "ccxt";
  * OHLC candle data structure
  */
 export interface OHLCCandle {
-  timestamp: number;  // Unix timestamp in milliseconds
+  timestamp: number; // Unix timestamp in milliseconds
   open: number;
   high: number;
   low: number;
@@ -23,11 +23,11 @@ export interface OHLCCandle {
  * Supported OHLC timeframes with their duration in seconds
  */
 export enum OHLCTimeframe {
-  S5 = 5,        // 5 seconds (cache only)
-  S20 = 20,      // 20 seconds (cache only)
-  M1 = 60,       // 1 minute (stored)
-  M5 = 300,      // 5 minutes (stored)
-  M30 = 1800,    // 30 minutes (stored)
+  S5 = 5, // 5 seconds (cache only)
+  S20 = 20, // 20 seconds (cache only)
+  M1 = 60, // 1 minute (stored)
+  M5 = 300, // 5 minutes (stored)
+  M30 = 1800, // 30 minutes (stored)
 }
 
 /**
@@ -50,8 +50,8 @@ interface CacheEntry {
  * Historical data requirements
  */
 const HISTORICAL_DATA_REQUIREMENTS = {
-  MIN_DAYS: 7,    // Minimum 1 week of data
-  FILL_DAYS: 14,  // Fill with 2 weeks of data when missing
+  MIN_DAYS: 7, // Minimum 1 week of data
+  FILL_DAYS: 14, // Fill with 2 weeks of data when missing
 };
 
 /**
@@ -68,15 +68,19 @@ export class OHLCStorageService {
   private ccxtExchange: ccxt.binance;
 
   // Stored timeframes (saved to disk)
-  private readonly STORED_TIMEFRAMES = [OHLCTimeframe.M1, OHLCTimeframe.M5, OHLCTimeframe.M30];
+  private readonly STORED_TIMEFRAMES = [
+    OHLCTimeframe.M1,
+    OHLCTimeframe.M5,
+    OHLCTimeframe.M30,
+  ];
 
   // Cached timeframes (kept in memory only)
   private readonly CACHED_TIMEFRAMES = [OHLCTimeframe.S5, OHLCTimeframe.S20];
 
   // Cache size limits
   private readonly CACHE_LIMITS = {
-    [OHLCTimeframe.S5]: 720,   // 1 hour of 5s candles
-    [OHLCTimeframe.S20]: 180,  // 1 hour of 20s candles
+    [OHLCTimeframe.S5]: 720, // 1 hour of 5s candles
+    [OHLCTimeframe.S20]: 180, // 1 hour of 20s candles
   };
 
   constructor(private dataDir: string = "./data/ohlc") {
@@ -140,9 +144,9 @@ export class OHLCStorageService {
    */
   private getTableName(timeframe: OHLCTimeframe): string {
     const names = {
-      [OHLCTimeframe.M1]: 'candles_1m',
-      [OHLCTimeframe.M5]: 'candles_5m',
-      [OHLCTimeframe.M30]: 'candles_30m',
+      [OHLCTimeframe.M1]: "candles_1m",
+      [OHLCTimeframe.M5]: "candles_5m",
+      [OHLCTimeframe.M30]: "candles_30m",
     };
     return names[timeframe];
   }
@@ -152,7 +156,7 @@ export class OHLCStorageService {
    */
   private getPairFromSymbol(symbol: Symbol): string {
     // Extract pair from symbol like "binance:spot:BTCUSDT" -> "BTCUSDT"
-    const parts = symbol.split(':');
+    const parts = symbol.split(":");
     return parts[parts.length - 1];
   }
 
@@ -165,11 +169,11 @@ export class OHLCStorageService {
 
     // Convert common pairs to CCXT format with slash
     const pairMappings: Record<string, string> = {
-      'BTCUSDT': 'BTC/USDT',
-      'ETHUSDT': 'ETH/USDT',
-      'USDCUSDT': 'USDC/USDT',
-      '1INCHUSDT': '1INCH/USDT',
-      'AAVEUSDT': 'AAVE/USDT'
+      BTCUSDT: "BTC/USDT",
+      ETHUSDT: "ETH/USDT",
+      USDCUSDT: "USDC/USDT",
+      "1INCHUSDT": "1INCH/USDT",
+      AAVEUSDT: "AAVE/USDT",
     };
 
     return pairMappings[pair] || pair;
@@ -178,7 +182,11 @@ export class OHLCStorageService {
   /**
    * Process real-time price update and compute OHLC candles
    */
-  async processPriceUpdate(symbol: Symbol, price: number, volume: number = 0): Promise<void> {
+  async processPriceUpdate(
+    symbol: Symbol,
+    price: number,
+    volume: number = 0,
+  ): Promise<void> {
     const pair = this.getPairFromSymbol(symbol);
     const timestamp = Date.now();
 
@@ -193,7 +201,7 @@ export class OHLCStorageService {
       for (const tf of this.CACHED_TIMEFRAMES) {
         this.cacheStorage.get(pair)!.set(tf, {
           candles: [],
-          maxSize: this.CACHE_LIMITS[tf]
+          maxSize: this.CACHE_LIMITS[tf],
         });
         this.saveQueues.get(pair)!.set(tf, []);
       }
@@ -208,11 +216,20 @@ export class OHLCStorageService {
     const pairCache = this.cacheStorage.get(pair)!;
 
     // Process all timeframes
-    const allTimeframes = [...this.STORED_TIMEFRAMES, ...this.CACHED_TIMEFRAMES];
+    const allTimeframes = [
+      ...this.STORED_TIMEFRAMES,
+      ...this.CACHED_TIMEFRAMES,
+    ];
 
     for (const timeframe of allTimeframes) {
       await this.processTimeframeUpdate(
-        pair, timeframe, timestamp, price, volume, pairStates, pairCache
+        pair,
+        timeframe,
+        timestamp,
+        price,
+        volume,
+        pairStates,
+        pairCache,
       );
     }
   }
@@ -227,7 +244,7 @@ export class OHLCStorageService {
     price: number,
     volume: number,
     pairStates: Map<OHLCTimeframe, OHLCState>,
-    pairCache: Map<OHLCTimeframe, CacheEntry>
+    pairCache: Map<OHLCTimeframe, CacheEntry>,
   ): Promise<void> {
     const timeframeMs = timeframe * 1000;
     const candleStartTime = Math.floor(timestamp / timeframeMs) * timeframeMs;
@@ -235,14 +252,17 @@ export class OHLCStorageService {
     if (!pairStates.has(timeframe)) {
       pairStates.set(timeframe, {
         currentCandle: null,
-        lastSaveTimestamp: 0
+        lastSaveTimestamp: 0,
       });
     }
 
     const state = pairStates.get(timeframe)!;
 
     // Check if we need to close the current candle and start a new one
-    if (!state.currentCandle || state.currentCandle.timestamp !== candleStartTime) {
+    if (
+      !state.currentCandle ||
+      state.currentCandle.timestamp !== candleStartTime
+    ) {
       // Save the completed candle if it exists
       if (state.currentCandle) {
         await this.saveCandle(pair, timeframe, state.currentCandle, pairCache);
@@ -255,7 +275,7 @@ export class OHLCStorageService {
         high: price,
         low: price,
         close: price,
-        volume: volume
+        volume: volume,
       };
     } else {
       // Update current candle
@@ -273,7 +293,7 @@ export class OHLCStorageService {
     pair: string,
     timeframe: OHLCTimeframe,
     candle: OHLCCandle,
-    pairCache: Map<OHLCTimeframe, CacheEntry>
+    pairCache: Map<OHLCTimeframe, CacheEntry>,
   ): Promise<void> {
     if (this.CACHED_TIMEFRAMES.includes(timeframe)) {
       // Save to cache
@@ -297,7 +317,10 @@ export class OHLCStorageService {
   /**
    * Flush save queue for a specific pair and timeframe (async, non-blocking)
    */
-  private async flushSaveQueue(pair: string, timeframe: OHLCTimeframe): Promise<void> {
+  private async flushSaveQueue(
+    pair: string,
+    timeframe: OHLCTimeframe,
+  ): Promise<void> {
     const savingSet = this.isSaving.get(pair)!;
 
     // Prevent concurrent saves for the same pair/timeframe
@@ -336,15 +359,19 @@ export class OHLCStorageService {
             candle.high,
             candle.low,
             candle.close,
-            candle.volume
+            candle.volume,
           );
         }
       })();
 
-      logger.debug(`Saved ${candlesToSave.length} ${timeframe}s candles for ${pair}`);
-
+      logger.debug(
+        `Saved ${candlesToSave.length} ${timeframe}s candles for ${pair}`,
+      );
     } catch (error) {
-      logger.error(`Failed to save OHLC candles for ${pair}:${timeframe}:`, error);
+      logger.error(
+        `Failed to save OHLC candles for ${pair}:${timeframe}:`,
+        error,
+      );
     } finally {
       savingSet.delete(timeframe);
     }
@@ -358,7 +385,7 @@ export class OHLCStorageService {
     timeframe: OHLCTimeframe,
     startTime?: number,
     endTime?: number,
-    limit?: number
+    limit?: number,
   ): Promise<OHLCCandle[]> {
     const pair = this.getPairFromSymbol(symbol);
 
@@ -374,10 +401,10 @@ export class OHLCStorageService {
 
       // Apply filters
       if (startTime) {
-        candles = candles.filter(c => c.timestamp >= startTime);
+        candles = candles.filter((c) => c.timestamp >= startTime);
       }
       if (endTime) {
-        candles = candles.filter(c => c.timestamp <= endTime);
+        candles = candles.filter((c) => c.timestamp <= endTime);
       }
       if (limit) {
         candles = candles.slice(-limit); // Get most recent
@@ -394,36 +421,38 @@ export class OHLCStorageService {
       const conditions: string[] = [];
 
       if (startTime) {
-        conditions.push('timestamp >= ?');
+        conditions.push("timestamp >= ?");
         params.push(startTime);
       }
       if (endTime) {
-        conditions.push('timestamp <= ?');
+        conditions.push("timestamp <= ?");
         params.push(endTime);
       }
 
       if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
+        query += " WHERE " + conditions.join(" AND ");
       }
 
-      query += ' ORDER BY timestamp DESC';
+      query += " ORDER BY timestamp DESC";
 
       if (limit) {
-        query += ' LIMIT ?';
+        query += " LIMIT ?";
         params.push(limit);
       }
 
       const stmt = db.prepare(query);
       const results = stmt.all(...params) as any[];
 
-      return results.map(row => ({
-        timestamp: row.timestamp,
-        open: row.open,
-        high: row.high,
-        low: row.low,
-        close: row.close,
-        volume: row.volume
-      })).reverse(); // Return in ascending order
+      return results
+        .map((row) => ({
+          timestamp: row.timestamp,
+          open: row.open,
+          high: row.high,
+          low: row.low,
+          close: row.close,
+          volume: row.volume,
+        }))
+        .reverse(); // Return in ascending order
     }
   }
 
@@ -434,23 +463,36 @@ export class OHLCStorageService {
     logger.info("Running OHLC data sanity check...");
 
     const now = Date.now();
-    const minRequiredTime = now - (HISTORICAL_DATA_REQUIREMENTS.MIN_DAYS * 24 * 60 * 60 * 1000);
+    const minRequiredTime =
+      now - HISTORICAL_DATA_REQUIREMENTS.MIN_DAYS * 24 * 60 * 60 * 1000;
 
     for (const symbol of symbols) {
       const pair = this.getPairFromSymbol(symbol);
 
       // Only check 1-minute data - we'll construct higher timeframes from it
       try {
-        const existingCandles = await this.getCandles(symbol, OHLCTimeframe.M1, minRequiredTime);
+        const existingCandles = await this.getCandles(
+          symbol,
+          OHLCTimeframe.M1,
+          minRequiredTime,
+        );
 
-        if (existingCandles.length === 0 || existingCandles[0].timestamp > minRequiredTime) {
-          logger.info(`Missing historical data for ${pair}:${OHLCTimeframe.M1}s, filling gaps...`);
+        if (
+          existingCandles.length === 0 ||
+          existingCandles[0].timestamp > minRequiredTime
+        ) {
+          logger.info(
+            `Missing historical data for ${pair}:${OHLCTimeframe.M1}s, filling gaps...`,
+          );
           await this.fillHistoricalData(symbol, OHLCTimeframe.M1);
         } else {
           logger.debug(`Historical data OK for ${pair}:${OHLCTimeframe.M1}s`);
         }
       } catch (error) {
-        logger.error(`Failed to check data for ${pair}:${OHLCTimeframe.M1}s:`, error);
+        logger.error(
+          `Failed to check data for ${pair}:${OHLCTimeframe.M1}s:`,
+          error,
+        );
       }
     }
 
@@ -460,12 +502,17 @@ export class OHLCStorageService {
   /**
    * Fill historical data using CCXT from Binance
    */
-  private async fillHistoricalData(symbol: Symbol, timeframe: OHLCTimeframe): Promise<void> {
+  private async fillHistoricalData(
+    symbol: Symbol,
+    timeframe: OHLCTimeframe,
+  ): Promise<void> {
     const pair = this.getPairFromSymbol(symbol);
 
     // Only fetch 1-minute data; higher timeframes will be constructed from it
     if (timeframe !== OHLCTimeframe.M1) {
-      logger.warn(`fillHistoricalData should only be called with M1 timeframe, got ${timeframe}s`);
+      logger.warn(
+        `fillHistoricalData should only be called with M1 timeframe, got ${timeframe}s`,
+      );
       return;
     }
 
@@ -478,13 +525,21 @@ export class OHLCStorageService {
       }
 
       const now = Date.now();
-      const startTime = now - (HISTORICAL_DATA_REQUIREMENTS.FILL_DAYS * 24 * 60 * 60 * 1000);
+      const startTime =
+        now - HISTORICAL_DATA_REQUIREMENTS.FILL_DAYS * 24 * 60 * 60 * 1000;
 
-      logger.info(`Fetching ${HISTORICAL_DATA_REQUIREMENTS.FILL_DAYS} days of ${timeframe}s data for ${pair}...`);
+      logger.info(
+        `Fetching ${HISTORICAL_DATA_REQUIREMENTS.FILL_DAYS} days of ${timeframe}s data for ${pair}...`,
+      );
 
       // Convert to CCXT symbol format and fetch historical data
       const ccxtSymbol = this.getCCXTSymbol(symbol);
-      const ohlcvData = await this.fetchHistoricalDataBatch(ccxtSymbol, ccxtTimeframe, startTime, now);
+      const ohlcvData = await this.fetchHistoricalDataBatch(
+        ccxtSymbol,
+        ccxtTimeframe,
+        startTime,
+        now,
+      );
 
       if (ohlcvData.length === 0) {
         logger.warn(`No historical data available for ${pair}`);
@@ -492,14 +547,16 @@ export class OHLCStorageService {
       }
 
       // Convert CCXT format to our format
-      const candles: OHLCCandle[] = ohlcvData.map(([timestamp, open, high, low, close, volume]) => ({
-        timestamp,
-        open,
-        high,
-        low,
-        close,
-        volume: volume || 0
-      }));
+      const candles: OHLCCandle[] = ohlcvData.map(
+        ([timestamp, open, high, low, close, volume]) => ({
+          timestamp,
+          open,
+          high,
+          low,
+          close,
+          volume: volume || 0,
+        }),
+      );
 
       // Save to database
       const db = await this.getDatabase(pair);
@@ -518,7 +575,7 @@ export class OHLCStorageService {
             candle.high,
             candle.low,
             candle.close,
-            candle.volume
+            candle.volume,
           );
         }
       })();
@@ -528,10 +585,14 @@ export class OHLCStorageService {
         await this.constructHigherTimeframes(pair, candles);
       }
 
-      logger.info(`Filled ${candles.length} historical candles for ${pair}:${timeframe}s`);
-
+      logger.info(
+        `Filled ${candles.length} historical candles for ${pair}:${timeframe}s`,
+      );
     } catch (error) {
-      logger.error(`Failed to fill historical data for ${pair}:${timeframe}s:`, error);
+      logger.error(
+        `Failed to fill historical data for ${pair}:${timeframe}s:`,
+        error,
+      );
     }
   }
 
@@ -543,7 +604,7 @@ export class OHLCStorageService {
     ccxtSymbol: string,
     ccxtTimeframe: string,
     startTime: number,
-    endTime: number
+    endTime: number,
   ): Promise<any[]> {
     const allData: any[] = [];
     const batchSize = 1000; // Binance API limit - ensure we use exactly 1000
@@ -552,23 +613,29 @@ export class OHLCStorageService {
     let currentStartTime = startTime;
     let batchCount = 0;
 
-    logger.info(`Starting batch fetch for ${ccxtSymbol} from ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`);
+    logger.info(
+      `Starting batch fetch for ${ccxtSymbol} from ${new Date(startTime).toISOString()} to ${new Date(endTime).toISOString()}`,
+    );
 
     while (currentStartTime < endTime) {
       try {
         batchCount++;
-        logger.debug(`Fetching batch ${batchCount} for ${ccxtSymbol} starting from ${new Date(currentStartTime).toISOString()}`);
+        logger.debug(
+          `Fetching batch ${batchCount} for ${ccxtSymbol} starting from ${new Date(currentStartTime).toISOString()}`,
+        );
 
         // Use CCXT symbol format and ensure limit is exactly 1000
         const batchData = await this.ccxtExchange.fetchOHLCV(
           ccxtSymbol,
           ccxtTimeframe,
           currentStartTime,
-          batchSize
+          batchSize,
         );
 
         if (batchData.length === 0) {
-          logger.debug(`No more data available for ${ccxtSymbol} at ${new Date(currentStartTime).toISOString()}`);
+          logger.debug(
+            `No more data available for ${ccxtSymbol} at ${new Date(currentStartTime).toISOString()}`,
+          );
           break;
         }
 
@@ -580,23 +647,29 @@ export class OHLCStorageService {
         const timeframeMs = this.getTimeframeInMilliseconds(ccxtTimeframe);
         currentStartTime = lastCandle[0] + timeframeMs;
 
-        logger.debug(`Fetched ${batchData.length} candles for ${ccxtSymbol}, total: ${allData.length}`);
+        logger.debug(
+          `Fetched ${batchData.length} candles for ${ccxtSymbol}, total: ${allData.length}`,
+        );
 
         // If we got less than the batch size, we've reached the end
         if (batchData.length < batchSize) {
-          logger.debug(`Received partial batch (${batchData.length}/${batchSize}), assuming end of data`);
+          logger.debug(
+            `Received partial batch (${batchData.length}/${batchSize}), assuming end of data`,
+          );
           break;
         }
 
         // Rate limiting - wait between requests
         if (currentStartTime < endTime) {
-          await new Promise(resolve => setTimeout(resolve, rateLimitDelay));
+          await new Promise((resolve) => setTimeout(resolve, rateLimitDelay));
         }
-
       } catch (error) {
-        logger.error(`Error fetching batch ${batchCount} for ${ccxtSymbol}:`, error);
+        logger.error(
+          `Error fetching batch ${batchCount} for ${ccxtSymbol}:`,
+          error,
+        );
         // Wait longer on error then continue
-        await new Promise(resolve => setTimeout(resolve, rateLimitDelay * 2));
+        await new Promise((resolve) => setTimeout(resolve, rateLimitDelay * 2));
 
         // If we have some data, continue; otherwise abort
         if (allData.length === 0) {
@@ -606,7 +679,9 @@ export class OHLCStorageService {
       }
     }
 
-    logger.info(`Completed batch fetch for ${ccxtSymbol}: ${allData.length} candles in ${batchCount} batches`);
+    logger.info(
+      `Completed batch fetch for ${ccxtSymbol}: ${allData.length} candles in ${batchCount} batches`,
+    );
     return allData;
   }
 
@@ -615,9 +690,9 @@ export class OHLCStorageService {
    */
   private getTimeframeInMilliseconds(ccxtTimeframe: string): number {
     const timeframeMap: Record<string, number> = {
-      '1m': 60 * 1000,
-      '5m': 5 * 60 * 1000,
-      '30m': 30 * 60 * 1000,
+      "1m": 60 * 1000,
+      "5m": 5 * 60 * 1000,
+      "30m": 30 * 60 * 1000,
     };
     return timeframeMap[ccxtTimeframe] || 60 * 1000; // default to 1 minute
   }
@@ -625,7 +700,10 @@ export class OHLCStorageService {
   /**
    * Construct higher timeframe data from M1 data
    */
-  private async constructHigherTimeframes(pair: string, m1Candles: OHLCCandle[]): Promise<void> {
+  private async constructHigherTimeframes(
+    pair: string,
+    m1Candles: OHLCCandle[],
+  ): Promise<void> {
     const higherTimeframes = [OHLCTimeframe.M5, OHLCTimeframe.M30];
 
     for (const timeframe of higherTimeframes) {
@@ -648,12 +726,14 @@ export class OHLCStorageService {
               candle.high,
               candle.low,
               candle.close,
-              candle.volume
+              candle.volume,
             );
           }
         })();
 
-        logger.debug(`Constructed ${constructedCandles.length} ${timeframe}s candles from M1 data`);
+        logger.debug(
+          `Constructed ${constructedCandles.length} ${timeframe}s candles from M1 data`,
+        );
       }
     }
   }
@@ -661,7 +741,10 @@ export class OHLCStorageService {
   /**
    * Construct higher timeframe candles from M1 candles
    */
-  private constructFromM1(m1Candles: OHLCCandle[], targetTimeframe: OHLCTimeframe): OHLCCandle[] {
+  private constructFromM1(
+    m1Candles: OHLCCandle[],
+    targetTimeframe: OHLCTimeframe,
+  ): OHLCCandle[] {
     const timeframeMs = targetTimeframe * 1000;
     const constructedCandles: OHLCCandle[] = [];
 
@@ -686,10 +769,10 @@ export class OHLCStorageService {
       const constructedCandle: OHLCCandle = {
         timestamp,
         open: candles[0].open,
-        high: Math.max(...candles.map(c => c.high)),
-        low: Math.min(...candles.map(c => c.low)),
+        high: Math.max(...candles.map((c) => c.high)),
+        low: Math.min(...candles.map((c) => c.low)),
         close: candles[candles.length - 1].close,
-        volume: candles.reduce((sum, c) => sum + c.volume, 0)
+        volume: candles.reduce((sum, c) => sum + c.volume, 0),
       };
 
       constructedCandles.push(constructedCandle);
@@ -703,9 +786,9 @@ export class OHLCStorageService {
    */
   private getCCXTTimeframe(timeframe: OHLCTimeframe): string | null {
     const mapping = {
-      [OHLCTimeframe.M1]: '1m',
-      [OHLCTimeframe.M5]: '5m',
-      [OHLCTimeframe.M30]: '30m',
+      [OHLCTimeframe.M1]: "1m",
+      [OHLCTimeframe.M5]: "5m",
+      [OHLCTimeframe.M30]: "30m",
     };
     return mapping[timeframe] || null;
   }
@@ -720,18 +803,34 @@ export class OHLCStorageService {
     // Database stats
     for (const timeframe of this.STORED_TIMEFRAMES) {
       try {
-        const candles = await this.getCandles(symbol, timeframe, undefined, undefined, 1);
+        const candles = await this.getCandles(
+          symbol,
+          timeframe,
+          undefined,
+          undefined,
+          1,
+        );
         const db = await this.getDatabase(pair);
         const tableName = this.getTableName(timeframe);
 
-        const countResult = db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get() as { count: number };
-        const oldestResult = db.prepare(`SELECT MIN(timestamp) as oldest FROM ${tableName}`).get() as { oldest: number };
-        const newestResult = db.prepare(`SELECT MAX(timestamp) as newest FROM ${tableName}`).get() as { newest: number };
+        const countResult = db
+          .prepare(`SELECT COUNT(*) as count FROM ${tableName}`)
+          .get() as { count: number };
+        const oldestResult = db
+          .prepare(`SELECT MIN(timestamp) as oldest FROM ${tableName}`)
+          .get() as { oldest: number };
+        const newestResult = db
+          .prepare(`SELECT MAX(timestamp) as newest FROM ${tableName}`)
+          .get() as { newest: number };
 
         stats[`${timeframe}s`] = {
           count: countResult.count,
-          oldest: oldestResult.oldest ? new Date(oldestResult.oldest).toISOString() : null,
-          newest: newestResult.newest ? new Date(newestResult.newest).toISOString() : null,
+          oldest: oldestResult.oldest
+            ? new Date(oldestResult.oldest).toISOString()
+            : null,
+          newest: newestResult.newest
+            ? new Date(newestResult.newest).toISOString()
+            : null,
         };
       } catch (error) {
         stats[`${timeframe}s`] = { error: error.message };
@@ -802,7 +901,9 @@ export function initOHLCStorage(dataDir?: string): OHLCStorageService {
 
 export function getOHLCStorage(): OHLCStorageService {
   if (!ohlcStorageInstance) {
-    throw new Error("OHLC Storage not initialized. Call initOHLCStorage first.");
+    throw new Error(
+      "OHLC Storage not initialized. Call initOHLCStorage first.",
+    );
   }
   return ohlcStorageInstance;
 }

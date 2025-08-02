@@ -19,32 +19,40 @@ class RangeBreakoutOrderWatcher extends PriceBasedOrderWatcher {
     // Check all three conditions for breakout
     const isStrongTrend = this.checkTechnicalCondition(
       priceData,
-      'adx',
-      (adx) => adx > params.adxThreshold
+      "adx",
+      (adx) => adx > params.adxThreshold,
     );
 
     const isTrendStrengthening = this.checkTechnicalCondition(
       priceData,
-      'adx',
+      "adx",
       (adx) => {
-        const adxValues = priceData.analysis.adx?.filter((v: number) => !isNaN(v)) || [];
+        const adxValues =
+          priceData.analysis.adx?.filter((v: number) => !isNaN(v)) || [];
         return this.isAboveMA(adxValues, params.adxmaPeriod);
-      }
+      },
     );
 
     const hasBreakout = this.checkTechnicalCondition(
       priceData,
-      'ema',
+      "ema",
       (ema) => {
-        const threshold = this.calculatePercentage(ema, params.breakoutPct || 2.0);
+        const threshold = this.calculatePercentage(
+          ema,
+          params.breakoutPct || 2.0,
+        );
         return Math.abs(currentPrice - ema) > threshold;
-      }
+      },
     );
 
     return isStrongTrend && isTrendStrengthening && hasBreakout;
   }
 
-  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
+  async trigger(
+    order: Order,
+    makerAmount: string,
+    takerAmount: string,
+  ): Promise<void> {
     const priceInfo = this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
@@ -54,7 +62,7 @@ class RangeBreakoutOrderWatcher extends PriceBasedOrderWatcher {
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount
+      triggerAmount: makerAmount,
     });
 
     await super.trigger(order, makerAmount, takerAmount);

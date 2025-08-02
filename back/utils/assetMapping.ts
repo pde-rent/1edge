@@ -25,7 +25,10 @@ export function addressToSymbol(address: string, chainId: number = 1): string {
 /**
  * Convert token symbol to asset address
  */
-export function symbolToAddress(symbol: string, chainId: number = 1): string | undefined {
+export function symbolToAddress(
+  symbol: string,
+  chainId: number = 1,
+): string | undefined {
   const config = getConfig();
   const tokenMapping = config.tokenMapping[symbol];
 
@@ -39,7 +42,11 @@ export function symbolToAddress(symbol: string, chainId: number = 1): string | u
 /**
  * Create price feed symbol from maker and taker asset addresses
  */
-export function getSymbolFromAssets(makerAsset: string, takerAsset: string, chainId: number = 1): `${string}:${string}:${string}` {
+export function getSymbolFromAssets(
+  makerAsset: string,
+  takerAsset: string,
+  chainId: number = 1,
+): `${string}:${string}:${string}` {
   const makerSymbol = addressToSymbol(makerAsset, chainId);
   const takerSymbol = addressToSymbol(takerAsset, chainId);
 
@@ -49,6 +56,9 @@ export function getSymbolFromAssets(makerAsset: string, takerAsset: string, chai
 /**
  * Get display symbol for logging purposes
  */
-export function getAssetSymbol(assetAddress: string, chainId: number = 1): string {
+export function getAssetSymbol(
+  assetAddress: string,
+  chainId: number = 1,
+): string {
   return addressToSymbol(assetAddress, chainId);
 }

@@ -19,7 +19,7 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
     }
 
     // Check if we have a valid next trigger value
-    if (!order.nextTriggerValue || typeof order.nextTriggerValue !== 'number') {
+    if (!order.nextTriggerValue || typeof order.nextTriggerValue !== "number") {
       return false;
     }
 
@@ -35,13 +35,19 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
 
     if (hasReachedTarget) {
       const currentStep = this.getCurrentStep(order);
-      logger.debug(`Range order reached target ${targetPrice} at step ${currentStep + 1}/${params.steps}`);
+      logger.debug(
+        `Range order reached target ${targetPrice} at step ${currentStep + 1}/${params.steps}`,
+      );
     }
 
     return hasReachedTarget;
   }
 
-  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
+  async trigger(
+    order: Order,
+    makerAmount: string,
+    takerAmount: string,
+  ): Promise<void> {
     const params = this.validateParams<RangeParams>(order);
     if (!params) throw new Error("Invalid range parameters");
 
@@ -57,7 +63,7 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
       symbol: priceInfo.symbol,
       step: currentStep + 1,
       totalSteps: params.steps,
-      triggerAmount: makerAmount
+      triggerAmount: makerAmount,
     });
 
     // Execute the order
@@ -73,7 +79,9 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
 
     // Check if all steps completed
     if (nextStep >= params.steps) {
-      logger.debug(`Range order ${order.id} completed all ${params.steps} steps`);
+      logger.debug(
+        `Range order ${order.id} completed all ${params.steps} steps`,
+      );
       order.nextTriggerValue = undefined;
       return;
     }
@@ -81,10 +89,12 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
     // Calculate next trigger price
     const priceRange = params.endPrice - params.startPrice;
     const pricePerStep = priceRange / params.steps;
-    const nextTriggerPrice = params.startPrice + (pricePerStep * (nextStep + 1));
+    const nextTriggerPrice = params.startPrice + pricePerStep * (nextStep + 1);
 
     order.nextTriggerValue = nextTriggerPrice;
-    logger.debug(`Range order ${order.id} next trigger at price ${nextTriggerPrice} (step ${nextStep + 1}/${params.steps})`);
+    logger.debug(
+      `Range order ${order.id} next trigger at price ${nextTriggerPrice} (step ${nextStep + 1}/${params.steps})`,
+    );
   }
 
   /**

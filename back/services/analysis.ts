@@ -88,7 +88,7 @@ function calculateROC(prices: number[], period: number): number[] {
   });
 
   // Pad with NaN for missing values
-  const padding = new Array(period).fill(NaN);
+  const padding = Array.from({ length: period }, () => NaN);
   return [...padding, ...roc];
 }
 
@@ -131,7 +131,7 @@ function calculateATR(
   });
 
   // Pad with NaN for missing values
-  const padding = new Array(period).fill(NaN);
+  const padding = Array.from({ length: period }, () => NaN);
   return [...padding, ...atr];
 }
 
@@ -152,7 +152,7 @@ function calculateADX(
   });
 
   // Pad with NaN for missing values
-  const padding = new Array(period * 2 - 1).fill(NaN);
+  const padding = Array.from({ length: period * 2 - 1 }, () => NaN);
   return [...padding, ...adx.map((r: any) => r.adx)];
 }
 
@@ -166,7 +166,7 @@ function calculateEMA(prices: number[], period: number): number[] {
   });
 
   // Pad with NaN for missing values
-  const padding = new Array(period - 1).fill(NaN);
+  const padding = Array.from({ length: period - 1 }, () => NaN);
   return [...padding, ...ema];
 }
 
@@ -180,7 +180,7 @@ function calculateSMA(prices: number[], period: number): number[] {
   });
 
   // Pad with NaN for missing values
-  const padding = new Array(period - 1).fill(NaN);
+  const padding = Array.from({ length: period - 1 }, () => NaN);
   return [...padding, ...sma];
 }
 
@@ -194,7 +194,7 @@ function calculateRSI(prices: number[], period: number): number[] {
   });
 
   // Pad with NaN for missing values
-  const padding = new Array(period).fill(NaN);
+  const padding = Array.from({ length: period }, () => NaN);
   return [...padding, ...rsi];
 }
 
@@ -234,7 +234,7 @@ function calculateMACD(
   });
 
   // Extract arrays and pad
-  const padding = new Array(slowPeriod - 1).fill(NaN);
+  const padding = Array.from({ length: slowPeriod - 1 }, () => NaN);
   const macd = [...padding, ...macdResult.map((r: any) => r.MACD || NaN)];
   const signal = [...padding, ...macdResult.map((r: any) => r.signal || NaN)];
   const histogram = [
@@ -260,7 +260,7 @@ function calculateBollingerBands(
   });
 
   // Extract arrays and pad
-  const padding = new Array(period - 1).fill(NaN);
+  const padding = Array.from({ length: period - 1 }, () => NaN);
   const upper = [...padding, ...bb.map((r: any) => r.upper)];
   const middle = [...padding, ...bb.map((r: any) => r.middle)];
   const lower = [...padding, ...bb.map((r: any) => r.lower)];

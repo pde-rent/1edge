@@ -580,23 +580,21 @@ async function startBatchedTickerLoop(
   if (connection.isRunning) return;
   connection.isRunning = true;
 
-
   while (!connection.stopSignal.stop) {
     try {
       if (!connection.exchange) {
         await sleep(1000); // Wait for exchange to be ready
         continue;
       }
-      
+
       if (connection.subscriptions.size === 0) {
         await sleep(1000); // Wait for subscriptions to be added
         continue;
       }
 
-
       // Get all symbols for this exchange
       const symbols = Array.from(connection.subscriptions.keys());
-      
+
       // Use batch ticker fetching to avoid rate limits
       let tickerData: Record<string, any> = {};
       const fetchStart = Date.now();
@@ -621,11 +619,10 @@ async function startBatchedTickerLoop(
             }
           }
         }
-        
+
         const fetchTime = Date.now() - fetchStart;
         const validTickers = Object.keys(tickerData).length;
-        
-        
+
         // Log batch summary only if we have activity
         if (validTickers > 0) {
         }
@@ -644,8 +641,7 @@ async function startBatchedTickerLoop(
       // Process each ticker update
       let processedCount = 0;
       let updatedSymbols: string[] = [];
-      
-      
+
       // Create mapping from exchange-specific symbols to CCXT standardized symbols
       const symbolMap = new Map<string, string>();
       for (const [tickerSymbol] of connection.subscriptions) {
@@ -653,14 +649,17 @@ async function startBatchedTickerLoop(
         // We need to find the corresponding CCXT key (e.g., "BTC/USDT")
         for (const ccxtKey of Object.keys(tickerData)) {
           // Convert CCXT key to exchange format for comparison
-          const exchangeKey = ccxtKey.replace('/', exchangeId === 'okx' ? '-' : '');
+          const exchangeKey = ccxtKey.replace(
+            "/",
+            exchangeId === "okx" ? "-" : "",
+          );
           if (exchangeKey === tickerSymbol) {
             symbolMap.set(tickerSymbol, ccxtKey);
             break;
           }
         }
       }
-      
+
       for (const [tickerSymbol, subscription] of connection.subscriptions) {
         const ccxtKey = symbolMap.get(tickerSymbol);
         const ticker = ccxtKey ? tickerData[ccxtKey] : undefined;
@@ -713,7 +712,7 @@ async function startBatchedTickerLoop(
         // Cache the result
         await cacheTicker(aggSymbol, agg, 300);
       }
-      
+
       // Log processing summary
       if (processedCount > 0) {
       }
@@ -853,7 +852,6 @@ async function addBatchedSubscription(
     aggCfg,
   });
 
-
   // Start monitoring loop if exchange is ready and this is the first subscription
   if (connection.exchange && !connection.isRunning) {
     void startBatchedTickerLoop(
@@ -945,29 +943,32 @@ export function subToTickerFeeds(
   const subscriptionPromises: Promise<void>[] = [];
 
   for (const [exchangeId, subscriptions] of exchangeGroups) {
-
     // Start all subscriptions for this exchange in parallel
-    const exchangePromises = subscriptions.map(({ dest, srcKey, srcConfig, aggCfg }) => {
-      const fullCfg = buildFullSrcCfg(srcKey, srcConfig, aggCfg);
-      return addBatchedSubscription(
-        fullCfg,
-        dest,
-        aggCfg,
-        onUpdate,
-        onError,
-        reconnectMs,
-      );
-    });
+    const exchangePromises = subscriptions.map(
+      ({ dest, srcKey, srcConfig, aggCfg }) => {
+        const fullCfg = buildFullSrcCfg(srcKey, srcConfig, aggCfg);
+        return addBatchedSubscription(
+          fullCfg,
+          dest,
+          aggCfg,
+          onUpdate,
+          onError,
+          reconnectMs,
+        );
+      },
+    );
 
     subscriptionPromises.push(...exchangePromises);
   }
 
   // Don't wait for all subscriptions to complete - let them run in background
   Promise.allSettled(subscriptionPromises).then((results) => {
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const failed = results.filter((r) => r.status === "rejected").length;
     const succeeded = results.length - failed;
     if (failed > 0) {
-      logger.warn(`Subscription setup: ${succeeded} succeeded, ${failed} failed`);
+      logger.warn(
+        `Subscription setup: ${succeeded} succeeded, ${failed} failed`,
+      );
     }
   });
 
@@ -980,7 +981,6 @@ export function subToTickerFeeds(
 
       // Clear all connections
       batchedConnections.clear();
-
     },
     getAllActiveSignals: () => {
       // Return all stop signals from batched connections
@@ -998,7 +998,6 @@ export function subscribeTicker(
   symbol: Symbol,
   callback: (ticker: TickerTick) => void,
 ): () => void {
-
   // For now, return a placeholder unsubscribe function
   // Full implementation would use subToTickerFeeds internally
   return () => {

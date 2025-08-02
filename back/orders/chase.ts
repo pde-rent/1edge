@@ -24,28 +24,39 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
 
     // Check max price constraint
     if (params.maxPrice && priceInfo.price > params.maxPrice) {
-      logger.debug(`Chase limit order ${order.id} - price ${priceInfo.price} exceeds max ${params.maxPrice}`);
+      logger.debug(
+        `Chase limit order ${order.id} - price ${priceInfo.price} exceeds max ${params.maxPrice}`,
+      );
       return false;
     }
 
     // Get current trigger price or use current price
     const currentTriggerPrice = order.triggerPrice || priceInfo.price;
-    
+
     // Calculate distance threshold
-    const distanceThreshold = this.calculatePercentage(currentTriggerPrice, params.distancePct);
-    
+    const distanceThreshold = this.calculatePercentage(
+      currentTriggerPrice,
+      params.distancePct,
+    );
+
     // Check if price has moved beyond the distance threshold
     const priceDifference = Math.abs(priceInfo.price - currentTriggerPrice);
     const shouldChase = priceDifference >= distanceThreshold;
 
     if (shouldChase) {
-      logger.debug(`Chase limit triggered: price moved from ${currentTriggerPrice} to ${priceInfo.price} (${params.distancePct}% threshold)`);
+      logger.debug(
+        `Chase limit triggered: price moved from ${currentTriggerPrice} to ${priceInfo.price} (${params.distancePct}% threshold)`,
+      );
     }
 
     return shouldChase;
   }
 
-  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
+  async trigger(
+    order: Order,
+    makerAmount: string,
+    takerAmount: string,
+  ): Promise<void> {
     const priceInfo = this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
@@ -57,7 +68,7 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
       order,
       currentPrice: priceInfo.price,
       symbol: priceInfo.symbol,
-      triggerAmount: makerAmount
+      triggerAmount: makerAmount,
     });
 
     // Execute the order

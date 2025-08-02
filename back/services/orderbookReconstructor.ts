@@ -22,7 +22,10 @@ export class OrderbookReconstructor {
   private tokenMapping: TokenMapping;
 
   constructor(apiKey?: string) {
-    this.apiKey = apiKey || process.env.ONE_INCH_API_KEY || "T4l6ro3uDEfeBY4ROtslRUjUhacPmBgu";
+    this.apiKey =
+      apiKey ||
+      process.env.ONE_INCH_API_KEY ||
+      "T4l6ro3uDEfeBY4ROtslRUjUhacPmBgu";
     this.tokenMapping = getConfig().tokenMapping;
 
     if (!this.apiKey) {
@@ -59,10 +62,14 @@ export class OrderbookReconstructor {
             this.fetchTokenDecimals(chain, makerAsset),
             this.fetchTokenDecimals(chain, takerAsset),
           ]);
-          logger.info(`Token decimals: maker(${makerAsset.slice(0,6)})=${makerAssetDecimals}, taker(${takerAsset.slice(0,6)})=${takerAssetDecimals}`);
+          logger.info(
+            `Token decimals: maker(${makerAsset.slice(0, 6)})=${makerAssetDecimals}, taker(${takerAsset.slice(0, 6)})=${takerAssetDecimals}`,
+          );
         } catch (error) {
           logger.error(`Failed to fetch token decimals: ${error}`);
-          throw new Error(`Cannot proceed without token decimals for ${makerAsset}/${takerAsset}`);
+          throw new Error(
+            `Cannot proceed without token decimals for ${makerAsset}/${takerAsset}`,
+          );
         }
       }
 
@@ -70,9 +77,17 @@ export class OrderbookReconstructor {
       let spotPrice: number | null = null;
       if (makerAsset && takerAsset) {
         try {
-          spotPrice = await this.fetchSpotPriceFromCollector(chain, makerAsset, takerAsset, makerAssetDecimals, takerAssetDecimals);
+          spotPrice = await this.fetchSpotPriceFromCollector(
+            chain,
+            makerAsset,
+            takerAsset,
+            makerAssetDecimals,
+            takerAssetDecimals,
+          );
           if (spotPrice !== null) {
-            logger.info(`Using collector spot price for filtering: ${spotPrice}`);
+            logger.info(
+              `Using collector spot price for filtering: ${spotPrice}`,
+            );
           }
         } catch (error) {
           logger.warn(`Failed to fetch spot price from collector: ${error}`);
@@ -80,35 +95,77 @@ export class OrderbookReconstructor {
       }
 
       // Fetch all orders for the trading pair using enhanced approach
-      const allOrders = await this.fetchAllOrdersForPair(chain, makerAsset, takerAsset, limit);
+      const allOrders = await this.fetchAllOrdersForPair(
+        chain,
+        makerAsset,
+        takerAsset,
+        limit,
+      );
 
       if (allOrders.length === 0) {
-        logger.warn(`No orders found for ${makerAsset}/${takerAsset} on chain ${chain}`);
+        logger.warn(
+          `No orders found for ${makerAsset}/${takerAsset} on chain ${chain}`,
+        );
       }
 
       // Separate orders into bids and asks (no scaling needed here)
-      const result = this.separateBidsAndAsksWithSpotPrice(allOrders, makerAsset, takerAsset, spotPrice);
+      const result = this.separateBidsAndAsksWithSpotPrice(
+        allOrders,
+        makerAsset,
+        takerAsset,
+        spotPrice,
+      );
       const bidOrders = result.bidOrders;
       const askOrders = result.askOrders;
 
       // Debug: Log first few raw rates to understand the data
       if (bidOrders.length > 0) {
-        logger.info(`First 3 raw bid rates: ${bidOrders.slice(0, 3).map(o => o.makerRate).join(', ')}`);
-        logger.info(`First bid order details: maker=${bidOrders[0].data.makerAsset}, taker=${bidOrders[0].data.takerAsset}, makingAmount=${bidOrders[0].remainingMakerAmount}`);
+        logger.info(
+          `First 3 raw bid rates: ${bidOrders
+            .slice(0, 3)
+            .map((o) => o.makerRate)
+            .join(", ")}`,
+        );
+        logger.info(
+          `First bid order details: maker=${bidOrders[0].data.makerAsset}, taker=${bidOrders[0].data.takerAsset}, makingAmount=${bidOrders[0].remainingMakerAmount}`,
+        );
       }
       if (askOrders.length > 0) {
-        logger.info(`First 3 raw ask rates: ${askOrders.slice(0, 3).map(o => o.makerRate).join(', ')}`);
-        logger.info(`First ask order details: maker=${askOrders[0].data.makerAsset}, taker=${askOrders[0].data.takerAsset}, makingAmount=${askOrders[0].remainingMakerAmount}`);
+        logger.info(
+          `First 3 raw ask rates: ${askOrders
+            .slice(0, 3)
+            .map((o) => o.makerRate)
+            .join(", ")}`,
+        );
+        logger.info(
+          `First ask order details: maker=${askOrders[0].data.makerAsset}, taker=${askOrders[0].data.takerAsset}, makingAmount=${askOrders[0].remainingMakerAmount}`,
+        );
       }
 
       // Process orders into orderbook levels with proper decimal scaling
-      logger.info(`Processing orders: ${bidOrders.length} bids, ${askOrders.length} asks`);
+      logger.info(
+        `Processing orders: ${bidOrders.length} bids, ${askOrders.length} asks`,
+      );
 
       // Process orders into levels with proper decimals
       // For bids: makerAsset=USDT, takerAsset=ETH
       // For asks: makerAsset=ETH, takerAsset=USDT
-      const bids = this.processOrdersToLevels(bidOrders, "makerRate", true, makerAssetDecimals, takerAssetDecimals, true); // Descending for bids
-      const asks = this.processOrdersToLevels(askOrders, "makerRate", false, makerAssetDecimals, takerAssetDecimals, false); // Ascending for asks
+      const bids = this.processOrdersToLevels(
+        bidOrders,
+        "makerRate",
+        true,
+        makerAssetDecimals,
+        takerAssetDecimals,
+        true,
+      ); // Descending for bids
+      const asks = this.processOrdersToLevels(
+        askOrders,
+        "makerRate",
+        false,
+        makerAssetDecimals,
+        takerAssetDecimals,
+        false,
+      ); // Ascending for asks
 
       const orderbook: OneInchOrderBook = {
         chain,
@@ -163,23 +220,37 @@ export class OrderbookReconstructor {
     baseAsset: string,
     quoteAsset: string,
     baseDecimals: number,
-    quoteDecimals: number
+    quoteDecimals: number,
   ): Promise<number | null> {
     try {
       // Map addresses to symbols for collector lookup
       const baseSymbol = this.getSymbolFromAddress(baseAsset, chain);
       const quoteSymbol = this.getSymbolFromAddress(quoteAsset, chain);
 
-      logger.info(`Mapping addresses to symbols: ${baseAsset} -> ${baseSymbol}, ${quoteAsset} -> ${quoteSymbol}`);
+      logger.info(
+        `Mapping addresses to symbols: ${baseAsset} -> ${baseSymbol}, ${quoteAsset} -> ${quoteSymbol}`,
+      );
 
       if (!baseSymbol || !quoteSymbol) {
-        logger.warn(`Cannot map addresses to symbols: ${baseAsset} -> ${baseSymbol}, ${quoteAsset} -> ${quoteSymbol}`);
+        logger.warn(
+          `Cannot map addresses to symbols: ${baseAsset} -> ${baseSymbol}, ${quoteAsset} -> ${quoteSymbol}`,
+        );
         return null;
       }
 
       // Map symbols to feed format (WETH -> ETH, WBTC -> BTC for feeds)
-      const feedBaseSymbol = baseSymbol === 'WETH' ? 'ETH' : (baseSymbol === 'WBTC' ? 'BTC' : baseSymbol);
-      const feedQuoteSymbol = quoteSymbol === 'WETH' ? 'ETH' : (quoteSymbol === 'WBTC' ? 'BTC' : quoteSymbol);
+      const feedBaseSymbol =
+        baseSymbol === "WETH"
+          ? "ETH"
+          : baseSymbol === "WBTC"
+            ? "BTC"
+            : baseSymbol;
+      const feedQuoteSymbol =
+        quoteSymbol === "WETH"
+          ? "ETH"
+          : quoteSymbol === "WBTC"
+            ? "BTC"
+            : quoteSymbol;
 
       // Construct feed symbol based on config ticker format
       const pairSymbol = `${feedBaseSymbol}${feedQuoteSymbol}`;
@@ -190,14 +261,20 @@ export class OrderbookReconstructor {
       // Debug: List all available symbols in priceCache
       const allPrices = priceCache.getAllPrices();
       const availableSymbols = Object.keys(allPrices);
-      logger.info(`Available symbols in priceCache: ${JSON.stringify(availableSymbols)}`);
+      logger.info(
+        `Available symbols in priceCache: ${JSON.stringify(availableSymbols)}`,
+      );
 
       // Get price from priceCache (using same pattern as frontend WebSocket subscriber)
       const priceData = priceCache.getPrice(feedSymbol);
 
-      logger.info(`Looking for price data for ${feedSymbol}, found: ${priceData ? 'YES' : 'NO'}`);
+      logger.info(
+        `Looking for price data for ${feedSymbol}, found: ${priceData ? "YES" : "NO"}`,
+      );
       if (priceData) {
-        logger.info(`Price data structure: ${JSON.stringify(priceData, null, 2)}`);
+        logger.info(
+          `Price data structure: ${JSON.stringify(priceData, null, 2)}`,
+        );
       }
 
       if (!priceData || !priceData.last?.mid) {
@@ -206,7 +283,9 @@ export class OrderbookReconstructor {
       }
 
       const midPrice = priceData.last.mid;
-      logger.info(`Retrieved spot price from cache for ${feedSymbol}: ${midPrice}`);
+      logger.info(
+        `Retrieved spot price from cache for ${feedSymbol}: ${midPrice}`,
+      );
 
       return midPrice;
     } catch (error) {
@@ -218,7 +297,10 @@ export class OrderbookReconstructor {
   /**
    * Maps token address to symbol for collector lookup using config
    */
-  private getSymbolFromAddress(address: string, chain: number = 1): string | null {
+  private getSymbolFromAddress(
+    address: string,
+    chain: number = 1,
+  ): string | null {
     const addr = address.toLowerCase();
     const chainStr = chain.toString();
 
@@ -243,7 +325,7 @@ export class OrderbookReconstructor {
   private async fetchSpotPrice(
     chain: number,
     baseAsset: string,
-    quoteAsset?: string
+    quoteAsset?: string,
   ): Promise<number | null> {
     try {
       // For now, get price in USD as we don't have direct pair pricing
@@ -311,12 +393,14 @@ export class OrderbookReconstructor {
     // Combine and deduplicate orders
     const orderMap = new Map<string, OneInchOrder>();
 
-    [...direction1Orders, ...direction2Orders].forEach(order => {
+    [...direction1Orders, ...direction2Orders].forEach((order) => {
       orderMap.set(order.orderHash, order);
     });
 
     const allOrders = Array.from(orderMap.values());
-    logger.info(`Fetched ${allOrders.length} unique orders from ${direction1Orders.length + direction2Orders.length} total`);
+    logger.info(
+      `Fetched ${allOrders.length} unique orders from ${direction1Orders.length + direction2Orders.length} total`,
+    );
 
     return allOrders;
   }
@@ -373,7 +457,9 @@ export class OrderbookReconstructor {
           parseFloat(order.takerRate) > 0,
       );
 
-      logger.debug(`Fetched ${orders.length} orders (${makerAsset.slice(0,6)}→${takerAsset.slice(0,6)}, sortBy: ${sortBy}), ${validOrders.length} valid`);
+      logger.debug(
+        `Fetched ${orders.length} orders (${makerAsset.slice(0, 6)}→${takerAsset.slice(0, 6)}, sortBy: ${sortBy}), ${validOrders.length} valid`,
+      );
       return validOrders;
     } catch (error) {
       logger.error(`Failed to fetch orders from 1inch API: ${error}`);
@@ -402,14 +488,16 @@ export class OrderbookReconstructor {
 
       if (makerAsset === baseAssetLower && takerAsset === quoteAssetLower) {
         askOrders.push(order);
-      } else if (makerAsset === quoteAssetLower && takerAsset === baseAssetLower) {
+      } else if (
+        makerAsset === quoteAssetLower &&
+        takerAsset === baseAssetLower
+      ) {
         bidOrders.push(order);
       }
     }
 
     return { bidOrders, askOrders };
   }
-
 
   /**
    * Processes raw orders into aggregated price levels with proper decimal scaling
@@ -448,12 +536,15 @@ export class OrderbookReconstructor {
         // Bid: makerAsset is quote (USDT), takerAsset is base (WETH)
         // makerRate represents scaled WETH per USDT, so we need to invert it
         // Price should be USDT per WETH
-        const wethPerUsdt = rawPriceFloat / (Math.pow(10, makerAssetDecimals) / Math.pow(10, takerAssetDecimals));
+        const wethPerUsdt =
+          rawPriceFloat /
+          (Math.pow(10, makerAssetDecimals) / Math.pow(10, takerAssetDecimals));
         actualPrice = 1 / wethPerUsdt;
       } else {
         // Ask: makerAsset is base (WETH), takerAsset is quote (USDT)
         // makerRate needs scaling: multiply by 10^(makerDecimals - takerDecimals)
-        actualPrice = rawPriceFloat * Math.pow(10, makerAssetDecimals - takerAssetDecimals);
+        actualPrice =
+          rawPriceFloat * Math.pow(10, makerAssetDecimals - takerAssetDecimals);
       }
 
       // Calculate total amount at this level in quote asset (USDT) denomination
@@ -462,13 +553,15 @@ export class OrderbookReconstructor {
           // Bid: makerAsset is quote (USDT), takerAsset is base (WETH)
           // Use makerAmount (USDT) directly - but makerAssetDecimals here refers to USDT decimals = 6
           const rawMakingAmount = parseFloat(order.remainingMakerAmount || "0");
-          const scaledMakingAmount = rawMakingAmount / Math.pow(10, takerAssetDecimals); // Use takerAssetDecimals (USDT = 6)
+          const scaledMakingAmount =
+            rawMakingAmount / Math.pow(10, takerAssetDecimals); // Use takerAssetDecimals (USDT = 6)
           return sum + scaledMakingAmount;
         } else {
           // Ask: makerAsset is base (WETH), takerAsset is quote (USDT)
           // Convert ETH to USDT using actualPrice (since remainingTakerAmount might not be available)
           const rawMakingAmount = parseFloat(order.remainingMakerAmount || "0");
-          const scaledMakingAmount = rawMakingAmount / Math.pow(10, makerAssetDecimals); // Use makerAssetDecimals (ETH = 18)
+          const scaledMakingAmount =
+            rawMakingAmount / Math.pow(10, makerAssetDecimals); // Use makerAssetDecimals (ETH = 18)
           const usdtEquivalent = scaledMakingAmount * actualPrice;
           return sum + usdtEquivalent;
         }
@@ -573,18 +666,19 @@ export class OrderbookReconstructor {
     return this.reconstructOrderbook(chain, baseAsset, quoteAsset, limit);
   }
 
-
   /**
    * Parse a trading pair symbol like "BTCUSDT" into base and quote tokens
    * @param pairSymbol - Trading pair symbol (e.g., "BTCUSDT", "ETHUSDC")
    * @returns Object with base and quote token symbols
    */
-  private parseTradingPair(pairSymbol: string): { base: string; quote: string } | null {
+  private parseTradingPair(
+    pairSymbol: string,
+  ): { base: string; quote: string } | null {
     // Remove common prefixes/suffixes if they exist
-    const cleanSymbol = pairSymbol.replace(/^agg:spot:/, '');
+    const cleanSymbol = pairSymbol.replace(/^agg:spot:/, "");
 
     // Common quote assets (in order of priority for matching)
-    const quoteAssets = ['USDT', 'USDC', 'WETH', 'WBTC', 'ETH', 'BTC'];
+    const quoteAssets = ["USDT", "USDC", "WETH", "WBTC", "ETH", "BTC"];
 
     for (const quote of quoteAssets) {
       if (cleanSymbol.endsWith(quote)) {
@@ -648,12 +742,12 @@ export class OrderbookReconstructor {
 
     if (!baseAddress || !quoteAddress) {
       throw new Error(
-        `Unable to resolve token addresses for ${base}/${quote} on chain ${chain}`
+        `Unable to resolve token addresses for ${base}/${quote} on chain ${chain}`,
       );
     }
 
     logger.info(
-      `Resolving orderbook for ${pairSymbol} -> ${base}(${baseAddress})/${quote}(${quoteAddress}) on chain ${chain}`
+      `Resolving orderbook for ${pairSymbol} -> ${base}(${baseAddress})/${quote}(${quoteAddress}) on chain ${chain}`,
     );
 
     return this.reconstructOrderbook(chain, baseAddress, quoteAddress, limit);
@@ -667,7 +761,7 @@ export class OrderbookReconstructor {
   getAvailableTokens(chain: number): string[] {
     const chainStr = chain.toString();
     return Object.keys(this.tokenMapping).filter(
-      symbol => this.tokenMapping[symbol][chainStr]
+      (symbol) => this.tokenMapping[symbol][chainStr],
     );
   }
 
@@ -678,8 +772,8 @@ export class OrderbookReconstructor {
   getSupportedChains(): number[] {
     const chainSet = new Set<number>();
 
-    Object.values(this.tokenMapping).forEach(tokenConfig => {
-      Object.keys(tokenConfig).forEach(chainStr => {
+    Object.values(this.tokenMapping).forEach((tokenConfig) => {
+      Object.keys(tokenConfig).forEach((chainStr) => {
         chainSet.add(parseInt(chainStr));
       });
     });
@@ -690,7 +784,10 @@ export class OrderbookReconstructor {
   /**
    * Fetches token decimals via RPC call
    */
-  private async fetchTokenDecimals(chainId: number, tokenAddress: string): Promise<number> {
+  private async fetchTokenDecimals(
+    chainId: number,
+    tokenAddress: string,
+  ): Promise<number> {
     // Check cache first
     const cached = await getCachedTokenDecimals(chainId, tokenAddress);
     if (cached !== null) {
@@ -717,7 +814,7 @@ export class OrderbookReconstructor {
           to: tokenAddress,
           data: data,
         },
-        "latest"
+        "latest",
       ],
       id: 1,
     };
@@ -734,7 +831,9 @@ export class OrderbookReconstructor {
       });
 
       if (!response.ok) {
-        throw new Error(`RPC request failed: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `RPC request failed: ${response.status} ${response.statusText}`,
+        );
       }
 
       const result = await response.json();
@@ -759,7 +858,9 @@ export class OrderbookReconstructor {
       logger.error(`Failed to fetch decimals for ${tokenAddress}: ${error}`);
 
       // No fallback values - must fetch from blockchain or cache
-      throw new Error(`Unable to fetch decimals for token ${tokenAddress} on chain ${chainId}: ${error}`);
+      throw new Error(
+        `Unable to fetch decimals for token ${tokenAddress} on chain ${chainId}: ${error}`,
+      );
     }
   }
 
@@ -775,7 +876,11 @@ export class OrderbookReconstructor {
   /**
    * Scales rate between two tokens using their decimals
    */
-  private scaleRate(rawRate: string, baseDecimals: number, quoteDecimals: number): number {
+  private scaleRate(
+    rawRate: string,
+    baseDecimals: number,
+    quoteDecimals: number,
+  ): number {
     const rate = parseFloat(rawRate);
     // Rate scaling: rate * (10^baseDecimals) / (10^quoteDecimals)
     const scaleFactor = Math.pow(10, baseDecimals - quoteDecimals);

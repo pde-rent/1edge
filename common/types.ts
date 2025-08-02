@@ -68,7 +68,7 @@ export interface NetworkConfig {
   chainId: number;
   name: string;
   rpcUrl: string;
-  limitOrderContract: string;
+  aggregatorV6: string;
   settlementContract?: string;
   nativeSymbol: string;
   blockExplorer: string;
@@ -215,7 +215,6 @@ export enum OrderStatus {
   FAILED = "FAILED",
 }
 
-
 /**
  * TWAP order configuration
  * Params: amount, startDate, endDate, interval, maxPrice
@@ -321,10 +320,6 @@ export interface GridTradingParams {
   singleSide: boolean;
   tpPct?: number; // Take profit percentage
 }
-
-
-
-
 
 /**
  * Order parameters union type
@@ -470,7 +465,6 @@ export interface CollectorConfig {
 // Keeper service configuration
 export interface KeeperConfig {
   pollIntervalMs: number;
-  networks: Record<number, NetworkConfig>;
   privateKey?: string; // Keeper wallet private key
   maxGasPrice?: string; // Max gas price in gwei
 }
@@ -488,19 +482,13 @@ export interface ApiServerConfig {
   corsOrigins?: string[];
 }
 
-// Order executor configuration
-export interface OrderExecutorConfig {
-  strategies: Record<string, StrategyConfig>;
-  defaultNetwork: number;
-}
-
 // Root services configuration
 export interface ServicesConfig {
   collector: CollectorConfig;
-  orderExecutor: OrderExecutorConfig;
   keeper: KeeperConfig;
   statusChecker: StatusCheckerConfig;
   apiServer: ApiServerConfig;
+  websocketServer?: { port: number };
 }
 
 // Token mapping configuration - maps token symbols to contract addresses per chain
@@ -513,6 +501,7 @@ export interface TokenMapping {
 // Application configuration
 export interface Config {
   storage: StorageConfig;
+  networks: { [chainId: string]: NetworkConfig };
   services: ServicesConfig;
   tokenMapping: TokenMapping;
 }
@@ -585,4 +574,3 @@ export interface OrderEvent {
   gasUsed?: string;
   error?: string;
 }
-

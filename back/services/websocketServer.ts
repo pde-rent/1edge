@@ -207,7 +207,7 @@ class WebSocketService {
 
     for (const symbol of symbols) {
       client.symbols.add(symbol);
-      
+
       // Send initial price data if available
       const latestPrice = this.latestPrices.get(symbol);
       if (latestPrice) {

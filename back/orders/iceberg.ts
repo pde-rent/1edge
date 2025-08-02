@@ -23,29 +23,37 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
     if (!priceInfo) return false;
 
     const currentStep = this.getCurrentStep(order);
-    
+
     // Check if all steps completed
     if (currentStep >= params.steps) {
-      logger.debug(`Iceberg order ${order.id} completed all ${params.steps} steps`);
+      logger.debug(
+        `Iceberg order ${order.id} completed all ${params.steps} steps`,
+      );
       return false;
     }
 
     // Calculate target price for current step
     const priceRange = params.endPrice - params.startPrice;
     const pricePerStep = priceRange / params.steps;
-    const targetPrice = params.startPrice + (pricePerStep * (currentStep + 1));
+    const targetPrice = params.startPrice + pricePerStep * (currentStep + 1);
 
     // Check if current price has reached the target level
     const hasReachedLevel = priceInfo.price >= targetPrice;
 
     if (hasReachedLevel) {
-      logger.debug(`Iceberg step ${currentStep + 1}/${params.steps} triggered at price ${priceInfo.price} (target: ${targetPrice})`);
+      logger.debug(
+        `Iceberg step ${currentStep + 1}/${params.steps} triggered at price ${priceInfo.price} (target: ${targetPrice})`,
+      );
     }
 
     return hasReachedLevel;
   }
 
-  async trigger(order: Order, makerAmount: string, takerAmount: string): Promise<void> {
+  async trigger(
+    order: Order,
+    makerAmount: string,
+    takerAmount: string,
+  ): Promise<void> {
     const params = this.validateParams<IcebergParams>(order);
     if (!params) throw new Error("Invalid iceberg parameters");
 
@@ -61,7 +69,7 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
       symbol: priceInfo.symbol,
       step: currentStep + 1,
       totalSteps: params.steps,
-      triggerAmount: makerAmount
+      triggerAmount: makerAmount,
     });
 
     // Execute the order

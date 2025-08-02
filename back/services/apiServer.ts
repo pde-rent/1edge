@@ -346,11 +346,14 @@ class ApiServer {
     return this.jsonResponse({ success: true, data: ticker }, headers);
   }
 
-  private async proxyToOrderRegistry(request: Request, headers: any): Promise<Response> {
+  private async proxyToOrderRegistry(
+    request: Request,
+    headers: any,
+  ): Promise<Response> {
     try {
       const url = new URL(request.url);
       const orderRegistryUrl = `http://localhost:${SERVICE_PORTS.ORDER_REGISTRY}${url.pathname}${url.search}`;
-      
+
       // Forward the request to OrderRegistry service
       const response = await fetch(orderRegistryUrl, {
         method: request.method,
@@ -361,7 +364,7 @@ class ApiServer {
       });
 
       const data = await response.text();
-      
+
       return new Response(data, {
         status: response.status,
         headers: {
@@ -374,11 +377,10 @@ class ApiServer {
       return this.jsonResponse(
         { success: false, error: "Order service unavailable" },
         headers,
-        503
+        503,
       );
     }
   }
-
 
   private methodNotAllowed(headers: any): Response {
     return this.jsonResponse(

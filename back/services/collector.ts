@@ -169,8 +169,9 @@ class CollectorService {
       if (indexData.mid > 0) {
         const estimatedVolume = (indexData.vbid + indexData.vask) / 2;
         setImmediate(() => {
-          getOHLCStorage().processPriceUpdate(symbol, indexData.mid, estimatedVolume)
-            .catch(error => {
+          getOHLCStorage()
+            .processPriceUpdate(symbol, indexData.mid, estimatedVolume)
+            .catch((error) => {
               logger.error(`Failed to process OHLC for ${symbol}:`, error);
             });
         });
@@ -261,7 +262,6 @@ class CollectorService {
     this.publishInterval = setInterval(async () => {
       await this.publishAllIndexes();
     }, this.PUBLISH_INTERVAL_MS);
-
   }
 
   private async publishAllIndexes() {
@@ -304,11 +304,17 @@ class CollectorService {
                 dispersion: indexData.dispersion,
                 timestamp: indexData.timestamp,
                 // Include history from the aggregated ticker data
-                history: aggData?.history || { ts: [], o: [], h: [], l: [], c: [], v: [] },
+                history: aggData?.history || {
+                  ts: [],
+                  o: [],
+                  h: [],
+                  l: [],
+                  c: [],
+                  v: [],
+                },
               };
 
               pubSubServer.publishPrice(symbol, publishData);
-
             }
 
             // Reset tick count for next period

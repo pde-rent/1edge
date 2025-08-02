@@ -140,7 +140,13 @@ class StatusCheckerService {
 
   private async checkProcessStatus(service: Service) {
     // Services that should be running based on start-back.ts configuration
-    const runningServices = ["collector", "api", "websocket", "order-registry", "status-checker"];
+    const runningServices = [
+      "collector",
+      "api",
+      "websocket",
+      "order-registry",
+      "status-checker",
+    ];
 
     try {
       if (runningServices.includes(service.id)) {

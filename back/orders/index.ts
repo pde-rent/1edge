@@ -1,7 +1,7 @@
 // Export base handler functionality
-export { 
-  getOrderWatcher, 
-  registerOrderWatcher, 
+export {
+  getOrderWatcher,
+  registerOrderWatcher,
   type OrderWatcher,
   BaseOrderWatcher,
   TimeBasedOrderWatcher,
@@ -13,7 +13,7 @@ export {
   MS_PER_HOUR,
   MS_PER_MINUTE,
   RSI_OVERSOLD,
-  RSI_OVERBOUGHT
+  RSI_OVERBOUGHT,
 } from "./base";
 
 // Import all order watchers to register them
