@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "prebuild": "bun run build:search-index",
-    "predev": "bun run build:search-index",
+    "prebuild": "bun run build:config && bun run build:search-index",
+    "predev": "bun run build:config && bun run build:search-index",
     "dev": "next dev -p 40006",
     "build": "next build",
     "start": "next start -p 40006",
-    "build:search-index": "bun ../scripts/build-search-index.ts"
+    "build:search-index": "bun ../scripts/build-search-index.ts",
+    "build:config": "node ../scripts/build-frontend-config.js"
   },
   "dependencies": {
     "@codemirror/lang-json": "^6.0.1",

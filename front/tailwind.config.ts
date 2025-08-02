@@ -1,5 +1,5 @@
-import type { Config } from 'tailwindcss';
-import { THEME } from '../common/constants';
+import type { Config } from "tailwindcss";
+import { THEME } from "../common/constants";
 
 const config: Config = {
   darkMode: "class",
@@ -65,8 +65,8 @@ const config: Config = {
           foreground: THEME.text.primary,
         },
         // Chart colors
-        'chart-up': THEME.chart.upColor,
-        'chart-down': THEME.chart.downColor,
+        "chart-up": THEME.chart.upColor,
+        "chart-down": THEME.chart.downColor,
         // Custom color mappings for consistency
         blue: {
           500: THEME.primary, // Map blue-500 to primary cyan

@@ -14,25 +14,49 @@ import { WebSocketProvider } from "../contexts/WebSocketContext";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider, createConfig } from "@privy-io/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { mainnet, sepolia, polygon, arbitrum, base } from "viem/chains";
+import { defineChain } from "viem";
 import { http } from "wagmi";
+import { CONFIG, getAllChainIds, getNetworkById } from "../config/generated";
+import { WS_BASE_URL } from "../config/api";
+
+// Create chain configurations from our config
+const chains = getAllChainIds().map(chainId => {
+  const network = getNetworkById(chainId)!;
+  return defineChain({
+    id: chainId,
+    name: network.name,
+    nativeCurrency: {
+      name: network.nativeSymbol,
+      symbol: network.nativeSymbol,
+      decimals: 18,
+    },
+    rpcUrls: {
+      default: { http: [network.rpcUrl] },
+      public: { http: [network.rpcUrl] },
+    },
+    blockExplorers: {
+      default: { name: network.name, url: network.blockExplorer },
+    },
+  });
+});
+
+// Create transports object
+const transports = getAllChainIds().reduce((acc, chainId) => {
+  const network = getNetworkById(chainId)!;
+  acc[chainId] = http(network.rpcUrl);
+  return acc;
+}, {} as any);
 
 const config = createConfig({
-  chains: [mainnet, sepolia, polygon, arbitrum, base],
-  transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
-    [polygon.id]: http(),
-    [arbitrum.id]: http(),
-    [base.id]: http(),
-  },
+  chains: chains as any,
+  transports,
 });
 
 const queryClient = new QueryClient();
 
 const privyConfig = {
   // Configure supported chains (should match wagmi chains)
-  supportedChains: [mainnet, sepolia, polygon, arbitrum, base],
+  supportedChains: chains as any,
   // Configure login methods
   loginMethods: ["email", "wallet", "google", "twitter", "discord"] as const,
   // Configure embedded wallet
@@ -160,7 +184,7 @@ const App: FC<AppProps> = ({ Component, pageProps }) => {
         <WagmiProvider config={config as any}>
           <ThemeProvider theme={darkTheme}>
             <CssBaseline />
-            <WebSocketProvider url="ws://localhost:40007/ws">
+            <WebSocketProvider url={`${WS_BASE_URL}/ws`}>
               <Toaster
                 theme="dark"
                 position="top-right"

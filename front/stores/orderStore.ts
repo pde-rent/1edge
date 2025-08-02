@@ -30,11 +30,11 @@ interface OrderDefaults {
 
 interface OrderStore {
   orderDefaults: OrderDefaults | null;
-  
+
   // Current form state sync
   currentFormData: Partial<FormData> | null;
   currentOrderType: string | null;
-  
+
   // Trading pair info
   currentPair: string;
   makerAsset: string; // Address
@@ -47,7 +47,7 @@ interface OrderStore {
   updateFormData: (formData: Partial<FormData>) => void;
   setCurrentOrderType: (orderType: string) => void;
   clearFormData: () => void;
-  
+
   // Trading pair methods
   setPairInfo: (pair: string, makerAsset: string, takerAsset: string) => void;
 

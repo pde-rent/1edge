@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from "../../config/api";
+
 /**
  * TWAP order configuration
  * Params: amount, startDate, endDate, interval, maxPrice
@@ -174,7 +176,7 @@ export const getDefaultExpiry = (): string => {
 export const getDefaultFormValues = (): FormData => ({
   // Common fields
   size: "",
-  fromCoin: "ETH",
+  fromCoin: "WETH", // Use wrapped version for DeFi
   toCoin: "USDC",
   amount: "",
 
@@ -379,7 +381,7 @@ export const createStrategy = (
  */
 export const submitStrategy = async (strategy: any): Promise<boolean> => {
   try {
-    const response = await fetch("http://localhost:40005/strategies", {
+    const response = await fetch(API_ENDPOINTS.STRATEGIES, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

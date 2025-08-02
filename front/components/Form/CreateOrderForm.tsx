@@ -54,7 +54,12 @@ import {
   useSignMessage,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useNetwork,
+  useChainId,
+  usePublicClient,
 } from "wagmi";
+import { getNetworkById } from "../../config/generated";
+import { API_BASE_URL } from "../../config/api";
 import { v4 as uuidv4 } from "uuid";
 
 // Order Type Enum to match API
@@ -85,12 +90,7 @@ const ORDER_TYPE_MAPPING: Record<string, APIOrderType> = {
   RangeBreakout: APIOrderType.RANGE_BREAKOUT,
 };
 
-// Environment variables
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:40005";
-const CONTRACT_ADDRESS =
-  process.env.NEXT_PUBLIC_CONTRACT_ADDRESS ||
-  "0x0000000000000000000000000000000000000000";
+// API configuration is imported from config/api.ts
 
 // ERC20 ABI for allowance
 const ERC20_ABI = [
@@ -131,6 +131,7 @@ const CreateOrderForm = () => {
   const { address } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { writeContractAsync } = useWriteContract();
+  const chainId = useChainId();
 
   const {
     orderDefaults,
@@ -345,11 +346,16 @@ const CreateOrderForm = () => {
       setPendingAllowance(true);
       toast.info("Please approve token allowance in your wallet...");
 
+      const network = getNetworkById(chainId);
+      if (!network) {
+        throw new Error(`Network not found for chainId ${chainId}`);
+      }
+
       const txHash = await writeContractAsync({
         address: tokenAddress as `0x${string}`,
         abi: ERC20_ABI,
         functionName: "approve",
-        args: [CONTRACT_ADDRESS, BigInt(amount)],
+        args: [network.aggregatorV6 as `0x${string}`, BigInt(amount)],
       });
 
       toast.success("Allowance approved! Transaction submitted.");
