@@ -11,12 +11,12 @@ Limit orders revolutionize DeFi trading by allowing users to define exact price 
 
 ### Order Lifecycle
 
-| Phase            | 📍 Location  |  Action                   |  Technology |
-| ---------------- | ------------ | --------------------------- | ------------- |
-| **1. Creation**  |  Off-chain | Define trade parameters     |  SDK        |
-| **2. Signing**   | 🔐 Off-chain | Cryptographic authorization |  EIP-712    |
-| **3. Sharing**   | 📡 API       | Broadcast to orderbook      |  1inch API  |
-| **4. Execution** | ⛓ On-chain  | Smart contract fulfillment  |  Protocol   |
+| Phase            | 📍 Location  | Action                      | Technology |
+| ---------------- | ------------ | --------------------------- | ---------- |
+| **1. Creation**  | Off-chain    | Define trade parameters     | SDK        |
+| **2. Signing**   | 🔐 Off-chain | Cryptographic authorization | EIP-712    |
+| **3. Sharing**   | 📡 API       | Broadcast to orderbook      | 1inch API  |
+| **4. Execution** | ⛓ On-chain  | Smart contract fulfillment  | Protocol   |
 
 ### Key Benefits
 
@@ -93,7 +93,7 @@ await sdk.submitOrder(order, signature);
 
 ### Step-by-Step Breakdown
 
-| Step                  |  Purpose            |  Details                                  |
+| Step                  | Purpose               | Details                                     |
 | --------------------- | --------------------- | ------------------------------------------- |
 | **1. SDK Setup**      | Initialize connection | Configure network, auth, and HTTP provider  |
 | **2. Traits Config**  | Define order behavior | Set expiration, nonce, and other parameters |
@@ -129,13 +129,13 @@ The EIP-712 signature provides multiple layers of protection:
 
 ### Core Configuration Options
 
-| Feature            |  Description                               |  Method                     |  Default |
-| ------------------ | -------------------------------------------- | ----------------------------- | ---------- |
-| **Partial Fills**  | Allow order to be filled in chunks           | `.withPartialFill()`          | Enabled    |
-| **Multiple Fills** | Allow same order to be filled multiple times | `.allowMultipleFills()`       | Disabled   |
-| **Expiration**     | Set order deadline timestamp                 | `.withExpiration(timestamp)`  | None       |
-| **Nonce**          | Unique identifier for order                  | `.withNonce(value)`           | Random     |
-| **Private Orders** | Restrict filling to specific address         | `.withAllowedSender(address)` | Public     |
+| Feature            | Description                                  | Method                        | Default  |
+| ------------------ | -------------------------------------------- | ----------------------------- | -------- |
+| **Partial Fills**  | Allow order to be filled in chunks           | `.withPartialFill()`          | Enabled  |
+| **Multiple Fills** | Allow same order to be filled multiple times | `.allowMultipleFills()`       | Disabled |
+| **Expiration**     | Set order deadline timestamp                 | `.withExpiration(timestamp)`  | None     |
+| **Nonce**          | Unique identifier for order                  | `.withNonce(value)`           | Random   |
+| **Private Orders** | Restrict filling to specific address         | `.withAllowedSender(address)` | Public   |
 
 ### Advanced Configuration Example
 
@@ -194,12 +194,12 @@ const privateTraits = MakerTraits.default()
 
 ### Core Order Fields
 
-| Field              |  Type   | 💭 Description                    | 📏 Format                          |
+| Field              | Type      | 💭 Description                    | 📏 Format                          |
 | ------------------ | --------- | --------------------------------- | ---------------------------------- |
-| **`makerAsset`**   | `Address` |  Token being sold by maker      | ERC-20 contract address            |
-| **`takerAsset`**   | `Address` |  Token expected from taker      | ERC-20 contract address            |
-| **`makingAmount`** | `bigint`  |  Amount maker is offering       | Wei units (respect token decimals) |
-| **`takingAmount`** | `bigint`  |  Amount maker wants in return   | Wei units (respect token decimals) |
+| **`makerAsset`**   | `Address` | Token being sold by maker         | ERC-20 contract address            |
+| **`takerAsset`**   | `Address` | Token expected from taker         | ERC-20 contract address            |
+| **`makingAmount`** | `bigint`  | Amount maker is offering          | Wei units (respect token decimals) |
+| **`takingAmount`** | `bigint`  | Amount maker wants in return      | Wei units (respect token decimals) |
 | **`maker`**        | `Address` | 👤 Order creator's wallet address | Ethereum address                   |
 
 ### Field Best Practices
@@ -252,8 +252,8 @@ try {
 
 ### Benefits of Orderbook Submission
 
-| Advantage            |  Description                      |  Impact               |
-| -------------------- | ----------------------------------- | ----------------------- |
+| Advantage          | Description                         | Impact                  |
+| ------------------ | ----------------------------------- | ----------------------- |
 | ** Global Reach**  | Visible to all network participants | Higher fill probability |
 | ** Fast Matching** | Professional resolver network       | Quick execution         |
 | ** Best Prices**   | Competitive market environment      | Optimal pricing         |
@@ -272,7 +272,7 @@ try {
 
 ## Integration Complete!
 
- You now have the knowledge to create, sign, and manage sophisticated limit orders with the 1inch Protocol SDK.
+You now have the knowledge to create, sign, and manage sophisticated limit orders with the 1inch Protocol SDK.
 
 ### Next Steps
 

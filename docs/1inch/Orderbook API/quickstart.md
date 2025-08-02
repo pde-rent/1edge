@@ -134,7 +134,7 @@ import { MaxUint256 } from "ethers";
 
 // Get the limit order contract address
 const domain = getLimitOrderV4Domain(chainId);
-const limitOrderContractAddress = domain.verifyingContract;
+const aggregatorV6Address = domain.verifyingContract;
 
 // Create contract instance for the maker asset
 const makerAssetContract = new Contract(makerAsset, erc20AbiFragment, wallet);
@@ -142,7 +142,7 @@ const makerAssetContract = new Contract(makerAsset, erc20AbiFragment, wallet);
 // Check current allowance
 const currentAllowance = await makerAssetContract.allowance(
   wallet.address,
-  limitOrderContractAddress,
+  aggregatorV6Address,
 );
 
 // Approve if insufficient allowance
@@ -150,7 +150,7 @@ if (currentAllowance < makingAmount) {
   console.log("🔄 Approving token transfer...");
 
   const approveTx = await makerAssetContract.approve(
-    limitOrderContractAddress,
+    aggregatorV6Address,
     makingAmount, // or MaxUint256 for unlimited approval
   );
 
@@ -165,7 +165,7 @@ if (currentAllowance < makingAmount) {
 > To avoid repeated approvals, you can approve the maximum amount:
 >
 > ```javascript
-> await makerAssetContract.approve(limitOrderContractAddress, MaxUint256);
+> await makerAssetContract.approve(aggregatorV6Address, MaxUint256);
 > ```
 
 > **Important: Token-Specific Approvals**  
@@ -300,14 +300,14 @@ try {
 
 The 1inch Limit Order Protocol supports multiple networks:
 
-| Network   | Chain ID | Status    |
-| --------- | -------- | --------- |
-| Ethereum  | 1        |  Active |
-| Polygon   | 137      |  Active |
-| BSC       | 56       |  Active |
-| Arbitrum  | 42161    |  Active |
-| Optimism  | 10       |  Active |
-| Avalanche | 43114    |  Active |
+| Network   | Chain ID | Status |
+| --------- | -------- | ------ |
+| Ethereum  | 1        | Active |
+| Polygon   | 137      | Active |
+| BSC       | 56       | Active |
+| Arbitrum  | 42161    | Active |
+| Optimism  | 10       | Active |
+| Avalanche | 43114    | Active |
 
 ---
 
@@ -315,11 +315,11 @@ The 1inch Limit Order Protocol supports multiple networks:
 
 Congratulations! You've successfully:
 
--  Set up the development environment
--  Configured wallet and tokens
--  Approved token transfers
--  Created and signed a limit order
--  Submitted the order to the 1inch Orderbook
+- Set up the development environment
+- Configured wallet and tokens
+- Approved token transfers
+- Created and signed a limit order
+- Submitted the order to the 1inch Orderbook
 
 Your order is now live and discoverable by resolvers across the network!
 
@@ -331,8 +331,8 @@ Your order is now live and discoverable by resolvers across the network!
 
 ### Need Help?
 
--  [Documentation Portal](https://docs.1inch.io/)
--  [Developer Community](https://discord.gg/1inch)
+- [Documentation Portal](https://docs.1inch.io/)
+- [Developer Community](https://discord.gg/1inch)
 - 🐛 [Report Issues](https://github.com/1inch/limit-order-protocol-utils)
 
 ---

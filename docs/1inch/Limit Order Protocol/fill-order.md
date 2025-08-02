@@ -50,11 +50,11 @@ Order filling in the 1inch Limit Order Protocol is designed for maximum flexibil
 
 ### Available Fill Methods
 
-| Scenario | Order Type | Extensions | Method | Best For |
-|----------|------------|------------|--------|----------|
-| **Simple Fill** | EOA Order | None | `fillOrder` | Basic trading |
-| **Contract Fill** | Contract Order | None | `fillContractOrder` | Smart contract makers |
-| **Extended Fill** | EOA Order | Has Extensions/Interactions | `fillOrderArgs` | Complex strategies |
+| Scenario                   | Order Type     | Extensions                  | Method                  | Best For                |
+| -------------------------- | -------------- | --------------------------- | ----------------------- | ----------------------- |
+| **Simple Fill**            | EOA Order      | None                        | `fillOrder`             | Basic trading           |
+| **Contract Fill**          | Contract Order | None                        | `fillContractOrder`     | Smart contract makers   |
+| **Extended Fill**          | EOA Order      | Has Extensions/Interactions | `fillOrderArgs`         | Complex strategies      |
 | **Extended Contract Fill** | Contract Order | Has Extensions/Interactions | `fillContractOrderArgs` | Enterprise integrations |
 
 ### Decision Tree
@@ -102,8 +102,8 @@ const contract = new LimitOrderContract();
 
 // Simple order fill - maximum gas efficiency
 const calldata = contract.getFillOrderCalldata(
-  order,      // LimitOrderV4Struct
-  signature,  // "0x..." - EIP-712 signature
+  order, // LimitOrderV4Struct
+  signature, // "0x..." - EIP-712 signature
   takerTraits, // TakerTraits configuration
   fillAmount, // bigint - amount to fill
 );
@@ -138,9 +138,9 @@ function fillContractOrder(
 // Contract maker order (e.g., DAO treasury, automated strategy)
 const calldata = contract.getFillContractOrderCalldata(
   contractOrder, // Order where maker is a contract
-  signature,     // Contract signature (EIP-1271)
-  takerTraits,   // Execution preferences
-  fillAmount,    // Fill amount
+  signature, // Contract signature (EIP-1271)
+  takerTraits, // Execution preferences
+  fillAmount, // Fill amount
 );
 ```
 
@@ -161,6 +161,7 @@ function fillOrderArgs(
 ```
 
 **Power**: Supports all protocol features including:
+
 - Extensions (predicates, interactions, custom logic)
 - Dynamic amount calculations
 - Pre/post execution hooks
@@ -200,6 +201,7 @@ function fillContractOrderArgs(
 ```
 
 **Use Cases**:
+
 - Institutional trading systems
 - Advanced trading bots
 - DAO treasury management
@@ -214,23 +216,23 @@ function fillContractOrderArgs(
 
 ### Core Parameters
 
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| **order** | `Order` | The order structure to be filled |
-| **r** | `bytes32` | R-component of EIP-712 signature (EOA orders) |
-| **vs** | `bytes32` | VS-component of EIP-712 signature (EOA orders) |
-| **signature** | `bytes` | EIP-1271 signature for contract orders |
-| **amount** | `uint256` | Amount to fill (interpretation depends on TakerTraits) |
-| **takerTraits** | `TakerTraits` | Taker's configuration for the fill |
-| **args** | `bytes` | Extension data, taker interaction, and target address |
+| Parameter       | Type          | Description                                            |
+| --------------- | ------------- | ------------------------------------------------------ |
+| **order**       | `Order`       | The order structure to be filled                       |
+| **r**           | `bytes32`     | R-component of EIP-712 signature (EOA orders)          |
+| **vs**          | `bytes32`     | VS-component of EIP-712 signature (EOA orders)         |
+| **signature**   | `bytes`       | EIP-1271 signature for contract orders                 |
+| **amount**      | `uint256`     | Amount to fill (interpretation depends on TakerTraits) |
+| **takerTraits** | `TakerTraits` | Taker's configuration for the fill                     |
+| **args**        | `bytes`       | Extension data, taker interaction, and target address  |
 
 ### Return Values
 
-| Return Value | Type | Description |
-|--------------|------|-------------|
+| Return Value     | Type      | Description                      |
+| ---------------- | --------- | -------------------------------- |
 | **makingAmount** | `uint256` | Actual amount the maker provided |
 | **takingAmount** | `uint256` | Actual amount the taker received |
-| **orderHash** | `bytes32` | Hash of the filled order |
+| **orderHash**    | `bytes32` | Hash of the filled order         |
 
 ---
 
@@ -256,21 +258,21 @@ function fillContractOrderArgs(
 
 ### Control Flags
 
-| Bit | Flag Name |  When Set |  When Clear | Use Case |
-|-----|-----------|-------------|---------------|----------|
-| **255** | `MAKER_AMOUNT_FLAG` | Amount = making amount | Amount = taking amount | Specify fill type |
-| **254** | `UNWRAP_WETH_FLAG` | Unwrap WETH to ETH | Keep as WETH | Native ETH delivery |
-| **253** | `SKIP_ORDER_PERMIT_FLAG` | Skip maker permit | Execute permit | Gas optimization |
-| **252** | `USE_PERMIT2_FLAG` | Use Permit2 | Standard approval | Advanced authorization |
-| **251** | `ARGS_HAS_TARGET` | Custom receiver | Use msg.sender | Redirect assets |
+| Bit     | Flag Name                | When Set               | When Clear             | Use Case               |
+| ------- | ------------------------ | ---------------------- | ---------------------- | ---------------------- |
+| **255** | `MAKER_AMOUNT_FLAG`      | Amount = making amount | Amount = taking amount | Specify fill type      |
+| **254** | `UNWRAP_WETH_FLAG`       | Unwrap WETH to ETH     | Keep as WETH           | Native ETH delivery    |
+| **253** | `SKIP_ORDER_PERMIT_FLAG` | Skip maker permit      | Execute permit         | Gas optimization       |
+| **252** | `USE_PERMIT2_FLAG`       | Use Permit2            | Standard approval      | Advanced authorization |
+| **251** | `ARGS_HAS_TARGET`        | Custom receiver        | Use msg.sender         | Redirect assets        |
 
 ### Data Fields
 
-| Bits | Field | Purpose | Details |
-|------|-------|---------|---------|
-| **224-247** | **Extension Length** | Size of extension data in args | Up to 16MB of data |
-| **200-223** | **Interaction Length** | Size of interaction data in args | Up to 16MB of data |
-| **0-184** | **Threshold** | Price protection mechanism | Slippage protection |
+| Bits        | Field                  | Purpose                          | Details             |
+| ----------- | ---------------------- | -------------------------------- | ------------------- |
+| **224-247** | **Extension Length**   | Size of extension data in args   | Up to 16MB of data  |
+| **200-223** | **Interaction Length** | Size of interaction data in args | Up to 16MB of data  |
+| **0-184**   | **Threshold**          | Price protection mechanism       | Slippage protection |
 
 ---
 
@@ -289,29 +291,29 @@ const traits = TakerTraits.default();
 
 // Configure fill behavior
 const configuredTraits = TakerTraits.default()
-  .setAmountMode(AmountMode.maker)           // Treat amount as making amount
-  .enableNativeUnwrap()                      // Convert WETH to ETH
-  .setReceiver(new Address("0x1234..."))     // Custom recipient
-  .setAmountThreshold(1000000n)              // Slippage protection
-  .setExtension(orderExtension)              // Order extensions
-  .setInteraction(takerInteraction);         // Taker interaction
+  .setAmountMode(AmountMode.maker) // Treat amount as making amount
+  .enableNativeUnwrap() // Convert WETH to ETH
+  .setReceiver(new Address("0x1234...")) // Custom recipient
+  .setAmountThreshold(1000000n) // Slippage protection
+  .setExtension(orderExtension) // Order extensions
+  .setInteraction(takerInteraction); // Taker interaction
 ```
 
 ### Core Methods
 
-| Method | Purpose | Signature | Effect |
-|--------|---------|-----------|--------|
-| **setAmountMode** | Define amount interpretation | `(mode: AmountMode) => this` | Maker vs taker amount |
-| **enableNativeUnwrap** | Enable WETH unwrapping | `() => this` | Convert WETH to ETH |
-| **setReceiver** | Set custom recipient | `(receiver: Address) => this` | Redirect maker assets |
-| **setAmountThreshold** | Set price protection | `(threshold: bigint) => this` | Slippage protection |
-| **setExtension** | Include extensions | `(ext: Extension) => this` | Advanced features |
-| **setInteraction** | Add taker interaction | `(interaction: Interaction) => this` | Custom logic |
+| Method                 | Purpose                      | Signature                            | Effect                |
+| ---------------------- | ---------------------------- | ------------------------------------ | --------------------- |
+| **setAmountMode**      | Define amount interpretation | `(mode: AmountMode) => this`         | Maker vs taker amount |
+| **enableNativeUnwrap** | Enable WETH unwrapping       | `() => this`                         | Convert WETH to ETH   |
+| **setReceiver**        | Set custom recipient         | `(receiver: Address) => this`        | Redirect maker assets |
+| **setAmountThreshold** | Set price protection         | `(threshold: bigint) => this`        | Slippage protection   |
+| **setExtension**       | Include extensions           | `(ext: Extension) => this`           | Advanced features     |
+| **setInteraction**     | Add taker interaction        | `(interaction: Interaction) => this` | Custom logic          |
 
 ### Amount Modes
 
-| Mode | Description | Amount Interpretation |
-|------|-------------|----------------------|
+| Mode                 | Description       | Amount Interpretation                              |
+| -------------------- | ----------------- | -------------------------------------------------- |
 | **AmountMode.taker** | Taker amount mode | `amount` = taking amount, making amount calculated |
 | **AmountMode.maker** | Maker amount mode | `amount` = making amount, taking amount calculated |
 
@@ -320,11 +322,13 @@ const configuredTraits = TakerTraits.default()
 The threshold mechanism provides slippage protection:
 
 **For Taker Amount Mode (flag = 0):**
+
 ```
 threshold ≤ amount × (makingAmount / takingAmount)
 ```
 
 **For Maker Amount Mode (flag = 1):**
+
 ```
 threshold ≥ amount × (takingAmount / makingAmount)
 ```
@@ -345,6 +349,7 @@ The `args` calldata is structured based on TakerTraits flags:
 ```
 
 **Component Inclusion:**
+
 - **Target**: Included if `ARGS_HAS_TARGET` flag is set
 - **Extension**: Length specified in `ARGS_EXTENSION_LENGTH`
 - **Interaction**: Length specified in `ARGS_INTERACTION_LENGTH`
@@ -354,9 +359,9 @@ The `args` calldata is structured based on TakerTraits flags:
 ```typescript
 // Configure complex args structure
 const traits = TakerTraits.default()
-  .setReceiver(new Address("0xcustom_receiver..."))  // Include target
-  .setExtension(orderExtension)                      // Include extension
-  .setInteraction(takerInteraction);                 // Include interaction
+  .setReceiver(new Address("0xcustom_receiver...")) // Include target
+  .setExtension(orderExtension) // Include extension
+  .setInteraction(takerInteraction); // Include interaction
 
 const { trait, args } = traits.encode();
 
@@ -379,10 +384,10 @@ const calldata = contract.getFillOrderArgsCalldata(
 ### Simple Order Fill
 
 ```typescript
-import { 
-  LimitOrderContract, 
-  TakerTraits, 
-  AmountMode 
+import {
+  LimitOrderContract,
+  TakerTraits,
+  AmountMode,
 } from "@1inch/limit-order-sdk";
 
 class OrderFiller {
@@ -390,8 +395,7 @@ class OrderFiller {
 
   async fillSimpleOrder(order: LimitOrderV4Struct, signature: string) {
     // Simple, gas-efficient fill
-    const traits = TakerTraits.default()
-      .setAmountMode(AmountMode.maker);
+    const traits = TakerTraits.default().setAmountMode(AmountMode.maker);
 
     const calldata = this.contract.getFillOrderCalldata(
       order,
@@ -448,7 +452,7 @@ async fillContractOrder(order: LimitOrderV4Struct, signature: string) {
 
 ```typescript
 async fillWithSlippageProtection(
-  order: LimitOrderV4Struct, 
+  order: LimitOrderV4Struct,
   signature: string,
   maxSlippage: number
 ) {
@@ -478,12 +482,12 @@ async fillWithSlippageProtection(
 > **Method Benchmarks**  
 > Choose the optimal method for your performance requirements.
 
-| Method | ⛽ Gas Cost |  Speed |  Features | 🧩 Complexity |
-|--------|-------------|----------|-------------|---------------|
-| ** fillOrder** |  Lowest |  Fastest | 🔴 Basic |  Simple |
-| **🏢 fillContractOrder** |  Low |  Fast | 🔴 Basic |  Medium |
-| **🎭 fillOrderArgs** |  Medium |  Medium |  Full |  Medium |
-| ** fillContractOrderArgs** | 🔴 Highest | 🔴 Slowest |  Full | 🔴 Complex |
+| Method                     | ⛽ Gas Cost | Speed      | Features | 🧩 Complexity |
+| -------------------------- | ----------- | ---------- | -------- | ------------- |
+| ** fillOrder**             | Lowest      | Fastest    | 🔴 Basic | Simple        |
+| **🏢 fillContractOrder**   | Low         | Fast       | 🔴 Basic | Medium        |
+| **🎭 fillOrderArgs**       | Medium      | Medium     | Full     | Medium        |
+| ** fillContractOrderArgs** | 🔴 Highest  | 🔴 Slowest | Full     | 🔴 Complex    |
 
 ### Gas Usage Guidelines
 
@@ -507,8 +511,9 @@ Orders automatically become invalid after their expiration timestamp:
 
 ```typescript
 // Order expires automatically
-const traits = MakerTraits.default()
-  .withExpiration(BigInt(Math.floor(Date.now() / 1000)) + 3600n); // 1 hour
+const traits = MakerTraits.default().withExpiration(
+  BigInt(Math.floor(Date.now() / 1000)) + 3600n,
+); // 1 hour
 ```
 
 **Error**: `OrderExpired` when attempting to fill expired orders.
@@ -540,6 +545,7 @@ function cancelOrder(
 > **Important**: Use correct `makerTraits` that match the original order, or cancellation will have no effect.
 
 **Invalidator Selection**:
+
 - **BitInvalidator**: Used when partial OR multiple fills are disabled
 - **RemainingInvalidator**: Used when both partial AND multiple fills are enabled
 
@@ -553,11 +559,13 @@ function advanceEpoch(uint256 series, uint256 amount) external
 ```
 
 **Requirements**:
+
 - Orders must have `NEED_CHECK_EPOCH_MANAGER` flag set
 - Partial and multiple fills must be allowed
 - Orders must match the current epoch for the series
 
 **Use Cases**:
+
 - Emergency order cancellation
 - Strategy rotation
 - Risk management
@@ -571,15 +579,15 @@ function advanceEpoch(uint256 series, uint256 amount) external
 
 ### Common Fill Errors
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| `OrderExpired` | Order past expiration | Use unexpired orders |
-| `InvalidatedOrder` | Order manually cancelled | Check order status |
-| `BitInvalidatedOrder` | Nonce-based cancellation | Verify order validity |
-| `PredicateIsNotTrue` | Predicate condition failed | Check predicate logic |
-| `WrongSeriesNonce` | Epoch mismatch | Update to current epoch |
-| `InsufficientBalance` | Insufficient maker balance | Check maker funds |
-| `InsufficientAllowance` | Insufficient approval | Increase allowance |
+| Error                   | Cause                      | Solution                |
+| ----------------------- | -------------------------- | ----------------------- |
+| `OrderExpired`          | Order past expiration      | Use unexpired orders    |
+| `InvalidatedOrder`      | Order manually cancelled   | Check order status      |
+| `BitInvalidatedOrder`   | Nonce-based cancellation   | Verify order validity   |
+| `PredicateIsNotTrue`    | Predicate condition failed | Check predicate logic   |
+| `WrongSeriesNonce`      | Epoch mismatch             | Update to current epoch |
+| `InsufficientBalance`   | Insufficient maker balance | Check maker funds       |
+| `InsufficientAllowance` | Insufficient approval      | Increase allowance      |
 
 ### Best Practices
 
@@ -604,8 +612,8 @@ async function validateOrder(order: LimitOrderV4Struct): Promise<boolean> {
 
   // Check allowance
   const allowance = await tokenContract.allowance(
-    order.maker, 
-    LIMIT_ORDER_PROTOCOL_ADDRESS
+    order.maker,
+    LIMIT_ORDER_PROTOCOL_ADDRESS,
   );
   if (allowance < order.makingAmount) {
     throw new Error("Insufficient allowance");
@@ -623,10 +631,15 @@ async function estimateFillGas(
   order: LimitOrderV4Struct,
   signature: string,
   traits: TakerTraits,
-  amount: bigint
+  amount: bigint,
 ): Promise<bigint> {
-  const calldata = contract.getFillOrderCalldata(order, signature, traits, amount);
-  
+  const calldata = contract.getFillOrderCalldata(
+    order,
+    signature,
+    traits,
+    amount,
+  );
+
   return await provider.estimateGas({
     to: LIMIT_ORDER_PROTOCOL_ADDRESS,
     data: calldata,
@@ -660,6 +673,7 @@ interface ITakerInteraction {
 ```
 
 **Benefits**:
+
 - Rate improvement opportunities
 - Custom validation logic
 - Integration with external protocols
@@ -672,10 +686,10 @@ Fill multiple orders in a single transaction:
 ```typescript
 // Pseudo-code for batch filling
 async function batchFillOrders(orders: OrderFillData[]) {
-  const calls = orders.map(({ order, signature, traits, amount }) => 
-    contract.getFillOrderCalldata(order, signature, traits, amount)
+  const calls = orders.map(({ order, signature, traits, amount }) =>
+    contract.getFillOrderCalldata(order, signature, traits, amount),
   );
-  
+
   // Use multicall or custom batch contract
   return await batchContract.multiCall(calls);
 }
@@ -689,12 +703,14 @@ Implement MEV protection strategies:
 // Private mempool submission
 async function fillOrderPrivately(order: LimitOrderV4Struct) {
   const calldata = contract.getFillOrderCalldata(/* ... */);
-  
+
   // Submit via Flashbots or other private pools
-  return await flashbotsProvider.sendBundle([{
-    to: LIMIT_ORDER_PROTOCOL_ADDRESS,
-    data: calldata,
-  }]);
+  return await flashbotsProvider.sendBundle([
+    {
+      to: LIMIT_ORDER_PROTOCOL_ADDRESS,
+      data: calldata,
+    },
+  ]);
 }
 ```
 
@@ -710,10 +726,10 @@ async function fillOrderPrivately(order: LimitOrderV4Struct) {
 ```typescript
 class LimitOrderBot {
   private contract = new LimitOrderContract();
-  
+
   async monitorAndFill() {
     const profitableOrders = await this.findProfitableOrders();
-    
+
     for (const order of profitableOrders) {
       try {
         await this.fillOrderSafely(order);
@@ -722,20 +738,20 @@ class LimitOrderBot {
       }
     }
   }
-  
+
   private async fillOrderSafely(order: OrderData) {
     // Implement safety checks, gas estimation, profit calculation
     const traits = TakerTraits.default()
       .setAmountMode(AmountMode.maker)
       .setAmountThreshold(this.calculateMinProfit(order));
-      
+
     const calldata = this.contract.getFillOrderCalldata(
-      order.order, 
-      order.signature, 
-      traits, 
-      order.fillAmount
+      order.order,
+      order.signature,
+      traits,
+      order.fillAmount,
     );
-    
+
     return await this.executeWithRetry(calldata);
   }
 }
@@ -748,12 +764,12 @@ class DEXAggregator {
   async getBestPrice(tokenIn: Address, tokenOut: Address, amountIn: bigint) {
     const [limitOrderPrice, ammPrice] = await Promise.all([
       this.getLimitOrderPrice(tokenIn, tokenOut, amountIn),
-      this.getAMMPrice(tokenIn, tokenOut, amountIn)
+      this.getAMMPrice(tokenIn, tokenOut, amountIn),
     ]);
-    
-    return limitOrderPrice > ammPrice ? 
-      this.buildLimitOrderFill(tokenIn, tokenOut, amountIn) :
-      this.buildAMMSwap(tokenIn, tokenOut, amountIn);
+
+    return limitOrderPrice > ammPrice
+      ? this.buildLimitOrderFill(tokenIn, tokenOut, amountIn)
+      : this.buildAMMSwap(tokenIn, tokenOut, amountIn);
   }
 }
 ```

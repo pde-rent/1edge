@@ -41,10 +41,10 @@ graph TD
     DEX3 --> AGG
     DEX4 --> AGG
     DEX5 --> AGG
-    
+
     AGG --> CACHE
     CACHE --> API
-    
+
     API --> CLIENT1
     API --> CLIENT2
     API --> CLIENT3
@@ -53,25 +53,25 @@ graph TD
 
 ## Supported Networks
 
-| Network | Chain ID | Base Currency | Status |
-|---------|----------|---------------|--------|
-| Ethereum | 1 | ETH | Active |
-| Polygon | 137 | MATIC | Active |
-| BSC | 56 | BNB | Active |
-| Arbitrum | 42161 | ETH | Active |
-| Optimism | 10 | ETH | Active |
-| Avalanche | 43114 | AVAX | Active |
+| Network   | Chain ID | Base Currency | Status |
+| --------- | -------- | ------------- | ------ |
+| Ethereum  | 1        | ETH           | Active |
+| Polygon   | 137      | MATIC         | Active |
+| BSC       | 56       | BNB           | Active |
+| Arbitrum  | 42161    | ETH           | Active |
+| Optimism  | 10       | ETH           | Active |
+| Avalanche | 43114    | AVAX          | Active |
 
 ## API Endpoints
 
 ### Core Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| [`/price/v1.1/{chain}`](api-reference/get-all-prices.md) | GET | Get prices for all whitelisted tokens |
-| [`/price/v1.1/{chain}`](api-reference/get-prices-by-tokens.md) | POST | Get prices for specific tokens |
-| [`/price/v1.1/{chain}/{address}`](api-reference/get-prices-by-tokens.md) | GET | Get price for a single token |
-| [`/price/v1.1/{chain}/currencies`](api-reference/get-all-currencies.md) | GET | Get available base currencies |
+| Endpoint                                                                 | Method | Description                           |
+| ------------------------------------------------------------------------ | ------ | ------------------------------------- |
+| [`/price/v1.1/{chain}`](api-reference/get-all-prices.md)                 | GET    | Get prices for all whitelisted tokens |
+| [`/price/v1.1/{chain}`](api-reference/get-prices-by-tokens.md)           | POST   | Get prices for specific tokens        |
+| [`/price/v1.1/{chain}/{address}`](api-reference/get-prices-by-tokens.md) | GET    | Get price for a single token          |
+| [`/price/v1.1/{chain}/currencies`](api-reference/get-all-currencies.md)  | GET    | Get available base currencies         |
 
 ## Authentication
 
@@ -101,6 +101,7 @@ Token prices are returned as strings representing the price in the requested cur
 ```
 
 **Important Notes:**
+
 - Prices are denominated in the base currency (USD by default)
 - All numeric values are returned as strings to preserve precision
 - Token addresses are lowercase and include the `0x` prefix
@@ -118,6 +119,7 @@ The API uses standard HTTP status codes and returns detailed error information:
 ```
 
 Common error codes:
+
 - `400` - Bad Request (invalid parameters)
 - `401` - Unauthorized (invalid API key)
 - `404` - Not Found (token not whitelisted)
@@ -140,28 +142,28 @@ class PriceService {
   constructor(apiKey, chainId = 1) {
     this.apiKey = apiKey;
     this.chainId = chainId;
-    this.baseUrl = 'https://api.1inch.dev/price/v1.1';
+    this.baseUrl = "https://api.1inch.dev/price/v1.1";
     this.cache = new Map();
   }
 
-  async getTokenPrices(tokenAddresses, currency = 'USD') {
-    const cacheKey = `${tokenAddresses.join(',')}-${currency}`;
+  async getTokenPrices(tokenAddresses, currency = "USD") {
+    const cacheKey = `${tokenAddresses.join(",")}-${currency}`;
     const cached = this.cache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < 30000) {
       return cached.data;
     }
 
     const response = await fetch(`${this.baseUrl}/${this.chainId}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${this.apiKey}`,
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         tokens: tokenAddresses,
-        currency: currency
-      })
+        currency: currency,
+      }),
     });
 
     if (!response.ok) {
@@ -170,7 +172,7 @@ class PriceService {
 
     const data = await response.json();
     this.cache.set(cacheKey, { data, timestamp: Date.now() });
-    
+
     return data;
   }
 }
@@ -179,15 +181,19 @@ class PriceService {
 ## Use Cases
 
 ### Portfolio Valuation
+
 Track the total value of token holdings across multiple wallets and networks.
 
 ### Trading Algorithms
+
 Power automated trading strategies with real-time price feeds.
 
 ### DeFi Protocol Integration
+
 Enable price-aware smart contract functionality for lending, borrowing, and yield farming.
 
 ### Analytics and Reporting
+
 Build comprehensive market analysis tools and dashboards.
 
 ## Getting Started
@@ -207,6 +213,7 @@ Build comprehensive market analysis tools and dashboards.
 ## Support
 
 For technical support and questions:
+
 - Documentation: [1inch Docs](https://docs.1inch.io/)
 - Developer Portal: [portal.1inch.dev](https://portal.1inch.dev/)
 - Community: [Discord](https://discord.gg/1inch)

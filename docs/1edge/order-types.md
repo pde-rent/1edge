@@ -2,34 +2,36 @@
 
 > **Trading Strategy Arsenal**: Comprehensive order types supporting both one-off executions and recurring strategies for advanced trading automation.
 
- **Note**: All time periods are specified in milliseconds for precise control.
+**Note**: All time periods are specified in milliseconds for precise control.
 
 ## 1inch Order Placement Strategy
 
 > **Fast Fill Optimization**: To ensure rapid order fills when triggering orders to 1inch, limit orders should be placed close to the spot price, inside the bid-ask spread.
 
 **Recommended Pricing Strategy:**
+
 - **Limit Buy Orders**: Set price at `spot - 0.05%` (slightly below market, within book spread)
 - **Limit Sell Orders**: Set price at `spot + 0.05%` (slightly above market, within book spread)
 - **Maximum Deviation**: Stay within ±0.2% of spot price for optimal execution
 - **Rationale**: Orders priced inside the spread get filled immediately by market makers and arbitrageurs
 
 **Implementation Notes:**
+
 - All order watchers should apply this pricing when creating 1inch limit orders
 - Price adjustments should be calculated dynamically based on current spot price
 - Consider slippage tolerance based on order size and market conditions
 
-##  One-off Orders
+## One-off Orders
 
 > **Single Execution Orders**: Execute once when conditions are met, then complete.
 
-###  Stop-Limit Order
+### Stop-Limit Order
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Price level reached |  |
-| **Execution** | Single order at a time |  |
-| **Description** | Limit order at stop level |  |
+| Property        | Value                     | Status |
+| --------------- | ------------------------- | ------ |
+| **Trigger**     | Price level reached       |        |
+| **Execution**   | Single order at a time    |        |
+| **Description** | Limit order at stop level |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -39,13 +41,13 @@
 | `limitPrice` | spot - 0.5% | Execution price |
 | `expiry` | 10 | Expiration time |
 
-###  Chase-Limit Order
+### Chase-Limit Order
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Price drift cancellation/recreation |  |
-| **Execution** | Single order at a time |  |
-| **Description** | Trailing limit order |  |
+| Property        | Value                               | Status |
+| --------------- | ----------------------------------- | ------ |
+| **Trigger**     | Price drift cancellation/recreation |        |
+| **Execution**   | Single order at a time              |        |
+| **Description** | Trailing limit order                |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -55,13 +57,13 @@
 | `expiry` | 10 | Expiration time |
 | `maxPrice` | spot - 0.5% | Maximum price |
 
-###  Time Weighted Average Price (TWAP)
+### Time Weighted Average Price (TWAP)
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Time interval based |  |
-| **Execution** | Sequential until complete |  |
-| **Description** | Stealth execution via chase-limit |  |
+| Property        | Value                             | Status |
+| --------------- | --------------------------------- | ------ |
+| **Trigger**     | Time interval based               |        |
+| **Execution**   | Sequential until complete         |        |
+| **Description** | Stealth execution via chase-limit |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -72,15 +74,15 @@
 | `interval` | 1 day | Time between orders |
 | `maxPrice` | market | Maximum execution price |
 
- **Strategy**: 30 orders recurring over time period
+**Strategy**: 30 orders recurring over time period
 
-###  Range Order
+### Range Order
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Price step execution |  |
-| **Execution** | Single order at a time |  |
-| **Description** | Fixed price interval buying |  |
+| Property        | Value                       | Status |
+| --------------- | --------------------------- | ------ |
+| **Trigger**     | Price step execution        |        |
+| **Execution**   | Single order at a time      |        |
+| **Description** | Fixed price interval buying |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -91,15 +93,15 @@
 | `stepPct` | 0.3% | Price step size |
 | `expiry` | - | Order expiration |
 
- **Strategy**: 5 orders across price range
+**Strategy**: 5 orders across price range
 
-###  Iceberg Order
+### Iceberg Order
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Order execution based |  |
-| **Execution** | Sequential until complete |  |
-| **Description** | Large order stealth execution |  |
+| Property        | Value                         | Status |
+| --------------- | ----------------------------- | ------ |
+| **Trigger**     | Order execution based         |        |
+| **Execution**   | Sequential until complete     |        |
+| **Description** | Large order stealth execution |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -110,17 +112,17 @@
 | `steps` | 10 | Number of sub-orders |
 | `expiry` | - | Order expiration |
 
-##  Recurring Orders
+## Recurring Orders
 
 > **Perpetual Strategies**: Continuously executing orders that repeat based on time or market conditions.
 
-###  Dollar-Cost Averaging (DCA)
+### Dollar-Cost Averaging (DCA)
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Time interval recurring |  |
-| **Execution** | Perpetual until stopped |  |
-| **Description** | Regular chase-limit purchases |  |
+| Property        | Value                         | Status |
+| --------------- | ----------------------------- | ------ |
+| **Trigger**     | Time interval recurring       |        |
+| **Execution**   | Perpetual until stopped       |        |
+| **Description** | Regular chase-limit purchases |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -130,15 +132,15 @@
 | `interval` | 1 day | Time between orders |
 | `maxPrice` | market | Maximum execution price |
 
- **Strategy**: 30 orders recurring indefinitely
+**Strategy**: 30 orders recurring indefinitely
 
-###  Grid Trading
+### Grid Trading
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | Price step execution |  |
-| **Execution** | Recurring market making |  |
-| **Description** | Automated grid strategy |  |
+| Property        | Value                   | Status |
+| --------------- | ----------------------- | ------ |
+| **Trigger**     | Price step execution    |        |
+| **Execution**   | Recurring market making |        |
+| **Description** | Automated grid strategy |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -151,15 +153,15 @@
 | `singleSide` | false | One-directional grid |
 | `tpPct` | - | Take profit percentage |
 
- **Strategy**: 5 orders in grid formation
+**Strategy**: 5 orders in grid formation
 
-###  Momentum Reversal Trading
+### Momentum Reversal Trading
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | RSI momentum reversal |  |
-| **Execution** | Mean reversion timing |  |
-| **Description** | RSI-based chase-limit orders |  |
+| Property        | Value                        | Status |
+| --------------- | ---------------------------- | ------ |
+| **Trigger**     | RSI momentum reversal        |        |
+| **Execution**   | Mean reversion timing        |        |
+| **Description** | RSI-based chase-limit orders |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -170,15 +172,15 @@
 | `tpPct` | 2% | Take profit percentage |
 | `slPct` | 1% | Stop loss percentage |
 
- **Signal**: RSI crosses RSI MA (up = long, down = short)
+**Signal**: RSI crosses RSI MA (up = long, down = short)
 
-###  Breakout Trading
+### Breakout Trading
 
-| Property | Value | Status |
-|----------|-------|---------|
-| **Trigger** | ADX trend breakout |  |
-| **Execution** | Breakout timing |  |
-| **Description** | ADX-based chase-limit orders |  |
+| Property        | Value                        | Status |
+| --------------- | ---------------------------- | ------ |
+| **Trigger**     | ADX trend breakout           |        |
+| **Execution**   | Breakout timing              |        |
+| **Description** | ADX-based chase-limit orders |        |
 
 **Parameters:**
 | Parameter | Default | Description |
@@ -190,4 +192,4 @@
 | `tpPct` | 2% | Take profit percentage |
 | `slPct` | 1% | Stop loss percentage |
 
- **Signal**: ADX crosses ADX MA + EMA direction (bullish EMA = long, bearish EMA = short)
+**Signal**: ADX crosses ADX MA + EMA direction (bullish EMA = long, bearish EMA = short)

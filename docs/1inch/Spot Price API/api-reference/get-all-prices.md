@@ -31,8 +31,8 @@ GET https://api.1inch.dev/price/v1.1/{chain}
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description |
-|-----------|----------|----------|-------------|
+| Parameter | Type     | Required | Description                                                  |
+| --------- | -------- | -------- | ------------------------------------------------------------ |
 | `chain`   | `number` | Yes      | Chain ID (1 for Ethereum, 137 for Polygon, 56 for BSC, etc.) |
 
 ### Query Parameters
@@ -68,8 +68,8 @@ async function getAllPrices() {
   const config = {
     headers: {
       Authorization: "Bearer T4l6ro3uDEfeBY4ROtslRUjUhacPmBgu",
-      Accept: "application/json"
-    }
+      Accept: "application/json",
+    },
   };
 
   try {
@@ -77,7 +77,10 @@ async function getAllPrices() {
     console.log(response.data);
     return response.data;
   } catch (error) {
-    console.error("Error fetching prices:", error.response?.data || error.message);
+    console.error(
+      "Error fetching prices:",
+      error.response?.data || error.message,
+    );
     throw error;
   }
 }
@@ -92,12 +95,12 @@ import requests
 
 def get_all_prices(chain_id=1, api_key="T4l6ro3uDEfeBY4ROtslRUjUhacPmBgu"):
     url = f"https://api.1inch.dev/price/v1.1/{chain_id}"
-    
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Accept": "application/json"
     }
-    
+
     try:
         response = requests.get(url, headers=headers)
         response.raise_for_status()
@@ -125,27 +128,27 @@ import (
 
 func getAllPrices(chainID int, apiKey string) (map[string]string, error) {
     url := fmt.Sprintf("https://api.1inch.dev/price/v1.1/%d", chainID)
-    
+
     req, err := http.NewRequest("GET", url, nil)
     if err != nil {
         return nil, err
     }
-    
+
     req.Header.Set("Authorization", "Bearer "+apiKey)
     req.Header.Set("Accept", "application/json")
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
         return nil, err
     }
     defer resp.Body.Close()
-    
+
     body, err := io.ReadAll(resp.Body)
     if err != nil {
         return nil, err
     }
-    
+
     var prices map[string]string
     err = json.Unmarshal(body, &prices)
     return prices, err
@@ -156,7 +159,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    
+
     fmt.Printf("Retrieved %d token prices\n", len(prices))
 }
 ```
@@ -169,8 +172,8 @@ Returns a JSON object where each key is a token contract address (lowercase, wit
 
 ### Response Schema
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field            | Type     | Description                                  |
+| ---------------- | -------- | -------------------------------------------- |
 | `{tokenAddress}` | `string` | Price of the token in USD (default currency) |
 
 ### Example Response
@@ -187,6 +190,7 @@ Returns a JSON object where each key is a token contract address (lowercase, wit
 ```
 
 **Response Format Notes:**
+
 - All token addresses are returned in lowercase
 - Prices are strings to preserve decimal precision
 - Prices are denominated in USD by default
@@ -198,14 +202,14 @@ Here are some commonly requested token addresses for reference:
 
 ### Ethereum (Chain ID: 1)
 
-| Token | Symbol | Address |
-|-------|--------|---------|
-| Wrapped Ether | WETH | `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2` |
-| USD Coin | USDC | `0xa0b86a33e6b2d4d51c7c3a9b78d2f8b9c4d5e6f7` |
-| Dai Stablecoin | DAI | `0x6b175474e89094c44da98b954eedeac495271d0f` |
-| Uniswap | UNI | `0x1f9840a85d5af5bf1d1762f925bdaddc4201f984` |
-| Aave | AAVE | `0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9` |
-| 1INCH Token | 1INCH | `0x111111111117dc0aa78b770fa6a738034120c302` |
+| Token          | Symbol | Address                                      |
+| -------------- | ------ | -------------------------------------------- |
+| Wrapped Ether  | WETH   | `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2` |
+| USD Coin       | USDC   | `0xa0b86a33e6b2d4d51c7c3a9b78d2f8b9c4d5e6f7` |
+| Dai Stablecoin | DAI    | `0x6b175474e89094c44da98b954eedeac495271d0f` |
+| Uniswap        | UNI    | `0x1f9840a85d5af5bf1d1762f925bdaddc4201f984` |
+| Aave           | AAVE   | `0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9` |
+| 1INCH Token    | 1INCH  | `0x111111111117dc0aa78b770fa6a738034120c302` |
 
 ## Error Responses
 
@@ -221,7 +225,7 @@ Invalid chain ID or malformed request.
 }
 ```
 
-### 401 Unauthorized  
+### 401 Unauthorized
 
 Invalid or missing API key.
 
@@ -260,11 +264,11 @@ Server-side error occurred.
 
 ## Rate Limits
 
-| Plan | Requests per Minute | Daily Limit |
-|------|-------------------|-------------|
-| Free | 100 | 10,000 |
-| Pro | 1,000 | 100,000 |
-| Enterprise | Custom | Custom |
+| Plan       | Requests per Minute | Daily Limit |
+| ---------- | ------------------- | ----------- |
+| Free       | 100                 | 10,000      |
+| Pro        | 1,000               | 100,000     |
+| Enterprise | Custom              | Custom      |
 
 ## Usage Examples
 
@@ -287,7 +291,7 @@ class PriceMonitor {
   async start() {
     this.isRunning = true;
     console.log(`Starting price monitor for chain ${this.chainId}`);
-    
+
     while (this.isRunning) {
       try {
         await this.checkPrices();
@@ -306,32 +310,34 @@ class PriceMonitor {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
         },
-      }
+      },
     );
 
     const currentPrices = response.data;
-    
+
     for (const [address, price] of Object.entries(currentPrices)) {
       const currentPrice = parseFloat(price);
       const previousPrice = this.previousPrices.get(address);
-      
+
       if (previousPrice) {
-        const changePercent = ((currentPrice - previousPrice) / previousPrice) * 100;
-        
-        if (Math.abs(changePercent) > 5) { // Alert on 5%+ change
+        const changePercent =
+          ((currentPrice - previousPrice) / previousPrice) * 100;
+
+        if (Math.abs(changePercent) > 5) {
+          // Alert on 5%+ change
           console.log(`🚨 Price Alert: ${address}`);
           console.log(`  Previous: $${previousPrice.toFixed(6)}`);
           console.log(`  Current: $${currentPrice.toFixed(6)}`);
           console.log(`  Change: ${changePercent.toFixed(2)}%`);
         }
       }
-      
+
       this.previousPrices.set(address, currentPrice);
     }
   }
 
   sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   stop() {
@@ -356,19 +362,19 @@ async function getMarketStats(apiKey, chainId = 1) {
       headers: {
         Authorization: `Bearer ${apiKey}`,
       },
-    }
+    },
   );
 
-  const prices = Object.values(response.data).map(price => parseFloat(price));
-  
+  const prices = Object.values(response.data).map((price) => parseFloat(price));
+
   const stats = {
     totalTokens: prices.length,
     averagePrice: prices.reduce((sum, price) => sum + price, 0) / prices.length,
     medianPrice: prices.sort((a, b) => a - b)[Math.floor(prices.length / 2)],
     highestPrice: Math.max(...prices),
     lowestPrice: Math.min(...prices),
-    pricesAbove1000: prices.filter(price => price > 1000).length,
-    pricesBelow1: prices.filter(price => price < 1).length
+    pricesAbove1000: prices.filter((price) => price > 1000).length,
+    pricesBelow1: prices.filter((price) => price < 1).length,
   };
 
   return stats;
@@ -376,7 +382,7 @@ async function getMarketStats(apiKey, chainId = 1) {
 
 // Usage
 getMarketStats("YOUR_API_KEY")
-  .then(stats => console.log("Market Statistics:", stats))
+  .then((stats) => console.log("Market Statistics:", stats))
   .catch(console.error);
 ```
 
@@ -393,16 +399,16 @@ const cache = new NodeCache({ stdTTL: 30 }); // 30 second cache
 async function getCachedPrices(apiKey, chainId) {
   const cacheKey = `prices-${chainId}`;
   let prices = cache.get(cacheKey);
-  
+
   if (!prices) {
     const response = await axios.get(
       `https://api.1inch.dev/price/v1.1/${chainId}`,
-      { headers: { Authorization: `Bearer ${apiKey}` } }
+      { headers: { Authorization: `Bearer ${apiKey}` } },
     );
     prices = response.data;
     cache.set(cacheKey, prices);
   }
-  
+
   return prices;
 }
 ```
@@ -420,7 +426,7 @@ async function fetchWithRetry(url, config, maxRetries = 3) {
       if (error.response?.status === 429 && attempt < maxRetries) {
         const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
         console.log(`Rate limited. Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         continue;
       }
       throw error;
@@ -434,7 +440,7 @@ async function fetchWithRetry(url, config, maxRetries = 3) {
 Use streaming for large datasets:
 
 ```javascript
-const { Transform } = require('stream');
+const { Transform } = require("stream");
 
 class PriceProcessor extends Transform {
   constructor() {
@@ -445,14 +451,15 @@ class PriceProcessor extends Transform {
   _transform(chunk, encoding, callback) {
     try {
       const prices = JSON.parse(chunk);
-      
+
       for (const [address, price] of Object.entries(prices)) {
-        if (parseFloat(price) > 1000) { // Process high-value tokens
+        if (parseFloat(price) > 1000) {
+          // Process high-value tokens
           this.push({ address, price: parseFloat(price) });
           this.processedCount++;
         }
       }
-      
+
       callback();
     } catch (error) {
       callback(error);
@@ -470,6 +477,7 @@ class PriceProcessor extends Transform {
 ## Support
 
 For technical issues or questions about this endpoint:
+
 - [1inch Developer Portal](https://portal.1inch.dev/)
 - [API Documentation](https://docs.1inch.io/)
 - [Community Discord](https://discord.gg/1inch)

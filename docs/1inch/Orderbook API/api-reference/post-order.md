@@ -50,9 +50,9 @@ POST https://api.1inch.dev/orderbook/v4.0/{chain}
 
 ### Path Parameters
 
-| Parameter | Type     |  Required  | Description           | Example                                           |
-| --------- | -------- | :--------: | --------------------- | ------------------------------------------------- |
-| `chain`   | `number` |  **Yes** | Blockchain network ID | `1` (Ethereum)<br/>`137` (Polygon)<br/>`56` (BSC) |
+| Parameter | Type     | Required | Description           | Example                                           |
+| --------- | -------- | :------: | --------------------- | ------------------------------------------------- |
+| `chain`   | `number` | **Yes**  | Blockchain network ID | `1` (Ethereum)<br/>`137` (Polygon)<br/>`56` (BSC) |
 
 ### Request Body
 
@@ -61,25 +61,25 @@ POST https://api.1inch.dev/orderbook/v4.0/{chain}
 
 #### Top-level Fields
 
-| Field       | Type     |  Required  | Description                         |
-| ----------- | -------- | :--------: | ----------------------------------- |
-| `orderHash` | `string` |  **Yes** | Unique hash identifier of the order |
-| `signature` | `string` |  **Yes** | EIP-712 signature from the maker    |
-| `data`      | `object` |  **Yes** | Complete order data structure       |
+| Field       | Type     | Required | Description                         |
+| ----------- | -------- | :------: | ----------------------------------- |
+| `orderHash` | `string` | **Yes**  | Unique hash identifier of the order |
+| `signature` | `string` | **Yes**  | EIP-712 signature from the maker    |
+| `data`      | `object` | **Yes**  | Complete order data structure       |
 
 #### Order Data Structure
 
-| Field               | Type     |  Required  | Description                     | Example                                      |
-| ------------------- | -------- | :--------: | ------------------------------- | -------------------------------------------- |
-| `data.makerAsset`   | `string` |  **Yes** | Token address being sold        | `0xdac17f958d2ee523a2206206994597c13d831ec7` |
-| `data.takerAsset`   | `string` |  **Yes** | Token address being bought      | `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2` |
-| `data.maker`        | `string` |  **Yes** | Address of the order creator    | `0xccede9975db9241bfc54f077b6990aafe8aee6da` |
-| `data.receiver`     | `string` | ⚪ **No**  | Address to receive taker tokens | `0xc0dfdb9e7a392c3dbbe7c6fbe8fbc1789c9fe05e` |
-| `data.makingAmount` | `string` |  **Yes** | Amount of maker tokens (wei)    | `"500000000"`                                |
-| `data.takingAmount` | `string` |  **Yes** | Amount of taker tokens (wei)    | `"142857142857142850"`                       |
-| `data.salt`         | `string` |  **Yes** | Unique order identifier         | Random large number                          |
-| `data.extension`    | `string` | ⚪ **No**  | Extension data                  | `"0x"` (default)                             |
-| `data.makerTraits`  | `string` | ⚪ **No**  | Order behavior configuration    | Hex-encoded traits                           |
+| Field               | Type     | Required  | Description                     | Example                                      |
+| ------------------- | -------- | :-------: | ------------------------------- | -------------------------------------------- |
+| `data.makerAsset`   | `string` |  **Yes**  | Token address being sold        | `0xdac17f958d2ee523a2206206994597c13d831ec7` |
+| `data.takerAsset`   | `string` |  **Yes**  | Token address being bought      | `0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2` |
+| `data.maker`        | `string` |  **Yes**  | Address of the order creator    | `0xccede9975db9241bfc54f077b6990aafe8aee6da` |
+| `data.receiver`     | `string` | ⚪ **No** | Address to receive taker tokens | `0xc0dfdb9e7a392c3dbbe7c6fbe8fbc1789c9fe05e` |
+| `data.makingAmount` | `string` |  **Yes**  | Amount of maker tokens (wei)    | `"500000000"`                                |
+| `data.takingAmount` | `string` |  **Yes**  | Amount of taker tokens (wei)    | `"142857142857142850"`                       |
+| `data.salt`         | `string` |  **Yes**  | Unique order identifier         | Random large number                          |
+| `data.extension`    | `string` | ⚪ **No** | Extension data                  | `"0x"` (default)                             |
+| `data.makerTraits`  | `string` | ⚪ **No** | Order behavior configuration    | Hex-encoded traits                           |
 
 ---
 
@@ -184,10 +184,10 @@ const result = await api.submitOrder(order, signature);
 
 **Possible Causes:**
 
--  Invalid or malformed EIP-712 signature
--  Missing required fields in request body
--  Invalid token addresses
--  Malformed amounts (not valid numbers)
+- Invalid or malformed EIP-712 signature
+- Missing required fields in request body
+- Invalid token addresses
+- Malformed amounts (not valid numbers)
 
 ### 401 Unauthorized
 
@@ -223,10 +223,10 @@ const result = await api.submitOrder(order, signature);
 
 **Common Validation Failures:**
 
--  Maker has insufficient token balance
--  Maker hasn't approved tokens for the limit order contract
--  Order has already expired
--  Invalid order hash (doesn't match order data)
+- Maker has insufficient token balance
+- Maker hasn't approved tokens for the limit order contract
+- Order has already expired
+- Invalid order hash (doesn't match order data)
 
 ---
 

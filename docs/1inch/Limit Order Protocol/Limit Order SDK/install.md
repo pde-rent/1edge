@@ -19,7 +19,7 @@ bun add '@1inch/limit-order-sdk'
 
 ## Documentation Hub
 
-|  Resource                 |  Description                     |  Link                                            |
+| Resource                    | Description                        | Link                                               |
 | --------------------------- | ---------------------------------- | -------------------------------------------------- |
 | **Limit Order Integration** | Creating and managing limit orders | [Integration Guide](./integration.md)              |
 | **Contract Interactions**   | Taker contract methods and usage   | [Taker Contract](../limit-order-taker-contract.md) |
@@ -139,13 +139,13 @@ const signature = await maker.signTypedData(
 
 #### RFQ vs Standard Orders Comparison
 
-| Feature            |  Standard Orders |  RFQ Orders    |
-| ------------------ | ------------------ | ---------------- |
-| **Gas Efficiency** |  Moderate        |  **High**      |
-| **Partial Fills**  |  Supported       |  Not supported |
-| **Multiple Fills** |  Supported       |  Not supported |
-| **Extensions**     |  Supported       |  Not supported |
-| **Market Making**  |  Good            |  **Excellent** |
+| Feature            | Standard Orders | RFQ Orders    |
+| ------------------ | --------------- | ------------- |
+| **Gas Efficiency** | Moderate        | **High**      |
+| **Partial Fills**  | Supported       | Not supported |
+| **Multiple Fills** | Supported       | Not supported |
+| **Extensions**     | Supported       | Not supported |
+| **Market Making**  | Good            | **Excellent** |
 
 ---
 
@@ -202,10 +202,10 @@ const api = new Api({
 
 #### HTTP Connector Comparison
 
-| Connector                  |  Dependencies   |  Setup      |  Performance  |
-| -------------------------- | ----------------- | ------------- | --------------- |
-| **FetchProviderConnector** |  Built-in       |  Simple     |  Native       |
-| **AxiosProviderConnector** |  Requires axios |  Extra step |  Feature-rich |
+| Connector                  | Dependencies   | Setup      | Performance  |
+| -------------------------- | -------------- | ---------- | ------------ |
+| **FetchProviderConnector** | Built-in       | Simple     | Native       |
+| **AxiosProviderConnector** | Requires axios | Extra step | Feature-rich |
 
 ---
 
@@ -251,10 +251,10 @@ bun test:integration
 
 ### Test Coverage Overview
 
-| Test Type             |  Purpose           |  Location           |  Speed    |
-| --------------------- | -------------------- | --------------------- | ----------- |
-| **Unit Tests**        | Component validation | `/tests/unit/`        |  Fast     |
-| **Integration Tests** | End-to-end workflows | `/tests/integration/` |  Moderate |
+| Test Type             | Purpose              | Location              | Speed    |
+| --------------------- | -------------------- | --------------------- | -------- |
+| **Unit Tests**        | Component validation | `/tests/unit/`        | Fast     |
+| **Integration Tests** | End-to-end workflows | `/tests/integration/` | Moderate |
 
 > ** Development Tip**  
 > Run unit tests during development for quick feedback, and integration tests before deployment to ensure full compatibility.
@@ -263,7 +263,7 @@ bun test:integration
 
 ## Next Steps
 
- **Installation Complete!** You're ready to start building with the 1inch Limit Order SDK.
+**Installation Complete!** You're ready to start building with the 1inch Limit Order SDK.
 
 ### What's Next?
 
@@ -274,6 +274,6 @@ bun test:integration
 
 ### Need Help?
 
--  **Documentation**: Comprehensive guides and API references
--  **1inch Portal**: [Get API keys and access developer resources](https://portal.1inch.dev/)
--  **Community**: Join the 1inch developer community for support
+- **Documentation**: Comprehensive guides and API references
+- **1inch Portal**: [Get API keys and access developer resources](https://portal.1inch.dev/)
+- **Community**: Join the 1inch developer community for support

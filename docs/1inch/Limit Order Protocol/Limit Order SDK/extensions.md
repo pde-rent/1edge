@@ -117,18 +117,18 @@ const encodedData = extension.encode();
 
 ### Core Extension Components
 
-| Property                |  Purpose                        |  Type           |  Use Case                 |
-| ----------------------- | --------------------------------- | ----------------- | --------------------------- |
-| **🆔 EMPTY**            | Default empty state               | `ExtensionStruct` | Template for new extensions |
-| ** makerAssetSuffix** | Additional maker asset data       | `string`          | Custom token handling       |
-| ** takerAssetSuffix** | Additional taker asset data       | `string`          | Custom token handling       |
-| ** makingAmountData** | Dynamic making amount calculation | `string`          | Oracle-based pricing        |
-| ** takingAmountData** | Dynamic taking amount calculation | `string`          | Oracle-based pricing        |
-| ** predicate**        | Conditional execution logic       | `string`          | Automated triggers          |
-| ** makerPermit**      | Maker authorization data          | `string`          | Gasless approvals           |
-| **🔄 preInteraction**   | Pre-execution hooks               | `string`          | Setup operations            |
-| **🏁 postInteraction**  | Post-execution hooks              | `string`          | Cleanup operations          |
-| **🎨 customData**       | Application-specific data         | `string`          | Custom functionality        |
+| Property               | Purpose                           | Type              | Use Case                    |
+| ---------------------- | --------------------------------- | ----------------- | --------------------------- |
+| **🆔 EMPTY**           | Default empty state               | `ExtensionStruct` | Template for new extensions |
+| ** makerAssetSuffix**  | Additional maker asset data       | `string`          | Custom token handling       |
+| ** takerAssetSuffix**  | Additional taker asset data       | `string`          | Custom token handling       |
+| ** makingAmountData**  | Dynamic making amount calculation | `string`          | Oracle-based pricing        |
+| ** takingAmountData**  | Dynamic taking amount calculation | `string`          | Oracle-based pricing        |
+| ** predicate**         | Conditional execution logic       | `string`          | Automated triggers          |
+| ** makerPermit**       | Maker authorization data          | `string`          | Gasless approvals           |
+| **🔄 preInteraction**  | Pre-execution hooks               | `string`          | Setup operations            |
+| **🏁 postInteraction** | Post-execution hooks              | `string`          | Cleanup operations          |
+| **🎨 customData**      | Application-specific data         | `string`          | Custom functionality        |
 
 ### Property Details
 
@@ -224,18 +224,18 @@ extension.customData = "0x6666..."; // Strategy parameters, user preferences, et
 
 ### Builder Methods Overview
 
-| Method                      |  Purpose                |  Parameters                            |  Chainable |
-| --------------------------- | ------------------------- | ---------------------------------------- | ------------ |
-| ** withMakerAssetSuffix** | Add maker asset data      | `suffix: string`                         |            |
-| ** withTakerAssetSuffix** | Add taker asset data      | `suffix: string`                         |            |
-| ** withMakingAmountData** | Set dynamic making amount | `address: Address, data: string`         |            |
-| ** withTakingAmountData** | Set dynamic taking amount | `address: Address, data: string`         |            |
-| ** withPredicate**        | Add conditional logic     | `predicate: string`                      |            |
-| ** withMakerPermit**      | Include permit data       | `tokenFrom: Address, permitData: string` |            |
-| **🔄 withPreInteraction**   | Set pre-execution hook    | `interaction: Interaction`               |            |
-| **🏁 withPostInteraction**  | Set post-execution hook   | `interaction: Interaction`               |            |
-| **🎨 withCustomData**       | Add custom functionality  | `data: string`                           |            |
-| **✨ build**                | Create final Extension    | -                                        |  Final     |
+| Method                     | Purpose                   | Parameters                               | Chainable |
+| -------------------------- | ------------------------- | ---------------------------------------- | --------- |
+| ** withMakerAssetSuffix**  | Add maker asset data      | `suffix: string`                         |           |
+| ** withTakerAssetSuffix**  | Add taker asset data      | `suffix: string`                         |           |
+| ** withMakingAmountData**  | Set dynamic making amount | `address: Address, data: string`         |           |
+| ** withTakingAmountData**  | Set dynamic taking amount | `address: Address, data: string`         |           |
+| ** withPredicate**         | Add conditional logic     | `predicate: string`                      |           |
+| ** withMakerPermit**       | Include permit data       | `tokenFrom: Address, permitData: string` |           |
+| **🔄 withPreInteraction**  | Set pre-execution hook    | `interaction: Interaction`               |           |
+| **🏁 withPostInteraction** | Set post-execution hook   | `interaction: Interaction`               |           |
+| **🎨 withCustomData**      | Add custom functionality  | `data: string`                           |           |
+| **✨ build**               | Create final Extension    | -                                        | Final     |
 
 ### Detailed Method Documentation
 
@@ -428,7 +428,7 @@ console.log("Encoded extension:", advancedExtension.encode());
 
 ## Extension Mastery Complete!
 
- You now understand how to leverage the full power of 1inch Limit Order Extensions.
+You now understand how to leverage the full power of 1inch Limit Order Extensions.
 
 ### Next Steps
 

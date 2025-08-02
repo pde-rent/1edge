@@ -78,8 +78,8 @@ graph TB
 
 ### Configuration Traits
 
-| Trait Type         |  Scope      |  Purpose                      |  Usage           |
-| ------------------ | ------------- | ------------------------------- | ------------------ |
+| Trait Type       | Scope         | Purpose                         | Usage              |
+| ---------------- | ------------- | ------------------------------- | ------------------ |
 | ** MakerTraits** | Order creator | Define order behavior and rules | All order types    |
 | ** TakerTraits** | Order filler  | Set execution preferences       | Filling operations |
 
@@ -90,8 +90,8 @@ graph TB
 
 ### API Integration Layer
 
-| Component                    |  Level   |  Description                  | 💼 Use Case                |
-| ---------------------------- | ---------- | ------------------------------- | -------------------------- |
+| Component                  | Level      | Description                     | 💼 Use Case                |
+| -------------------------- | ---------- | ------------------------------- | -------------------------- |
 | ** Sdk**                   | High-level | Complete order management suite | Application integration    |
 | ** Api**                   | Mid-level  | Direct orderbook API access     | Custom implementations     |
 | ** HttpProviderConnector** | Low-level  | Pluggable HTTP client system    | Infrastructure flexibility |
@@ -105,12 +105,12 @@ graph TB
 
 ### Primary Use Cases
 
-| Use Case                    |  Description                                                 |  Target Users         | ⭐ Complexity |
-| --------------------------- | -------------------------------------------------------------- | ----------------------- | ------------- |
-| **🏛 DEX Integration**      | Build decentralized exchanges with limit order functionality   | 👨‍ DApp developers      |  Medium     |
-| **🤖 Trading Bots**         | Create automated trading strategies with precise price control |  Quantitative traders |  Low        |
-| **🏪 Market Making**        | Deploy efficient market-making strategies using RFQ orders     | 💼 Professional traders | 🔴 High       |
-| ** Portfolio Management** | Execute trades at specific price targets                       |  Asset managers       |  Medium     |
+| Use Case                  | Description                                                    | Target Users            | ⭐ Complexity |
+| ------------------------- | -------------------------------------------------------------- | ----------------------- | ------------- |
+| **🏛 DEX Integration**    | Build decentralized exchanges with limit order functionality   | 👨‍ DApp developers     | Medium        |
+| **🤖 Trading Bots**       | Create automated trading strategies with precise price control | Quantitative traders    | Low           |
+| **🏪 Market Making**      | Deploy efficient market-making strategies using RFQ orders     | 💼 Professional traders | 🔴 High       |
+| ** Portfolio Management** | Execute trades at specific price targets                       | Asset managers          | Medium        |
 
 ### Advanced Applications
 
@@ -135,7 +135,7 @@ bun add '@1inch/limit-order-sdk'
 
 ### Step 2: Learning Path
 
-| Step  |  Resource                                                |  Focus               | ⏱ Time |
+| Step  | Resource                                                   | Focus                  | ⏱ Time |
 | ----- | ---------------------------------------------------------- | ---------------------- | ------- |
 | **1** | [Installation Guide](./install.md)                         | Setup and dependencies | 5 min   |
 | **2** | [Integration Guide](./integration.md)                      | Create first order     | 15 min  |
@@ -151,15 +151,15 @@ bun add '@1inch/limit-order-sdk'
 
 ### Supported Networks
 
-| Network       |  Chain ID |  Type   |  Status |
-| ------------- | ----------- | --------- | --------- |
-| **Ethereum**  | 1           | L1        |  Active |
-| **Polygon**   | 137         | L2        |  Active |
-| **BSC**       | 56          | Sidechain |  Active |
-| **Arbitrum**  | 42161       | L2        |  Active |
-| **Optimism**  | 10          | L2        |  Active |
-| **Avalanche** | 43114       | L1        |  Active |
-| **Fantom**    | 250         | L1        |  Active |
+| Network       | Chain ID | Type      | Status |
+| ------------- | -------- | --------- | ------ |
+| **Ethereum**  | 1        | L1        | Active |
+| **Polygon**   | 137      | L2        | Active |
+| **BSC**       | 56       | Sidechain | Active |
+| **Arbitrum**  | 42161    | L2        | Active |
+| **Optimism**  | 10       | L2        | Active |
+| **Avalanche** | 43114    | L1        | Active |
+| **Fantom**    | 250      | L1        | Active |
 
 > ** Growing Ecosystem**  
 > New networks are continuously added based on community demand and protocol deployment.
@@ -194,10 +194,10 @@ bun add '@1inch/limit-order-sdk'
 
 ### Essential Reading
 
-| Priority      |  Resource                                        |  Purpose             |
-| ------------- | -------------------------------------------------- | ---------------------- |
-| **🔥 High**   | [Installation Guide](./install.md)                 | Get started quickly    |
-| **🔥 High**   | [Integration Guide](./integration.md)              | Master order creation  |
+| Priority    | Resource                                           | Purpose                |
+| ----------- | -------------------------------------------------- | ---------------------- |
+| **🔥 High** | [Installation Guide](./install.md)                 | Get started quickly    |
+| **🔥 High** | [Integration Guide](./integration.md)              | Master order creation  |
 | ** Medium** | [Maker Contract](../limit-order-maker-contract.md) | Understand internals   |
 | ** Medium** | [Taker Contract](../limit-order-taker-contract.md) | Learn execution        |
 | ** Low**    | [Extensions](../extensions.md)                     | Advanced customization |
