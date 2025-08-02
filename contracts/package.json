@@ -15,6 +15,7 @@
   "dependencies": {
     "@1inch/solidity-utils": "^6.6.0",
     "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^17.2.1"
+    "dotenv": "^17.2.1",
+    "solady": "^0.1.24"
   }
 }

@@ -1,7 +1,15 @@
-import { BigNumberish, ZeroAddress, parseEther, keccak256, toUtf8Bytes } from "ethers";
+import {
+  BigNumberish,
+  ZeroAddress,
+  parseEther,
+  keccak256,
+  toUtf8Bytes,
+} from "ethers";
 import { IOrderMixin } from "../typechain-types";
 
-export function buildMockOrder(overrides: Partial<IOrderMixin.OrderStruct> = {}): IOrderMixin.OrderStruct {
+export function buildMockOrder(
+  overrides: Partial<IOrderMixin.OrderStruct> = {},
+): IOrderMixin.OrderStruct {
   return {
     salt: 0,
     maker: ZeroAddress,
@@ -14,5 +22,3 @@ export function buildMockOrder(overrides: Partial<IOrderMixin.OrderStruct> = {})
     ...overrides,
   };
 }
-
-
