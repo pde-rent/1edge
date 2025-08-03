@@ -276,4 +276,8 @@ export class PubSubClient {
       url: this.url,
     };
   }
+
 }
+
+// Export singleton instance
+export const pubSubClient = new PubSubClient();
