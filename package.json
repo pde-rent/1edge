@@ -18,6 +18,7 @@
     "start:order-executor": "bun run back/services/orderExecutor.ts",
     "start:api": "bun run back/services/apiServer.ts",
     "start:keeper": "bun run back/services/keeper.ts",
+    "start:taker-bot": "bun run scripts/run-taker-bot.ts",
     "start:status-checker": "bun run back/services/statusChecker.ts",
     "start:websocket": "bun run back/services/websocketServer.ts",
     "start:back": "bun ./scripts/start-back.ts",

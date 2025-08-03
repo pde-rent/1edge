@@ -1,393 +1,5 @@
 [
   {
-    "id": "development/setup",
-    "title": "setup",
-    "content": "Development Setup Prerequisites Bun : This project uses Bun as the JavaScript runtime and package manager Node.js : Required for some development tools (v18+ recommended) Git : For version control Installation Install Bun: curl -fsSL https://bun.sh/install | bash Clone the repository: git clone https://github.com/pde-rent/1edge.git cd 1edge Install dependencies: bun install Running Tests All tests in this project are run using Bun: Smart Contract Tests cd contracts bunx hardhat test Backend Tests cd backend bun test Frontend Tests cd frontend bun test Development Commands Contracts # Compile contracts bunx hardhat compile # Run tests bunx hardhat test # Deploy contracts bunx hardhat run scripts/deployDelegateProxy.ts --network localhost # Start local node bunx hardhat node Backend Services # Start all services bun run start # Start individual services bun run start:api bun run start:keeper bun run start:executor Frontend # Development server bun run dev # Build for production bun run build # Start production server bun run start Environment Setup Copy the example environment file and configure: cp .env.example .env Key environment variables: KEEPER_PK : Private key for the keeper account ONE_INCH_API_KEY : Your 1inch API key ETH_RPC_URL : Ethereum RPC endpoint Package Management This project uses Bun for all package management: # Add a dependency bun add <package> # Add a dev dependency bun add -d <package> # Remove a dependency bun remove <package> # Update dependencies bun update Notes Always use bun instead of npm or yarn Use bunx instead of npx for executing packages Bun is significantly faster than npm/yarn for installation and script execution All scripts in package.json files are executed with bun run",
-    "url": "/docs/development/setup",
-    "category": "development",
-    "headings": [
-      {
-        "level": 1,
-        "text": "Development Setup",
-        "anchor": "development-setup"
-      },
-      {
-        "level": 2,
-        "text": "Prerequisites",
-        "anchor": "prerequisites"
-      },
-      {
-        "level": 2,
-        "text": "Installation",
-        "anchor": "installation"
-      },
-      {
-        "level": 2,
-        "text": "Running Tests",
-        "anchor": "running-tests"
-      },
-      {
-        "level": 3,
-        "text": "Smart Contract Tests",
-        "anchor": "smart-contract-tests"
-      },
-      {
-        "level": 3,
-        "text": "Backend Tests",
-        "anchor": "backend-tests"
-      },
-      {
-        "level": 3,
-        "text": "Frontend Tests",
-        "anchor": "frontend-tests"
-      },
-      {
-        "level": 2,
-        "text": "Development Commands",
-        "anchor": "development-commands"
-      },
-      {
-        "level": 3,
-        "text": "Contracts",
-        "anchor": "contracts"
-      },
-      {
-        "level": 1,
-        "text": "Compile contracts",
-        "anchor": "compile-contracts"
-      },
-      {
-        "level": 1,
-        "text": "Run tests",
-        "anchor": "run-tests"
-      },
-      {
-        "level": 1,
-        "text": "Deploy contracts",
-        "anchor": "deploy-contracts"
-      },
-      {
-        "level": 1,
-        "text": "Start local node",
-        "anchor": "start-local-node"
-      },
-      {
-        "level": 3,
-        "text": "Backend Services",
-        "anchor": "backend-services"
-      },
-      {
-        "level": 1,
-        "text": "Start all services",
-        "anchor": "start-all-services"
-      },
-      {
-        "level": 1,
-        "text": "Start individual services",
-        "anchor": "start-individual-services"
-      },
-      {
-        "level": 3,
-        "text": "Frontend",
-        "anchor": "frontend"
-      },
-      {
-        "level": 1,
-        "text": "Development server",
-        "anchor": "development-server"
-      },
-      {
-        "level": 1,
-        "text": "Build for production",
-        "anchor": "build-for-production"
-      },
-      {
-        "level": 1,
-        "text": "Start production server",
-        "anchor": "start-production-server"
-      },
-      {
-        "level": 2,
-        "text": "Environment Setup",
-        "anchor": "environment-setup"
-      },
-      {
-        "level": 2,
-        "text": "Package Management",
-        "anchor": "package-management"
-      },
-      {
-        "level": 1,
-        "text": "Add a dependency",
-        "anchor": "add-a-dependency"
-      },
-      {
-        "level": 1,
-        "text": "Add a dev dependency",
-        "anchor": "add-a-dev-dependency"
-      },
-      {
-        "level": 1,
-        "text": "Remove a dependency",
-        "anchor": "remove-a-dependency"
-      },
-      {
-        "level": 1,
-        "text": "Update dependencies",
-        "anchor": "update-dependencies"
-      },
-      {
-        "level": 2,
-        "text": "Notes",
-        "anchor": "notes"
-      }
-    ],
-    "excerpt": "Development Setup Prerequisites Bun : This project uses Bun as the JavaScript runtime and package manager Node.js : Required for some development tools (v18+ recommended) Git : For version control Ins..."
-  },
-  {
-    "id": "development/setup#development-setup",
-    "title": "setup - Development Setup",
-    "content": "Development Setup",
-    "url": "/docs/development/setup#development-setup",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Development Setup (from setup)"
-  },
-  {
-    "id": "development/setup#prerequisites",
-    "title": "setup - Prerequisites",
-    "content": "Prerequisites",
-    "url": "/docs/development/setup#prerequisites",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Prerequisites (from setup)"
-  },
-  {
-    "id": "development/setup#installation",
-    "title": "setup - Installation",
-    "content": "Installation",
-    "url": "/docs/development/setup#installation",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Installation (from setup)"
-  },
-  {
-    "id": "development/setup#running-tests",
-    "title": "setup - Running Tests",
-    "content": "Running Tests",
-    "url": "/docs/development/setup#running-tests",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Running Tests (from setup)"
-  },
-  {
-    "id": "development/setup#smart-contract-tests",
-    "title": "setup - Smart Contract Tests",
-    "content": "Smart Contract Tests",
-    "url": "/docs/development/setup#smart-contract-tests",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Smart Contract Tests (from setup)"
-  },
-  {
-    "id": "development/setup#backend-tests",
-    "title": "setup - Backend Tests",
-    "content": "Backend Tests",
-    "url": "/docs/development/setup#backend-tests",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Backend Tests (from setup)"
-  },
-  {
-    "id": "development/setup#frontend-tests",
-    "title": "setup - Frontend Tests",
-    "content": "Frontend Tests",
-    "url": "/docs/development/setup#frontend-tests",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Frontend Tests (from setup)"
-  },
-  {
-    "id": "development/setup#development-commands",
-    "title": "setup - Development Commands",
-    "content": "Development Commands",
-    "url": "/docs/development/setup#development-commands",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Development Commands (from setup)"
-  },
-  {
-    "id": "development/setup#contracts",
-    "title": "setup - Contracts",
-    "content": "Contracts",
-    "url": "/docs/development/setup#contracts",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Contracts (from setup)"
-  },
-  {
-    "id": "development/setup#compile-contracts",
-    "title": "setup - Compile contracts",
-    "content": "Compile contracts",
-    "url": "/docs/development/setup#compile-contracts",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Compile contracts (from setup)"
-  },
-  {
-    "id": "development/setup#run-tests",
-    "title": "setup - Run tests",
-    "content": "Run tests",
-    "url": "/docs/development/setup#run-tests",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Run tests (from setup)"
-  },
-  {
-    "id": "development/setup#deploy-contracts",
-    "title": "setup - Deploy contracts",
-    "content": "Deploy contracts",
-    "url": "/docs/development/setup#deploy-contracts",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Deploy contracts (from setup)"
-  },
-  {
-    "id": "development/setup#start-local-node",
-    "title": "setup - Start local node",
-    "content": "Start local node",
-    "url": "/docs/development/setup#start-local-node",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Start local node (from setup)"
-  },
-  {
-    "id": "development/setup#backend-services",
-    "title": "setup - Backend Services",
-    "content": "Backend Services",
-    "url": "/docs/development/setup#backend-services",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Backend Services (from setup)"
-  },
-  {
-    "id": "development/setup#start-all-services",
-    "title": "setup - Start all services",
-    "content": "Start all services",
-    "url": "/docs/development/setup#start-all-services",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Start all services (from setup)"
-  },
-  {
-    "id": "development/setup#start-individual-services",
-    "title": "setup - Start individual services",
-    "content": "Start individual services",
-    "url": "/docs/development/setup#start-individual-services",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Start individual services (from setup)"
-  },
-  {
-    "id": "development/setup#frontend",
-    "title": "setup - Frontend",
-    "content": "Frontend",
-    "url": "/docs/development/setup#frontend",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Frontend (from setup)"
-  },
-  {
-    "id": "development/setup#development-server",
-    "title": "setup - Development server",
-    "content": "Development server",
-    "url": "/docs/development/setup#development-server",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Development server (from setup)"
-  },
-  {
-    "id": "development/setup#build-for-production",
-    "title": "setup - Build for production",
-    "content": "Build for production",
-    "url": "/docs/development/setup#build-for-production",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Build for production (from setup)"
-  },
-  {
-    "id": "development/setup#start-production-server",
-    "title": "setup - Start production server",
-    "content": "Start production server",
-    "url": "/docs/development/setup#start-production-server",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Start production server (from setup)"
-  },
-  {
-    "id": "development/setup#environment-setup",
-    "title": "setup - Environment Setup",
-    "content": "Environment Setup",
-    "url": "/docs/development/setup#environment-setup",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Environment Setup (from setup)"
-  },
-  {
-    "id": "development/setup#package-management",
-    "title": "setup - Package Management",
-    "content": "Package Management",
-    "url": "/docs/development/setup#package-management",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Package Management (from setup)"
-  },
-  {
-    "id": "development/setup#add-a-dependency",
-    "title": "setup - Add a dependency",
-    "content": "Add a dependency",
-    "url": "/docs/development/setup#add-a-dependency",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Add a dependency (from setup)"
-  },
-  {
-    "id": "development/setup#add-a-dev-dependency",
-    "title": "setup - Add a dev dependency",
-    "content": "Add a dev dependency",
-    "url": "/docs/development/setup#add-a-dev-dependency",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Add a dev dependency (from setup)"
-  },
-  {
-    "id": "development/setup#remove-a-dependency",
-    "title": "setup - Remove a dependency",
-    "content": "Remove a dependency",
-    "url": "/docs/development/setup#remove-a-dependency",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Remove a dependency (from setup)"
-  },
-  {
-    "id": "development/setup#update-dependencies",
-    "title": "setup - Update dependencies",
-    "content": "Update dependencies",
-    "url": "/docs/development/setup#update-dependencies",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Update dependencies (from setup)"
-  },
-  {
-    "id": "development/setup#notes",
-    "title": "setup - Notes",
-    "content": "Notes",
-    "url": "/docs/development/setup#notes",
-    "category": "development",
-    "headings": [],
-    "excerpt": "Notes (from setup)"
-  },
-  {
     "id": "1inch/Orderbook API/overview",
     "title": "overview",
     "content": "1inch Orderbook API Overview ** Your gateway to decentralized limit order trading** The 1inch Orderbook API provides RESTful access to limit orders, enabling efficient discovery and execution while maintaining the decentralized nature of the protocol. %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#f8f9fa','primaryTextColor':'#212529','primaryBorderColor':'#6c757d','lineColor':'#6c757d','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','gridColor':'#dee2e6','secondaryColor':'#e9ecef','tertiaryColor':'#f8f9fa'}}}%% graph TD subgraph \"Orderbook API Architecture\" CLIENT[Client Application] --> API[Orderbook API] API --> DB[(Order Database)] API --> EVENTS[Event Processor] API --> VALIDATOR[Order Validator] end subgraph \"Order Flow\" MAKER[Maker] -->|Submit Signed Order| API API -->|Store| DB TAKER[Taker] -->|Query Orders| API API -->|Return Matches| TAKER TAKER -->|Execute on-chain| BLOCKCHAIN[Blockchain] BLOCKCHAIN -->|Emit Events| EVENTS EVENTS -->|Update Status| DB end subgraph \"Data Access\" DB --> SEARCH[Order Search] DB --> STATS[Market Statistics] DB --> HISTORY[Event History] end Purpose & Mission The Orderbook API bridges the gap between off-chain order creation and on-chain execution by providing: Function Description Benefit Order Storage Store signed limit orders from makers Centralized discovery Order Discovery Enable takers and resolvers to find orders Efficient matching Status Tracking Monitor order lifecycle and events Real-time insights Price Discovery Facilitate market depth analysis Better pricing Key Features Order Management Complete order lifecycle management Submit Orders : Store cryptographically signed orders for public discovery Query Orders : Advanced search with filters for maker, assets, status, and more Order Status : Real-time tracking from creation to completion or cancellation Batch Operations : Efficient handling of multiple orders Event Tracking Stay updated with real-time order events Fill Events : Monitor partial and complete order executions Cancel Events : Track order cancellations and invalidations Real-time Updates : WebSocket support for live order state changes Historical Data : Access complete event history for analysis Market Data & Analytics Deep market insights at your fingertips Active Pairs : Discover all trading pairs with active liquidity Order Statistics : Comprehensive metrics on order distribution Market Depth : Analyze liquidity across different price levels Volume Metrics : Track trading volume and activity trends API Endpoints Core Order Operations Endpoint Method Description Use Case /{chain} POST Submit new order Order creation /{chain}/all GET List all orders with filters Market scanning /{chain}/order/{hash} GET Get specific order details Order verification /{chain}/address/{addr} GET Get orders by maker Portfolio tracking Event & Analytics Endpoint Method Description Use Case /{chain}/events GET Get all order events Market analysis /{chain}/events/{hash} GET Get events for specific order Order tracking /{chain}/count GET Get order counts with filters Statistics /{chain}/unique-active-pairs GET Get active trading pairs Market discovery Authentication & Security API Key Setup ** Get started in minutes** Obtain your API key from the 1inch Developer Portal # Include in all requests Authorization: Bearer YOUR_API_KEY Security Best Practices ** Security Guidelines** Never expose API keys in client-side code Use environment variables for key storage Rotate keys regularly for enhanced security Monitor usage patterns for unusual activity Rate Limits & Performance Current Limits Limit Type Quota Scope Per Second 10 requests Per API key Per Minute 1,000 requests Per API key Per Hour 50,000 requests Per API key Daily 1M requests Per API key Optimization Tips ** Pro Tips for Better Performance** Use appropriate filters to reduce response size Implement client-side caching for static data Batch requests when possible Use pagination for large datasets Response Format & Standards Success Response Structure { \"data\": {...}, // Requested data \"meta\": { // Metadata (pagination, etc.) \"totalItems\": 1000, \"currentPage\": 1, \"totalPages\": 10 }, \"timestamp\": \"2024-01-01T00:00:00Z\" } Error Response Structure { \"error\": { \"code\": 400, \"message\": \"Invalid request parameters\", \"details\": \"Chain ID must be a valid number\" }, \"timestamp\": \"2024-01-01T00:00:00Z\" } HTTP Status Codes Code Status Meaning 200 OK Request successful 400 Bad Request Invalid parameters 401 🔒 Unauthorized Invalid API key 404 Not Found Resource not found 429 ⏸ Rate Limited Too many requests 500 🔥 Server Error Internal server issue Network Support Supported Blockchains Network Chain ID Status Features Ethereum 1 Active Full support Polygon 137 Active Full support BSC 56 Active Full support Arbitrum 42161 Active Full support Optimism 10 Active Full support Avalanche 43114 Active Full support Base 8453 Beta Limited support Network Configuration // Example: Switch between networks const networks = { ethereum: { chainId: 1, name: \"Ethereum Mainnet\" }, polygon: { chainId: 137, name: \"Polygon\" }, bsc: { chainId: 56, name: \"BSC\" }, arbitrum: { chainId: 42161, name: \"Arbitrum One\" }, optimism: { chainId: 10, name: \"Optimism\" }, }; Getting Started Quick Setup # Install the SDK bun add @1inch/limit-order-sdk # Set up environment echo \"API_KEY=your_api_key_here\" > .env First API Call import { Api, AxiosProviderConnector } from \"@1inch/limit-order-sdk\"; const api = new Api({ networkId: 1, // Ethereum authKey: process.env.API_KEY, httpConnector: new AxiosProviderConnector(), }); // Get all active orders const orders = await api.getAllOrders({ limit: 10 }); console.log(`Found ${orders.length} active orders`); Additional Resources Quick Links Quickstart Guide - Get up and running in 5 minutes API Reference - Comprehensive endpoint documentation 🛠 SDK Integration - JavaScript/TypeScript SDK Contract Integration - Direct contract interaction Support & Community Documentation Portal - Complete documentation Developer Discord - Community support 🐛 GitHub Issues - Bug reports 📧 Developer Support - Direct assistance ** Ready to build?** Start with our Quickstart Guide and have your first order running in minutes!",
@@ -9540,6 +9152,702 @@
     "excerpt": ""
   },
   {
+    "id": "1edge/setup",
+    "title": "setup",
+    "content": "Development Setup Prerequisites Bun : This project uses Bun as the JavaScript runtime and package manager Node.js : Required for some development tools (v18+ recommended) Git : For version control and submodule management Installation Install Bun: curl -fsSL https://bun.sh/install | bash Clone the repository with submodules: git clone --recursive https://github.com/pde-rent/1edge.git cd 1edge Or if you already cloned without submodules: git clone https://github.com/pde-rent/1edge.git cd 1edge git submodule update --init --recursive Install all dependencies (this automatically handles submodules and builds the SDK): bun install This will: Initialize and update git submodules (1inch SDK) Install dependencies for all workspaces (front, back, contracts) Build the 1inch SDK from source Set up the complete development environment Monorepo Structure This project is organized as a monorepo with the following workspaces: front/ : Next.js frontend application back/ : Bun backend services contracts/ : Hardhat smart contracts sdk-source/ : 1inch SDK submodule (automatically managed) Quick Start After installation, start the development environment: # Terminal 1: Start backend services bun run start:back # Terminal 2: Start frontend development server bun run start:front The application will be available at: Frontend: http://localhost:40006 Backend API: http://localhost:40005 Running Tests All tests in this project are run using Bun: Smart Contract Tests cd contracts bunx hardhat test Backend Tests cd backend bun test Frontend Tests cd frontend bun test Development Commands Building All Components # Build everything (contracts, SDK, frontend) bun run build:all # Build individual components bun run build:contracts # Compile smart contracts bun run build:sdk # Build 1inch SDK from source bun run build:front # Build frontend for production Backend Services # Start all backend services (recommended) bun run start:back # Start individual services bun run start:api # API server bun run start:keeper # Keeper service bun run start:collector # Data collector bun run start:websocket # WebSocket server bun run start:status-checker # Status monitoring # Development mode (with auto-restart) bun run dev:back Frontend Development # Start development server bun run start:front # Development mode (alternative) bun run dev:front # Build for production bun run build:front Smart Contracts # Navigate to contracts workspace cd contracts # Compile contracts bun run compile # Run contract tests bun run test # Deploy contracts to local network bun run deploy # Start local Hardhat node bunx hardhat node SDK Management # Clean and rebuild SDK bun run clean:sdk bun run build:sdk # Update SDK submodule to latest git submodule update --remote sdk-source Environment Setup Copy the example environment file and configure: cp .env.example .env Key environment variables: KEEPER_PK : Private key for the keeper account ONE_INCH_API_KEY : Your 1inch API key ETH_RPC_URL : Ethereum RPC endpoint Workspace Management This monorepo uses Bun workspaces for dependency management: # Install dependencies for all workspaces bun install # Add dependency to specific workspace cd front && bun add <package> # Frontend cd back && bun add <package> # Backend cd contracts && bun add <package> # Contracts # Add dev dependency bun add -d <package> # Remove dependency bun remove <package> # Update all dependencies bun update Type Checking and Linting # Type check all workspaces bun run typecheck:all # Type check individual workspaces bun run typecheck:back bun run typecheck:front bun run typecheck:contracts # Lint and format code bun run lint # Check formatting and lint bun run lint:fix # Auto-fix formatting and lint issues bun run format # Format code with Prettier Troubleshooting Common Issues Submodule not initialized : git submodule update --init --recursive SDK build fails : bun run clean:sdk bun run build:sdk Port conflicts : bun run kill:all # Kill all running services Dependency issues : rm -rf node_modules */node_modules bun install Clean Rebuild For a complete clean rebuild: # Clean everything bun run clean:all # Reinstall and rebuild rm -rf node_modules */node_modules bun install bun run build:all Notes Always use bun instead of npm or yarn Use bunx instead of npx for executing packages Bun is significantly faster than npm/yarn for installation and script execution All scripts in package.json files are executed with bun run The SDK submodule is automatically managed during bun install Each workspace has its own package.json and can have workspace-specific dependencies",
+    "url": "/docs/1edge/setup",
+    "category": "1edge",
+    "headings": [
+      {
+        "level": 1,
+        "text": "Development Setup",
+        "anchor": "development-setup"
+      },
+      {
+        "level": 2,
+        "text": "Prerequisites",
+        "anchor": "prerequisites"
+      },
+      {
+        "level": 2,
+        "text": "Installation",
+        "anchor": "installation"
+      },
+      {
+        "level": 2,
+        "text": "Monorepo Structure",
+        "anchor": "monorepo-structure"
+      },
+      {
+        "level": 2,
+        "text": "Quick Start",
+        "anchor": "quick-start"
+      },
+      {
+        "level": 1,
+        "text": "Terminal 1: Start backend services",
+        "anchor": "terminal-1-start-backend-services"
+      },
+      {
+        "level": 1,
+        "text": "Terminal 2: Start frontend development server",
+        "anchor": "terminal-2-start-frontend-development-server"
+      },
+      {
+        "level": 2,
+        "text": "Running Tests",
+        "anchor": "running-tests"
+      },
+      {
+        "level": 3,
+        "text": "Smart Contract Tests",
+        "anchor": "smart-contract-tests"
+      },
+      {
+        "level": 3,
+        "text": "Backend Tests",
+        "anchor": "backend-tests"
+      },
+      {
+        "level": 3,
+        "text": "Frontend Tests",
+        "anchor": "frontend-tests"
+      },
+      {
+        "level": 2,
+        "text": "Development Commands",
+        "anchor": "development-commands"
+      },
+      {
+        "level": 3,
+        "text": "Building All Components",
+        "anchor": "building-all-components"
+      },
+      {
+        "level": 1,
+        "text": "Build everything (contracts, SDK, frontend)",
+        "anchor": "build-everything-contracts-sdk-frontend"
+      },
+      {
+        "level": 1,
+        "text": "Build individual components",
+        "anchor": "build-individual-components"
+      },
+      {
+        "level": 3,
+        "text": "Backend Services",
+        "anchor": "backend-services"
+      },
+      {
+        "level": 1,
+        "text": "Start all backend services (recommended)",
+        "anchor": "start-all-backend-services-recommended"
+      },
+      {
+        "level": 1,
+        "text": "Start individual services",
+        "anchor": "start-individual-services"
+      },
+      {
+        "level": 1,
+        "text": "Development mode (with auto-restart)",
+        "anchor": "development-mode-with-auto-restart"
+      },
+      {
+        "level": 3,
+        "text": "Frontend Development",
+        "anchor": "frontend-development"
+      },
+      {
+        "level": 1,
+        "text": "Start development server",
+        "anchor": "start-development-server"
+      },
+      {
+        "level": 1,
+        "text": "Development mode (alternative)",
+        "anchor": "development-mode-alternative"
+      },
+      {
+        "level": 1,
+        "text": "Build for production",
+        "anchor": "build-for-production"
+      },
+      {
+        "level": 3,
+        "text": "Smart Contracts",
+        "anchor": "smart-contracts"
+      },
+      {
+        "level": 1,
+        "text": "Navigate to contracts workspace",
+        "anchor": "navigate-to-contracts-workspace"
+      },
+      {
+        "level": 1,
+        "text": "Compile contracts",
+        "anchor": "compile-contracts"
+      },
+      {
+        "level": 1,
+        "text": "Run contract tests",
+        "anchor": "run-contract-tests"
+      },
+      {
+        "level": 1,
+        "text": "Deploy contracts to local network",
+        "anchor": "deploy-contracts-to-local-network"
+      },
+      {
+        "level": 1,
+        "text": "Start local Hardhat node",
+        "anchor": "start-local-hardhat-node"
+      },
+      {
+        "level": 3,
+        "text": "SDK Management",
+        "anchor": "sdk-management"
+      },
+      {
+        "level": 1,
+        "text": "Clean and rebuild SDK",
+        "anchor": "clean-and-rebuild-sdk"
+      },
+      {
+        "level": 1,
+        "text": "Update SDK submodule to latest",
+        "anchor": "update-sdk-submodule-to-latest"
+      },
+      {
+        "level": 2,
+        "text": "Environment Setup",
+        "anchor": "environment-setup"
+      },
+      {
+        "level": 2,
+        "text": "Workspace Management",
+        "anchor": "workspace-management"
+      },
+      {
+        "level": 1,
+        "text": "Install dependencies for all workspaces",
+        "anchor": "install-dependencies-for-all-workspaces"
+      },
+      {
+        "level": 1,
+        "text": "Add dependency to specific workspace",
+        "anchor": "add-dependency-to-specific-workspace"
+      },
+      {
+        "level": 1,
+        "text": "Add dev dependency",
+        "anchor": "add-dev-dependency"
+      },
+      {
+        "level": 1,
+        "text": "Remove dependency",
+        "anchor": "remove-dependency"
+      },
+      {
+        "level": 1,
+        "text": "Update all dependencies",
+        "anchor": "update-all-dependencies"
+      },
+      {
+        "level": 2,
+        "text": "Type Checking and Linting",
+        "anchor": "type-checking-and-linting"
+      },
+      {
+        "level": 1,
+        "text": "Type check all workspaces",
+        "anchor": "type-check-all-workspaces"
+      },
+      {
+        "level": 1,
+        "text": "Type check individual workspaces",
+        "anchor": "type-check-individual-workspaces"
+      },
+      {
+        "level": 1,
+        "text": "Lint and format code",
+        "anchor": "lint-and-format-code"
+      },
+      {
+        "level": 2,
+        "text": "Troubleshooting",
+        "anchor": "troubleshooting"
+      },
+      {
+        "level": 3,
+        "text": "Common Issues",
+        "anchor": "common-issues"
+      },
+      {
+        "level": 3,
+        "text": "Clean Rebuild",
+        "anchor": "clean-rebuild"
+      },
+      {
+        "level": 1,
+        "text": "Clean everything",
+        "anchor": "clean-everything"
+      },
+      {
+        "level": 1,
+        "text": "Reinstall and rebuild",
+        "anchor": "reinstall-and-rebuild"
+      },
+      {
+        "level": 2,
+        "text": "Notes",
+        "anchor": "notes"
+      }
+    ],
+    "excerpt": "Development Setup Prerequisites Bun : This project uses Bun as the JavaScript runtime and package manager Node.js : Required for some development tools (v18+ recommended) Git : For version control and..."
+  },
+  {
+    "id": "1edge/setup#development-setup",
+    "title": "setup - Development Setup",
+    "content": "Development Setup",
+    "url": "/docs/1edge/setup#development-setup",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Development Setup (from setup)"
+  },
+  {
+    "id": "1edge/setup#prerequisites",
+    "title": "setup - Prerequisites",
+    "content": "Prerequisites",
+    "url": "/docs/1edge/setup#prerequisites",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Prerequisites (from setup)"
+  },
+  {
+    "id": "1edge/setup#installation",
+    "title": "setup - Installation",
+    "content": "Installation",
+    "url": "/docs/1edge/setup#installation",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Installation (from setup)"
+  },
+  {
+    "id": "1edge/setup#monorepo-structure",
+    "title": "setup - Monorepo Structure",
+    "content": "Monorepo Structure",
+    "url": "/docs/1edge/setup#monorepo-structure",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Monorepo Structure (from setup)"
+  },
+  {
+    "id": "1edge/setup#quick-start",
+    "title": "setup - Quick Start",
+    "content": "Quick Start",
+    "url": "/docs/1edge/setup#quick-start",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Quick Start (from setup)"
+  },
+  {
+    "id": "1edge/setup#terminal-1-start-backend-services",
+    "title": "setup - Terminal 1: Start backend services",
+    "content": "Terminal 1: Start backend services",
+    "url": "/docs/1edge/setup#terminal-1-start-backend-services",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Terminal 1: Start backend services (from setup)"
+  },
+  {
+    "id": "1edge/setup#terminal-2-start-frontend-development-server",
+    "title": "setup - Terminal 2: Start frontend development server",
+    "content": "Terminal 2: Start frontend development server",
+    "url": "/docs/1edge/setup#terminal-2-start-frontend-development-server",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Terminal 2: Start frontend development server (from setup)"
+  },
+  {
+    "id": "1edge/setup#running-tests",
+    "title": "setup - Running Tests",
+    "content": "Running Tests",
+    "url": "/docs/1edge/setup#running-tests",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Running Tests (from setup)"
+  },
+  {
+    "id": "1edge/setup#smart-contract-tests",
+    "title": "setup - Smart Contract Tests",
+    "content": "Smart Contract Tests",
+    "url": "/docs/1edge/setup#smart-contract-tests",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Smart Contract Tests (from setup)"
+  },
+  {
+    "id": "1edge/setup#backend-tests",
+    "title": "setup - Backend Tests",
+    "content": "Backend Tests",
+    "url": "/docs/1edge/setup#backend-tests",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Backend Tests (from setup)"
+  },
+  {
+    "id": "1edge/setup#frontend-tests",
+    "title": "setup - Frontend Tests",
+    "content": "Frontend Tests",
+    "url": "/docs/1edge/setup#frontend-tests",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Frontend Tests (from setup)"
+  },
+  {
+    "id": "1edge/setup#development-commands",
+    "title": "setup - Development Commands",
+    "content": "Development Commands",
+    "url": "/docs/1edge/setup#development-commands",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Development Commands (from setup)"
+  },
+  {
+    "id": "1edge/setup#building-all-components",
+    "title": "setup - Building All Components",
+    "content": "Building All Components",
+    "url": "/docs/1edge/setup#building-all-components",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Building All Components (from setup)"
+  },
+  {
+    "id": "1edge/setup#build-everything-contracts-sdk-frontend",
+    "title": "setup - Build everything (contracts, SDK, frontend)",
+    "content": "Build everything (contracts, SDK, frontend)",
+    "url": "/docs/1edge/setup#build-everything-contracts-sdk-frontend",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Build everything (contracts, SDK, frontend) (from setup)"
+  },
+  {
+    "id": "1edge/setup#build-individual-components",
+    "title": "setup - Build individual components",
+    "content": "Build individual components",
+    "url": "/docs/1edge/setup#build-individual-components",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Build individual components (from setup)"
+  },
+  {
+    "id": "1edge/setup#backend-services",
+    "title": "setup - Backend Services",
+    "content": "Backend Services",
+    "url": "/docs/1edge/setup#backend-services",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Backend Services (from setup)"
+  },
+  {
+    "id": "1edge/setup#start-all-backend-services-recommended",
+    "title": "setup - Start all backend services (recommended)",
+    "content": "Start all backend services (recommended)",
+    "url": "/docs/1edge/setup#start-all-backend-services-recommended",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Start all backend services (recommended) (from setup)"
+  },
+  {
+    "id": "1edge/setup#start-individual-services",
+    "title": "setup - Start individual services",
+    "content": "Start individual services",
+    "url": "/docs/1edge/setup#start-individual-services",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Start individual services (from setup)"
+  },
+  {
+    "id": "1edge/setup#development-mode-with-auto-restart",
+    "title": "setup - Development mode (with auto-restart)",
+    "content": "Development mode (with auto-restart)",
+    "url": "/docs/1edge/setup#development-mode-with-auto-restart",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Development mode (with auto-restart) (from setup)"
+  },
+  {
+    "id": "1edge/setup#frontend-development",
+    "title": "setup - Frontend Development",
+    "content": "Frontend Development",
+    "url": "/docs/1edge/setup#frontend-development",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Frontend Development (from setup)"
+  },
+  {
+    "id": "1edge/setup#start-development-server",
+    "title": "setup - Start development server",
+    "content": "Start development server",
+    "url": "/docs/1edge/setup#start-development-server",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Start development server (from setup)"
+  },
+  {
+    "id": "1edge/setup#development-mode-alternative",
+    "title": "setup - Development mode (alternative)",
+    "content": "Development mode (alternative)",
+    "url": "/docs/1edge/setup#development-mode-alternative",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Development mode (alternative) (from setup)"
+  },
+  {
+    "id": "1edge/setup#build-for-production",
+    "title": "setup - Build for production",
+    "content": "Build for production",
+    "url": "/docs/1edge/setup#build-for-production",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Build for production (from setup)"
+  },
+  {
+    "id": "1edge/setup#smart-contracts",
+    "title": "setup - Smart Contracts",
+    "content": "Smart Contracts",
+    "url": "/docs/1edge/setup#smart-contracts",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Smart Contracts (from setup)"
+  },
+  {
+    "id": "1edge/setup#navigate-to-contracts-workspace",
+    "title": "setup - Navigate to contracts workspace",
+    "content": "Navigate to contracts workspace",
+    "url": "/docs/1edge/setup#navigate-to-contracts-workspace",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Navigate to contracts workspace (from setup)"
+  },
+  {
+    "id": "1edge/setup#compile-contracts",
+    "title": "setup - Compile contracts",
+    "content": "Compile contracts",
+    "url": "/docs/1edge/setup#compile-contracts",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Compile contracts (from setup)"
+  },
+  {
+    "id": "1edge/setup#run-contract-tests",
+    "title": "setup - Run contract tests",
+    "content": "Run contract tests",
+    "url": "/docs/1edge/setup#run-contract-tests",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Run contract tests (from setup)"
+  },
+  {
+    "id": "1edge/setup#deploy-contracts-to-local-network",
+    "title": "setup - Deploy contracts to local network",
+    "content": "Deploy contracts to local network",
+    "url": "/docs/1edge/setup#deploy-contracts-to-local-network",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Deploy contracts to local network (from setup)"
+  },
+  {
+    "id": "1edge/setup#start-local-hardhat-node",
+    "title": "setup - Start local Hardhat node",
+    "content": "Start local Hardhat node",
+    "url": "/docs/1edge/setup#start-local-hardhat-node",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Start local Hardhat node (from setup)"
+  },
+  {
+    "id": "1edge/setup#sdk-management",
+    "title": "setup - SDK Management",
+    "content": "SDK Management",
+    "url": "/docs/1edge/setup#sdk-management",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "SDK Management (from setup)"
+  },
+  {
+    "id": "1edge/setup#clean-and-rebuild-sdk",
+    "title": "setup - Clean and rebuild SDK",
+    "content": "Clean and rebuild SDK",
+    "url": "/docs/1edge/setup#clean-and-rebuild-sdk",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Clean and rebuild SDK (from setup)"
+  },
+  {
+    "id": "1edge/setup#update-sdk-submodule-to-latest",
+    "title": "setup - Update SDK submodule to latest",
+    "content": "Update SDK submodule to latest",
+    "url": "/docs/1edge/setup#update-sdk-submodule-to-latest",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Update SDK submodule to latest (from setup)"
+  },
+  {
+    "id": "1edge/setup#environment-setup",
+    "title": "setup - Environment Setup",
+    "content": "Environment Setup",
+    "url": "/docs/1edge/setup#environment-setup",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Environment Setup (from setup)"
+  },
+  {
+    "id": "1edge/setup#workspace-management",
+    "title": "setup - Workspace Management",
+    "content": "Workspace Management",
+    "url": "/docs/1edge/setup#workspace-management",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Workspace Management (from setup)"
+  },
+  {
+    "id": "1edge/setup#install-dependencies-for-all-workspaces",
+    "title": "setup - Install dependencies for all workspaces",
+    "content": "Install dependencies for all workspaces",
+    "url": "/docs/1edge/setup#install-dependencies-for-all-workspaces",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Install dependencies for all workspaces (from setup)"
+  },
+  {
+    "id": "1edge/setup#add-dependency-to-specific-workspace",
+    "title": "setup - Add dependency to specific workspace",
+    "content": "Add dependency to specific workspace",
+    "url": "/docs/1edge/setup#add-dependency-to-specific-workspace",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Add dependency to specific workspace (from setup)"
+  },
+  {
+    "id": "1edge/setup#add-dev-dependency",
+    "title": "setup - Add dev dependency",
+    "content": "Add dev dependency",
+    "url": "/docs/1edge/setup#add-dev-dependency",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Add dev dependency (from setup)"
+  },
+  {
+    "id": "1edge/setup#remove-dependency",
+    "title": "setup - Remove dependency",
+    "content": "Remove dependency",
+    "url": "/docs/1edge/setup#remove-dependency",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Remove dependency (from setup)"
+  },
+  {
+    "id": "1edge/setup#update-all-dependencies",
+    "title": "setup - Update all dependencies",
+    "content": "Update all dependencies",
+    "url": "/docs/1edge/setup#update-all-dependencies",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Update all dependencies (from setup)"
+  },
+  {
+    "id": "1edge/setup#type-checking-and-linting",
+    "title": "setup - Type Checking and Linting",
+    "content": "Type Checking and Linting",
+    "url": "/docs/1edge/setup#type-checking-and-linting",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Type Checking and Linting (from setup)"
+  },
+  {
+    "id": "1edge/setup#type-check-all-workspaces",
+    "title": "setup - Type check all workspaces",
+    "content": "Type check all workspaces",
+    "url": "/docs/1edge/setup#type-check-all-workspaces",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Type check all workspaces (from setup)"
+  },
+  {
+    "id": "1edge/setup#type-check-individual-workspaces",
+    "title": "setup - Type check individual workspaces",
+    "content": "Type check individual workspaces",
+    "url": "/docs/1edge/setup#type-check-individual-workspaces",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Type check individual workspaces (from setup)"
+  },
+  {
+    "id": "1edge/setup#lint-and-format-code",
+    "title": "setup - Lint and format code",
+    "content": "Lint and format code",
+    "url": "/docs/1edge/setup#lint-and-format-code",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Lint and format code (from setup)"
+  },
+  {
+    "id": "1edge/setup#troubleshooting",
+    "title": "setup - Troubleshooting",
+    "content": "Troubleshooting",
+    "url": "/docs/1edge/setup#troubleshooting",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Troubleshooting (from setup)"
+  },
+  {
+    "id": "1edge/setup#common-issues",
+    "title": "setup - Common Issues",
+    "content": "Common Issues",
+    "url": "/docs/1edge/setup#common-issues",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Common Issues (from setup)"
+  },
+  {
+    "id": "1edge/setup#clean-rebuild",
+    "title": "setup - Clean Rebuild",
+    "content": "Clean Rebuild",
+    "url": "/docs/1edge/setup#clean-rebuild",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Clean Rebuild (from setup)"
+  },
+  {
+    "id": "1edge/setup#clean-everything",
+    "title": "setup - Clean everything",
+    "content": "Clean everything",
+    "url": "/docs/1edge/setup#clean-everything",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Clean everything (from setup)"
+  },
+  {
+    "id": "1edge/setup#reinstall-and-rebuild",
+    "title": "setup - Reinstall and rebuild",
+    "content": "Reinstall and rebuild",
+    "url": "/docs/1edge/setup#reinstall-and-rebuild",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Reinstall and rebuild (from setup)"
+  },
+  {
+    "id": "1edge/setup#notes",
+    "title": "setup - Notes",
+    "content": "Notes",
+    "url": "/docs/1edge/setup#notes",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Notes (from setup)"
+  },
+  {
     "id": "1edge/collector-service",
     "title": "collector-service",
     "content": "Collector Service Documentation Protocol Data Engine : The Collector Service is the core of 1edge's real-time price data aggregation and historical data management. Overview The Collector Service is the core data aggregation and processing component of the 1edge system. It handles real-time price data collection, index price computation, OHLC candle generation, and historical data management with failover capabilities. Component Status Description Multi-Exchange Aggregation Active Real-time price feeds from multiple sources Index Price Computation Active Weighted average calculations with metrics OHLC Candle System Active Multiple timeframes with dual storage Historical Data Management Active Automatic gap filling and batch retrieval Pub/Sub Architecture Active TCP based broadcasting Key Features Real-Time Index Price Computation Feature Implementation Status Multi-Exchange Aggregation Simultaneous data collection Weighted Average Calculation Configurable source weights Advanced Metrics Velocity, dispersion, volume Performance Optimization Non-blocking queues OHLC Candle System Timeframe Storage Type Performance Status 5s, 20s Memory Cache Ultra-fast access 1m, 5m, 30m SQLite Database Persistent storage Async Processing Non-blocking Real-time maintained Boundary Detection Automatic Precise timing Historical Data Management Feature Specification Status Automatic Gap Filling CCXT + Binance API Batch Retrieval 1,000-candle chunks Rate Limiting 250ms between requests Data Retention 14 days minimum Startup Validation Sanity checks on boot Timeframe Construction 1m → 5m, 30m Error Recovery Graceful retry logic High-Performance Pub/Sub Architecture Component Technology Capability Status Message Bus TCP Dedicated pub/sub server Broadcasting Multi-subscriber Index prices + OHLC data Rate Control Configurable intervals Prevents overflow Architecture %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% flowchart TD A[Exchange A WebSocket] --> D[Collector Service] B[Exchange B WebSocket] --> D C[Exchange C WebSocket] --> D D --> E[Index Calculator<br/>- Weighted Avg<br/>- Dispersion<br/>- Velocity] D --> F[OHLC Processor<br/>- Boundary Check<br/>- Candle Update<br/>- Async Storage] E --> G[Cache Storage<br/>5s, 20s<br/>Memory & Ring Buffer] F --> G F --> H[SQLite DBs<br/>1m, 5m, 30m] F --> I[Pub/Sub Server<br/>TCP] I --> J[API Server<br/>REST API<br/>OHLC Data] I --> K[WebSocket Server<br/>Real-time] I --> L[Order Executor<br/>Strategy Feeds<br/>Price Triggers] Data Flow 1. Price Data Ingestion Exchange WebSocket → onTickerUpdate → calculateWeightedAverages → OHLC Processing → Pub/Sub Broadcast 2. OHLC Candle Processing Price Update → Timeframe Check → Boundary Detection → Candle Close/Open → Async Storage → Cache/DB 3. Historical Data Flow Startup → Data Sanity Check → Batch CCXT Fetch → Timeframe Construction → SQLite Storage 4. Batch Historical Data Retrieval The collector implements a sophisticated batch retrieval system for historical data: Batch Loop: 1. Calculate time range (14 days from current timestamp) 2. Fetch 1,000 candles from start time 3. Process and store candles in database 4. Update start time to last candle + 1 timeframe 5. Wait 250ms (rate limiting) 6. Repeat until all data fetched or API limit reached Key Features: Pagination : Handles Binance's 1,000-candle API limit by automatically requesting successive batches Rate Limiting : 250ms delays between requests to avoid API rate limits Error Handling : Continues with partial data if individual batches fail Progress Tracking : Logs batch progress and total candles fetched Timeframe Awareness : Automatically calculates correct timestamp increments for different timeframes Performance Metrics: 14 days of 1-minute data: 20,160 candles in 21 batches ( 5.5 minutes) 14 days of 5-minute data: 4,032 candles in 5 batches ( 1.5 minutes) 14 days of 30-minute data: 672 candles in 1 batch ( 0.5 minutes) Storage Architecture Per-Pair Database Structure Each trading pair (e.g., BTCUSDT) has its own SQLite database with the following tables: -- 1-minute candles CREATE TABLE candles_1m ( timestamp INTEGER PRIMARY KEY, open REAL NOT NULL, high REAL NOT NULL, low REAL NOT NULL, close REAL NOT NULL, volume REAL NOT NULL, created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000) ); -- 5-minute candles CREATE TABLE candles_5m ( timestamp INTEGER PRIMARY KEY, open REAL NOT NULL, high REAL NOT NULL, low REAL NOT NULL, close REAL NOT NULL, volume REAL NOT NULL, created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000) ); -- 30-minute candles CREATE TABLE candles_30m ( timestamp INTEGER PRIMARY KEY, open REAL NOT NULL, high REAL NOT NULL, low REAL NOT NULL, close REAL NOT NULL, volume REAL NOT NULL, created_at INTEGER DEFAULT (strftime('%s', 'now') * 1000) ); Cache Structure Short-timeframe candles are kept in memory: interface CacheEntry { candles: OHLCCandle[]; maxSize: number; // Ring buffer size } // Cache limits { 5: 720, // 1 hour of 5s candles 20: 180, // 1 hour of 20s candles } API Endpoints OHLC Data Retrieval GET /ohlc/{symbol}?timeframe={seconds}&startTime={timestamp}&endTime={timestamp}&limit={number} Parameters: symbol : Trading pair (e.g., binance:spot:BTCUSDT ) timeframe : Timeframe in seconds (5, 20, 60, 300, 1800) startTime : Start timestamp (optional) endTime : End timestamp (optional) limit : Maximum number of candles (optional) Response: { \"success\": true, \"data\": { \"symbol\": \"binance:spot:BTCUSDT\", \"timeframe\": 60, \"candles\": [ { \"timestamp\": 1640995200000, \"open\": 47000.5, \"high\": 47100.0, \"low\": 46900.0, \"close\": 47050.0, \"volume\": 1250.75 } ], \"count\": 1 } } Data Statistics GET /ohlc-stats/{symbol} Response: { \"success\": true, \"data\": { \"symbol\": \"binance:spot:BTCUSDT\", \"statistics\": { \"60\": { \"count\": 20160, \"oldest\": \"2024-01-01T00:00:00.000Z\", \"newest\": \"2024-01-15T00:00:00.000Z\" }, \"300\": { \"count\": 4032, \"oldest\": \"2024-01-01T00:00:00.000Z\", \"newest\": \"2024-01-15T00:00:00.000Z\" }, \"5_cache\": { \"count\": 720, \"maxSize\": 720 } } } } Configuration Collector Configuration interface CollectorConfig { pollIntervalMs: number; tickers: Record<Symbol, AggregatedTickerConfig>; } interface AggregatedTickerConfig { id: Symbol; name: string; tf: TimeFrame; lookback: number; sources: Record<Symbol, { weight: number }>; } Example Configuration { \"collector\": { \"pollIntervalMs\": 1000, \"tickers\": { \"binance:spot:BTCUSDT\": { \"id\": \"binance:spot:BTCUSDT\", \"name\": \"Bitcoin/USDT\", \"tf\": 60, \"lookback\": 3600, \"sources\": { \"binance:spot:BTCUSDT\": { \"weight\": 1.0 }, \"coinbase:spot:BTC-USD\": { \"weight\": 0.8 } } } } } } Performance Characteristics Metrics Tracked Metric Description Target Average Calculation Time Index price computation < 1ms Max Calculation Time Peak calculation latency < 5ms Average Publish Time Broadcast update time < 2ms Max Publish Time Peak publish latency < 10ms Total Processed Price updates handled Unlimited Dropped Updates Backpressure protection < 1% Performance Optimizations Optimization Implementation Benefit Non-blocking Processing setImmediate async ops Real-time responsiveness Queue Management Max 3 pending per symbol Backpressure protection Batch Operations Grouped DB writes I/O efficiency Ring Buffers Cache memory management Optimal memory usage Concurrent Processing Parallel pair processing Horizontal scalability Monitoring & Logging Health Checks Check Type Frequency Status Database Connectivity Continuous Data Completeness Startup + Hourly WebSocket Status Real-time Pub/Sub Availability Continuous Log Levels Level Content Use Case INFO Service lifecycle, sanity results Operations DEBUG Candle saves, cache ops Development ERROR WebSocket, DB, CCXT failures Critical issues WARN Missing data, config issues Attention needed Metrics Export Statistics are logged every 60 seconds: Collector stats: 5 indexes | Clients: 3 | Performance: {\"avgCalc\":\"0.45ms\",\"maxCalc\":\"2.10ms\",\"avgPub\":\"1.20ms\",\"maxPub\":\"5.30ms\",\"processed\":15420,\"dropped\":0} Error Handling & Recovery WebSocket Failures Scenario Recovery Strategy Status Connection Loss Auto-reconnect (5s interval) Source Unavailable Graceful degradation Weight Rebalancing Redistribute across active Database Failures Issue Type Response Status Write Failures Transaction rollback Temporary Outages Queue persistence Transient Errors Automatic retry Historical Data Failures Failure Mode Mitigation Status API Unavailable Alternative sources Partial Data Reconstruction from timeframes Incomplete History Graceful startup Scalability Considerations Horizontal Scaling Aspect Approach Scalability Trading Pairs Independent processing Linear Database Access Per-pair isolation Unlimited Collector Instances Pub/Sub architecture Multi-instance Vertical Scaling Resource Scaling Pattern Notes Memory Linear with cached timeframes Predictable Storage Linear with retention period Configurable CPU Linear with frequency × pairs Optimized Resource Requirements Resource Per Trading Pair Notes Memory ~10MB Cache storage Disk ~50MB/year Historical data CPU ~5% @ 1Hz Update processing Network ~1KB/s WebSocket data Development & Testing Local Development # Start collector service bun run start:collector # Test WebSocket connections bun run test:websocket # Check service status curl http://localhost:40005/services/status API Testing # Get OHLC data curl \"http://localhost:40005/ohlc/binance:spot:BTCUSDT?timeframe=60&limit=100\" # Get data statistics curl \"http://localhost:40005/ohlc-stats/binance:spot:BTCUSDT\" Historical Data Testing # Test historical data retrieval and storage bun test tests/historical-data.test.ts # Test WebSocket and market data integration bun test tests/test-websocket.test.ts Historical Data Test Coverage Test Category Scope Status Batch Retrieval 14 days × 1m OHLC from Binance Timeframe Construction Auto 5m, 30m from 1m base Schema Validation DB structure + statistics Rate Limiting 250ms compliance Data Integrity OHLC + timestamp checks Error Recovery Partial data handling Database Inspection # Connect to pair database sqlite3 ./data/ohlc/BTCUSDT.db # Check candle counts SELECT COUNT(*) FROM candles_1m; SELECT MIN(timestamp), MAX(timestamp) FROM candles_1m; Future Enhancements Planned Features Feature Priority Timeline Status Data Compression High Q1 2025 Distributed Storage Medium Q2 2025 Advanced Analytics High Q1 2025 Data Export Low Q3 2025 Backup System High Q1 2025 Performance Improvements Improvement Impact Priority Status Batch Processing +50% DB throughput High Connection Pooling +30% query speed Medium Memory Optimization -20% RAM usage Medium Parallel Processing +100% computation High Troubleshooting Common Issues High Memory Usage # Check cache sizes curl \"http://localhost:40005/ohlc-stats/binance:spot:BTCUSDT\" # Reduce cache limits in configuration # Restart collector service Missing Historical Data # Check data gaps sqlite3 ./data/ohlc/BTCUSDT.db \"SELECT MIN(timestamp), MAX(timestamp) FROM candles_1m\" # Check data completeness (should have ~20,160 1m candles for 14 days) sqlite3 ./data/ohlc/BTCUSDT.db \"SELECT COUNT(*) FROM candles_1m\" # Force re-fetch (delete database and restart) rm ./data/ohlc/BTCUSDT.db bun run start:collector Batch Retrieval Issues # Check for rate limiting errors in logs grep \"rate limit\\|429\\|too many requests\" logs/collector.log # Monitor batch progress during historical fetch tail -f logs/collector.log | grep \"batch\\|Completed batch fetch\" # Verify CCXT Binance connection bun -e \"import ccxt from 'ccxt'; const b = new ccxt.binance(); console.log(await b.fetchMarkets());\" WebSocket Connection Issues # Check network connectivity curl -I https://api.binance.com/api/v3/ping # Review collector logs tail -f logs/collector.log Database Lock Errors # Check for concurrent access lsof ./data/ohlc/BTCUSDT.db # Stop all services and restart bun run kill:all bun run start:services This collector service provides a robust foundation for real-time price data processing and historical data management, ensuring high availability and performance for trading strategy execution.",
@@ -11534,7 +11842,7 @@
   {
     "id": "1edge/order-lifecycle",
     "title": "order-lifecycle",
-    "content": "Order Lifecycle Complete Order Journey : From user creation to on-chain execution through the 1inch network, this document tracks every step of an order's lifecycle in the 1edge system. This document describes the complete lifecycle of an order in the 1edge system, from creation by the user to execution on the 1inch network. Phase Component Status Creation Frontend UI Active Validation API Server Active Registration OrderRegistry Active Monitoring Watcher System Active Execution Order Handlers Active Integration 1inch Protocol Active Overview The order lifecycle is managed by the OrderRegistry service, which receives, stores, monitors, and executes all orders. Each order is processed by a dedicated \"watcher\" that monitors trigger conditions and executes when conditions are met. All order types (including strategies, which are recurring orders) follow the same unified flow. Architecture & Flow The order lifecycle is divided into three main phases: Phase 1: 1edge Order Creation %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[User] --signs order--> D[API /order] A --approves--> G[DelegateProxy] D --registers--> E[OrderRegistry] E --persists--> F[Database] E --spawns--> G[Watcher] E --\"ok\"--> D --\"ok\"--> A Phase 2: Recurring 1inch Order Submission %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[Watcher condition met?] --yes--> D[Keeper] A --> C[No] --loops--> A D --calls--> E[DelegateProxy.create1inchOrder] E --1inch order signature--> D D --submits order--> F[1inch LOP] D --updates db--> G[Order status: ACTIVE] Phase 2bis: 1inch Order Fulfillment (JIT Order Funding) %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[\"Market Taker\"] --\"fillOrder(1inch order)\"--> B[1inch LimitOrderProtocol] B --\"preInteraction()\"--> C[DelegateProxy] C --\"transferFrom(user → DelegateProxy)\"--> D[User] B --\"transferFrom(DelegateProxy → Taker)\"--> C A --\"transfer takerAsset → User\"--> D B --\"postInteraction()\"--> C Phase 3: 1edge Order Fulfillment %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[Watcher] --\"observes\"--> B[1inch order fill] B --> C[Stop condition met?] C --> D[Yes] --stops--> A C --\"No\"--> A D --updates db--> F[Order status: FILLED] Complete Flow Order Creation (Frontend) User configures order parameters in the UI Frontend validates inputs and estimates gas/fees User signs order payload with their wallet (EVM signature) Signed order is submitted to POST /orders endpoint Order Validation (API Server) apiServer.ts receives the order request at /orders endpoint Validates the EVM signature using ethers.utils.recoverAddress Ensures the recovered address matches the order maker Forwards valid order to OrderRegistry.createOrder() Order Registration (OrderRegistry) Validates order signature using validateOrderSignature() Initializes order fields: status=PENDING , triggerCount=0 , remainingSize=size Saves order to database via saveOrder() Creates order event with PENDING status Spawns a new watcher for the order via startWatcher() Order Monitoring (Watcher System) Watcher Architecture : Each order has a dedicated watcher running watchOrder() loop in back/services/orderRegistry.ts:190 Polling Frequency : Watchers check trigger conditions every 5 seconds via checkTriggers() Handler Resolution : OrderRegistry uses getOrderWatcher(order.type) to get appropriate handler from back/orders/ Interface Contract : All handlers implement OrderWatcher interface with shouldTrigger() and execute() methods Reliability : Pending orders automatically restored from database on service restart Trigger Evaluation (Order Handlers) The OrderRegistry spawns dedicated watchers that check trigger conditions every 5 seconds using modular handlers. Each order type implements the OrderWatcher interface with specialized trigger logic: Price-Based Orders : Stop , Chase , Momentum , Breakout Time-Based Orders : TWAP , DCA Progressive Orders : Iceberg , Range , Grid See Order Types Documentation for detailed trigger mechanisms and implementation specifics. Order Execution (Handler Execute) Trigger Detection : Watcher calls handler.shouldTrigger(order) every 5 seconds Execution Flow : When triggered, OrderRegistry calls executeOrder() in back/services/orderRegistry.ts:255 Amount Calculation : Computes triggerAmount based on order type (fixed for DCA, calculated for TWAP/Range) 1inch Order Creation : Builds LimitOrder object with calculated makingAmount / takingAmount State Updates : Increments triggerCount , updates nextTriggerValue for recurring orders Contract Integration : Calls DelegateProxy.create1inchOrder() with DelegateProxy as the order.maker address Order Submission : Submits signed 1inch order with pre/post interaction hooks enabled 1inch Integration & Fund Management Order Creation : 1inch limit orders use DelegateProxy as maker address Pre-Interaction Hook : When order is filled, DelegateProxy.preInteraction() is called: Transfers makingAmount from original user to DelegateProxy contract using info.maker address Updates orders[orderHash].remainingAmount by subtracting filled amount Post-Interaction Hook : After order fill, DelegateProxy.postInteraction() is called: Updates orders[orderHash].remainingAmount with actual remaining amount from 1inch If order fully filled ( remainingMakingAmount == 0 ), cleans up storage to save gas by deleting orders[orderHash] 1edge ↔ 1inch Relationship : One 1edge order can create multiple 1inch limit orders over time Order Status Tracking & Multi-Call Batching Database Tracking : Order hashes stored in order.oneInchOrderHashes[] array On-Chain Status : Real-time order status retrieved via multi-call batching: Frontend calls DelegateProxy.getOrderData(bytes32[] orderIds) Returns OrderData[] with orderMaker and remainingMakerAmount for each order hash Batched calls efficient for checking multiple order statuses simultaneously User Dashboard : When users connect, system performs multi-call to get current fill status Watcher Monitoring : Watchers continue until stop condition met (order fully executed) Order status updated accordingly: FILLED , CANCELLED , EXPIRED API Endpoints POST /orders Creates a new order with EVM signature verification. Request Body: { \"id\": \"generated-uuid\", \"type\": \"STOP_LIMIT\", \"pair\": \"WETH/USDC\", \"size\": 1.0, \"maker\": \"0x742d35cc6734C0532925a3b8D0d5D0a8d1238a60\", \"makerAsset\": \"0xA0b86a33E6409c26C5E1d7D35644C7a9A6BdF4fE\", \"takerAsset\": \"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174\", \"params\": { \"nextTriggerValue\": 2500.0, \"limitPrice\": 2490.0 }, \"signature\": \"0x...\", \"userSignedPayload\": \"...\" } GET /orders Returns all active orders for monitoring. GET /orders?maker=0x123... Returns all orders for a specific user address (transparent, no authentication required). GET /orders/{orderId} Returns specific order details and status. PUT /orders/{orderId} Modifies an order (cancels original, creates new). DELETE /orders/{orderId} Cancels an order and stops its watcher. Database Schema Column Type Description id TEXT Unique order identifier order_hash TEXT 1inch-computed order hash (unique) strategy_id TEXT Associated strategy identifier type TEXT Order type (e.g., STOP_LIMIT, LIMIT) status TEXT Current order status maker_asset TEXT Maker asset address taker_asset TEXT Taker asset address making_amount TEXT Amount of maker asset to sell taking_amount TEXT Amount of taker asset to buy maker TEXT Maker address (order creator) receiver TEXT Receiver address (optional) salt TEXT Unique salt for order hash signature TEXT EVM signature for order size TEXT Original order size remaining_size TEXT Remaining unfilled size trigger_count INTEGER Number of times triggered next_trigger_value TEXT Next trigger value for recurring orders trigger_price REAL Trigger price (if applicable) filled_amount TEXT Total filled amount created_at INTEGER Order creation timestamp executed_at INTEGER Execution timestamp (if filled) cancelled_at INTEGER Cancellation timestamp (if cancelled) tx_hash TEXT Transaction hash (if on-chain) network INTEGER Chain/network ID expiry INTEGER Expiry timestamp (if set) user_signed_payload TEXT User-signed payload (JSON or string) one_inch_order_hashes TEXT JSON array of 1inch order hashes raw_data TEXT Complete JSON-serialized Order object Order Statuses Status Description PENDING Order created, watcher monitoring ACTIVE Submitted to 1inch, awaiting fill PARTIALLY_FILLED Partially executed FILLED Completely executed CANCELLED Cancelled by user/system EXPIRED Expired without execution FAILED Execution failed Multi-Call Order Status Batching Real-Time Order Status Checking The 1edge system implements efficient batch checking of order status using the DelegateProxy contract's getOrderData() view function: Implementation Details Contract Function: function getOrderData(bytes32[] calldata orderIds) public view returns (OrderInfo[] memory) struct OrderInfo { address maker; // Original user who created the order uint256 remainingAmount; // Remaining amount to be filled bool signed; // Whether the order is signed } Usage Flow: User Connection : When user connects wallet, frontend queries database for their active orders Order Hash Collection : Collect all 1inch order hashes from order.oneInchOrderHashes[] arrays Batch Status Call : Single multi-call to DelegateProxy.getOrderData(orderHashes[]) Status Interpretation : remainingAmount = 0 → Order fully filled remainingAmount > 0 → Order partially filled maker = address(0) → Order cancelled or non-existent Efficiency Benefits Gas Efficiency : Single transaction instead of multiple calls Network Efficiency : Reduced RPC calls and latency Real-Time Updates : Always reflects current on-chain state Scalability : Handles hundreds of orders in single batch Frontend Integration // Example implementation async function getOrderStatuses(orderHashes: string[]): Promise<OrderStatus[]> { const delegateProxy = getDelegateProxyContract(); const orderData = await delegateProxy.getOrderData(orderHashes); return orderData.map((data, index) => ({ orderHash: orderHashes[index], maker: data.maker, remainingAmount: data.remainingAmount, signed: data.signed, status: data.remainingAmount === 0n ? \"FILLED\" : data.maker === \"0x0000000000000000000000000000000000000000\" ? \"CANCELLED\" : \"ACTIVE\", })); } DelegateProxy Contract Functions The DelegateProxy contract provides the following key functions for order management: Order Creation Functions create1inchOrder(order, maker) Creates a single 1inch limit order with the following flow: Validates that order.maker equals the DelegateProxy contract address Stores order information in orders[orderHash] mapping with the original user as maker Approves tokens for the 1inch protocol if needed Emits OrderCreated event create1inchOrderBatch(orders, makers) Creates multiple 1inch limit orders in a single transaction: Validates array lengths match Processes each order with the same logic as single order creation More gas-efficient for creating multiple orders simultaneously Order Management Functions cancel1inchOrder(order) Cancels a single existing order: Only callable by approved keepers Deletes order from storage Calls 1inch protocol's cancelOrder function Emits OrderCancelled event cancel1inchOrderBatch(orders[]) Cancels multiple orders in a single transaction: Only callable by approved keepers Processes each order with the same logic as single order cancellation More gas-efficient for cancelling multiple orders simultaneously Emits one OrderCancelled event per order getOrderData(orderIds[]) Batch query function for order status: Returns OrderInfo[] array with current order state Used for efficient multi-call status checking View function (no gas cost) Interaction Hooks (1inch Protocol Integration) preInteraction(order, orderHash, makingAmount, ...) Called by 1inch protocol before order execution: Transfers makingAmount from original user ( info.maker ) to DelegateProxy using safeTransferFrom() Updates info.remainingAmount by subtracting the makingAmount Only callable by 1inch protocol (protected by only1inch modifier) Protected by nonReentrant modifier postInteraction(order, orderHash, remainingMakingAmount, ...) Called by 1inch protocol after order execution: If remainingMakingAmount == 0 : Deletes order from storage ( delete orders[orderHash] ) for gas optimization If remainingMakingAmount > 0 : Updates orders[orderHash].remainingAmount with the actual remaining amount Only callable by 1inch protocol (protected by only1inch modifier) Administrative Functions setKeeper(keeper, approved) Manages keeper permissions: Only callable by contract owner Controls who can create/cancel orders rescue(token) Emergency function to recover stuck funds: Only callable by contract owner Supports both native ETH ( 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE ) and ERC20 tokens For ETH: Uses payable(owner()).transfer(balance) to send entire contract balance For ERC20: Uses SafeERC20.safeTransfer() to send entire token balance Reverts with InsufficientBalance() if balance is zero Protected by nonReentrant modifier isValidSignature(hash, signature) EIP-1271 signature validation: Returns magic value 0x1626ba7e for valid orders Returns 0xffffffff for invalid orders Used by 1inch protocol to validate contract signatures Involved Components Component Path Responsibility Status Frontend front/ Order creation UI, multi-call batching for status API Server back/services/apiServer.ts REST endpoints Order Registry back/services/orderRegistry.ts Lifecycle management, watcher spawning Order Watchers back/orders/ Modular trigger implementations Storage Layer back/services/storage.ts Database persistence Type Definitions common/types.ts Shared interfaces DelegateProxy Contract contracts/src/DelegateProxy.sol JIT order funding, pre/post interaction hooks, rescue function 1inch Limit Order Protocol External Order execution and filling",
+    "content": "Order Lifecycle Complete Order Journey : From user creation to on-chain execution through the 1inch network, this document tracks every step of an order's lifecycle in the 1edge system. This document describes the complete lifecycle of an order in the 1edge system, from creation by the user to execution on the 1inch network. Phase Component Status Creation Frontend UI Active Validation API Server Active Registration OrderRegistry Active Monitoring Watcher System Active Execution Order Handlers Active Integration 1inch Protocol Active Overview The order lifecycle is managed by the OrderRegistry service, which receives, stores, monitors, and executes all orders. Each order is processed by a dedicated \"watcher\" that monitors trigger conditions and executes when conditions are met. All order types (including strategies, which are recurring orders) follow the same unified flow. Architecture & Flow The order lifecycle is divided into three main phases: Phase 1: 1edge Order Creation %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[User] --signs order--> D[API /order] A --approves--> G[DelegateProxy] D --registers--> E[OrderRegistry] E --persists--> F[Database] E --spawns--> G[Watcher] E --\"ok\"--> D --\"ok\"--> A Phase 2: Recurring 1inch Order Submission %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[Watcher condition met?] --yes--> D[Keeper] A --> C[No] --loops--> A D --calls--> E[DelegateProxy.create1inchOrder] E --1inch order signature--> D D --submits order--> F[1inch LOP] D --updates db--> G[Order status: ACTIVE] Phase 2bis: 1inch Order Fulfillment (JIT Order Funding) %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[\"Market Taker\"] --\"fillOrder(1inch order)\"--> B[1inch LimitOrderProtocol] B --\"preInteraction()\"--> C[DelegateProxy] C --\"transferFrom(user → DelegateProxy)\"--> D[User] B --\"transferFrom(DelegateProxy → Taker)\"--> C A --\"transfer takerAsset → User\"--> D B --\"postInteraction()\"--> C Phase 3: 1edge Order Fulfillment %%{init: {'theme':'dark', 'themeVariables': {'primaryColor':'#22c55e','background':'transparent','primaryBorderColor':'#22c55e','lineColor':'#6b7280','sectionBkgColor':'transparent','altSectionBkgColor':'transparent','clusterBkg':'transparent','clusterBorder':'#6b7280'}}}%% graph TD A[Watcher] --\"observes\"--> B[1inch order fill] B --> C[Stop condition met?] C --> D[Yes] --stops--> A C --\"No\"--> A D --updates db--> F[Order status: FILLED when all 1inch orders complete] Complete Flow Order Creation (Frontend) User configures order parameters in the UI Frontend validates inputs and estimates gas/fees User signs order payload with their wallet (EVM signature) Signed order is submitted to POST /orders endpoint Order Validation (API Server) apiServer.ts receives the order request at /orders endpoint Validates the EVM signature using ethers.utils.recoverAddress Ensures the recovered address matches the order maker Forwards valid order to OrderRegistry.createOrder() Order Registration (OrderRegistry) Validates order signature using validateOrderSignature() Initializes order fields: status=PENDING , triggerCount=0 , remainingSize=size Saves order to database via saveOrder() Creates order event with PENDING status Spawns a new watcher for the order via startWatcher() Order Monitoring (Watcher System) Watcher Architecture : Each order has a dedicated watcher running watchOrder() loop in back/services/orderRegistry.ts:190 Polling Frequency : Watchers check trigger conditions every 5 seconds via checkTriggers() Handler Resolution : OrderRegistry uses getOrderWatcher(order.type) to get appropriate handler from back/orders/ Interface Contract : All handlers implement OrderWatcher interface with shouldTrigger() and execute() methods Reliability : Pending orders automatically restored from database on service restart Trigger Evaluation (Order Handlers) The OrderRegistry spawns dedicated watchers that check trigger conditions every 5 seconds using modular handlers. Each order type implements the OrderWatcher interface with specialized trigger logic: Price-Based Orders : Stop , Chase , Momentum , Breakout Time-Based Orders : TWAP , DCA Progressive Orders : Iceberg , Range , Grid See Order Types Documentation for detailed trigger mechanisms and implementation specifics. Order Execution (Handler Execute) Trigger Detection : Watcher calls handler.shouldTrigger(order) every 5 seconds Execution Flow : When triggered, OrderRegistry calls executeOrder() in back/services/orderRegistry.ts:255 Amount Calculation : Computes triggerAmount based on order type (fixed for DCA, calculated for TWAP/Range) 1inch Order Creation : Builds LimitOrder object with calculated makingAmount / takingAmount State Updates : Increments triggerCount , updates nextTriggerValue for recurring orders Contract Integration : Calls DelegateProxy.create1inchOrder() with DelegateProxy as the order.maker address Order Submission : Submits signed 1inch order with pre/post interaction hooks enabled 1inch Integration & Fund Management Order Creation : 1inch limit orders use DelegateProxy as maker address Pre-Interaction Hook : When order is filled, DelegateProxy.preInteraction() is called: Transfers makingAmount from original user to DelegateProxy contract using info.maker address Updates orders[orderHash].remainingAmount by subtracting filled amount Post-Interaction Hook : After order fill, DelegateProxy.postInteraction() is called: Updates orders[orderHash].remainingAmount with actual remaining amount from 1inch If order fully filled ( remainingMakingAmount == 0 ), cleans up storage to save gas by deleting orders[orderHash] 1edge ↔ 1inch Relationship : One 1edge order can create multiple 1inch limit orders over time Order Status Tracking & Multi-Call Batching Database Tracking : Order hashes stored in order.oneInchOrderHashes[] array On-Chain Status : Real-time order status retrieved via multi-call batching: Frontend calls DelegateProxy.getOrderData(bytes32[] orderIds) Returns OrderData[] with orderMaker and remainingMakerAmount for each order hash Batched calls efficient for checking multiple order statuses simultaneously User Dashboard : When users connect, system performs multi-call to get current fill status Watcher Monitoring : Watchers continue until stop condition met (order fully executed) Order status updated accordingly: FILLED , CANCELLED , EXPIRED API Endpoints POST /orders Creates a new order with EVM signature verification. Request Body: { \"id\": \"generated-uuid\", \"type\": \"STOP_LIMIT\", \"pair\": \"WETH/USDC\", \"size\": 1.0, \"maker\": \"0x742d35cc6734C0532925a3b8D0d5D0a8d1238a60\", \"makerAsset\": \"0xA0b86a33E6409c26C5E1d7D35644C7a9A6BdF4fE\", \"takerAsset\": \"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174\", \"params\": { \"nextTriggerValue\": 2500.0, \"limitPrice\": 2490.0 }, \"signature\": \"0x...\", \"userSignedPayload\": \"...\" } GET /orders Returns all active orders for monitoring. GET /orders?maker=0x123... Returns all orders for a specific user address (transparent, no authentication required). GET /orders/{orderId} Returns specific order details and status. PUT /orders/{orderId} Modifies an order (cancels original, creates new). DELETE /orders/{orderId} Cancels an order and stops its watcher. Database Schema Column Type Description id TEXT Unique order identifier order_hash TEXT 1inch-computed order hash (unique) strategy_id TEXT Associated strategy identifier type TEXT Order type (e.g., STOP_LIMIT, LIMIT) status TEXT Current order status maker_asset TEXT Maker asset address taker_asset TEXT Taker asset address making_amount TEXT Amount of maker asset to sell taking_amount TEXT Amount of taker asset to buy maker TEXT Maker address (order creator) receiver TEXT Receiver address (optional) salt TEXT Unique salt for order hash signature TEXT EVM signature for order size TEXT Original order size remaining_size TEXT Remaining unfilled size trigger_count INTEGER Number of times triggered next_trigger_value TEXT Next trigger value for recurring orders trigger_price REAL Trigger price (if applicable) filled_amount TEXT Total filled amount created_at INTEGER Order creation timestamp executed_at INTEGER Execution timestamp (if filled) cancelled_at INTEGER Cancellation timestamp (if cancelled) tx_hash TEXT Transaction hash (if on-chain) network INTEGER Chain/network ID expiry INTEGER Expiry timestamp (if set) user_signed_payload TEXT User-signed payload (JSON or string) one_inch_order_hashes TEXT JSON array of 1inch order hashes raw_data TEXT Complete JSON-serialized Order object Order Statuses Status Description PENDING Order created, no 1inch orders created yet ACTIVE At least one 1inch order created, none filled PARTIALLY_FILLED At least one underlying 1inch order partially filled FILLED All underlying 1inch orders completed CANCELLED Cancelled by user/system EXPIRED Expired without execution FAILED Execution failed Order Status Flow The order status follows this lifecycle: PENDING → ACTIVE → PARTIALLY_FILLED → FILLED ↓ ↓ ↓ ↓ EXPIRED CANCELLED CANCELLED [Complete] ↓ ↓ ↓ FAILED FAILED FAILED Key Transitions: PENDING → ACTIVE : When first 1inch order is created and submitted ACTIVE → PARTIALLY_FILLED : When at least one underlying 1inch order is partially or fully filled PARTIALLY_FILLED → FILLED : When ALL underlying 1inch orders are completely filled Any Status → CANCELLED/EXPIRED/FAILED : Error conditions or user actions Multi-Call Order Status Batching Real-Time Order Status Checking The 1edge system implements efficient batch checking of order status using the DelegateProxy contract's getOrderData() view function: Implementation Details Contract Function: function getOrderData(bytes32[] calldata orderIds) public view returns (OrderInfo[] memory) struct OrderInfo { address maker; // Original user who created the order uint256 remainingAmount; // Remaining amount to be filled bool signed; // Whether the order is signed } Usage Flow: User Connection : When user connects wallet, frontend queries database for their active orders Order Hash Collection : Collect all 1inch order hashes from order.oneInchOrderHashes[] arrays Batch Status Call : Single multi-call to DelegateProxy.getOrderData(orderHashes[]) Status Interpretation : remainingAmount = 0 → Order fully filled remainingAmount > 0 → Order partially filled maker = address(0) → Order cancelled or non-existent Efficiency Benefits Gas Efficiency : Single transaction instead of multiple calls Network Efficiency : Reduced RPC calls and latency Real-Time Updates : Always reflects current on-chain state Scalability : Handles hundreds of orders in single batch Frontend Integration // Example implementation async function getOrderStatuses(orderHashes: string[]): Promise<OrderStatus[]> { const delegateProxy = getDelegateProxyContract(); const orderData = await delegateProxy.getOrderData(orderHashes); return orderData.map((data, index) => ({ orderHash: orderHashes[index], maker: data.maker, remainingAmount: data.remainingAmount, signed: data.signed, status: data.remainingAmount === 0n ? \"FILLED\" : data.maker === \"0x0000000000000000000000000000000000000000\" ? \"CANCELLED\" : \"ACTIVE\", })); } DelegateProxy Contract Functions The DelegateProxy contract provides the following key functions for order management: Order Creation Functions create1inchOrder(order, maker) Creates a single 1inch limit order with the following flow: Validates that order.maker equals the DelegateProxy contract address Stores order information in orders[orderHash] mapping with the original user as maker Approves tokens for the 1inch protocol if needed Emits OrderCreated event create1inchOrderBatch(orders, makers) Creates multiple 1inch limit orders in a single transaction: Validates array lengths match Processes each order with the same logic as single order creation More gas-efficient for creating multiple orders simultaneously Order Management Functions cancel1inchOrder(order) Cancels a single existing order: Only callable by approved keepers Deletes order from storage Calls 1inch protocol's cancelOrder function Emits OrderCancelled event cancel1inchOrderBatch(orders[]) Cancels multiple orders in a single transaction: Only callable by approved keepers Processes each order with the same logic as single order cancellation More gas-efficient for cancelling multiple orders simultaneously Emits one OrderCancelled event per order getOrderData(orderIds[]) Batch query function for order status: Returns OrderInfo[] array with current order state Used for efficient multi-call status checking View function (no gas cost) Interaction Hooks (1inch Protocol Integration) preInteraction(order, orderHash, makingAmount, ...) Called by 1inch protocol before order execution: Transfers makingAmount from original user ( info.maker ) to DelegateProxy using safeTransferFrom() Updates info.remainingAmount by subtracting the makingAmount Only callable by 1inch protocol (protected by only1inch modifier) Protected by nonReentrant modifier postInteraction(order, orderHash, remainingMakingAmount, ...) Called by 1inch protocol after order execution: If remainingMakingAmount == 0 : Deletes order from storage ( delete orders[orderHash] ) for gas optimization If remainingMakingAmount > 0 : Updates orders[orderHash].remainingAmount with the actual remaining amount Only callable by 1inch protocol (protected by only1inch modifier) Administrative Functions setKeeper(keeper, approved) Manages keeper permissions: Only callable by contract owner Controls who can create/cancel orders rescue(token) Emergency function to recover stuck funds: Only callable by contract owner Supports both native ETH ( 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE ) and ERC20 tokens For ETH: Uses payable(owner()).transfer(balance) to send entire contract balance For ERC20: Uses SafeERC20.safeTransfer() to send entire token balance Reverts with InsufficientBalance() if balance is zero Protected by nonReentrant modifier isValidSignature(hash, signature) EIP-1271 signature validation: Returns magic value 0x1626ba7e for valid orders Returns 0xffffffff for invalid orders Used by 1inch protocol to validate contract signatures Involved Components Component Path Responsibility Status Frontend front/ Order creation UI, multi-call batching for status API Server back/services/apiServer.ts REST endpoints Order Registry back/services/orderRegistry.ts Lifecycle management, watcher spawning Order Watchers back/orders/ Modular trigger implementations Storage Layer back/services/storage.ts Database persistence Type Definitions common/types.ts Shared interfaces DelegateProxy Contract contracts/src/DelegateProxy.sol JIT order funding, pre/post interaction hooks, rescue function 1inch Limit Order Protocol External Order execution and filling",
     "url": "/docs/1edge/order-lifecycle",
     "category": "1edge",
     "headings": [
@@ -11662,6 +11970,11 @@
         "level": 2,
         "text": "Order Statuses",
         "anchor": "order-statuses"
+      },
+      {
+        "level": 2,
+        "text": "Order Status Flow",
+        "anchor": "order-status-flow"
       },
       {
         "level": 2,
@@ -11995,6 +12308,15 @@
     "category": "1edge",
     "headings": [],
     "excerpt": "Order Statuses (from order-lifecycle)"
+  },
+  {
+    "id": "1edge/order-lifecycle#order-status-flow",
+    "title": "order-lifecycle - Order Status Flow",
+    "content": "Order Status Flow",
+    "url": "/docs/1edge/order-lifecycle#order-status-flow",
+    "category": "1edge",
+    "headings": [],
+    "excerpt": "Order Status Flow (from order-lifecycle)"
   },
   {
     "id": "1edge/order-lifecycle#multi-call-order-status-batching",
