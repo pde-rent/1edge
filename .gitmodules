@@ -1,0 +1,3 @@
+[submodule "sdk-source"]
+	path = sdk-source
+	url = https://github.com/1inch/limit-order-sdk.git
