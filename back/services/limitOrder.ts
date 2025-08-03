@@ -1,10 +1,8 @@
 import {
   LimitOrder,
-  LimitOrderWithFee,
   MakerTraits,
   Address,
   randBigInt,
-  ExtensionBuilder,
   Sdk,
   FetchProviderConnector as SDKFetchProviderConnector,
 } from "@1inch/limit-order-sdk";
