@@ -56,13 +56,39 @@ class StorageService {
   }
 
   private setupTables() {
-    // Orders table - simplified schema with minimal columns + raw_data
+    // Orders table - matches Order interface from common/types.ts exactly
     this.db.run(`
       CREATE TABLE IF NOT EXISTS orders (
+        -- Core identification
         id TEXT PRIMARY KEY,
+        signature TEXT NOT NULL,
+        
+        -- Order configuration (JSON)
+        params TEXT, -- OrderParams as JSON
+        
+        -- Order status and tracking
         status TEXT NOT NULL,
+        remaining_maker_amount REAL NOT NULL,
+        trigger_count INTEGER NOT NULL DEFAULT 0,
+        
+        -- Optional execution tracking
+        next_trigger_value TEXT, -- Can be number or string
         created_at INTEGER NOT NULL,
-        raw_data TEXT NOT NULL -- Complete Order object as JSON
+        executed_at INTEGER,
+        cancelled_at INTEGER,
+        filled_amount TEXT,
+        tx_hash TEXT,
+        
+        -- 1inch order tracking
+        one_inch_order_hashes TEXT, -- JSON array of strings
+        one_inch_orders TEXT, -- JSON array of order details
+        
+        -- Compatibility fields
+        order_hash TEXT, -- Primary 1inch order hash
+        receiver TEXT, -- Receiver address
+        salt TEXT, -- Salt value
+        expiry INTEGER, -- Expiry timestamp
+        trigger_price REAL -- Trigger price for conditional orders
       )
     `);
 
@@ -72,7 +98,7 @@ class StorageService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id TEXT NOT NULL,
         order_hash TEXT,
-        type TEXT NOT NULL,
+        status TEXT NOT NULL,
         timestamp INTEGER NOT NULL,
         tx_hash TEXT,
         filled_amount TEXT,
@@ -163,15 +189,15 @@ class StorageService {
     this.preparedStatements.set(
       "getOrder",
       this.db.prepare(`
-      SELECT raw_data FROM orders WHERE id = ?
+      SELECT * FROM orders WHERE id = ?
     `),
     );
 
     this.preparedStatements.set(
       "getActiveOrders",
       this.db.prepare(`
-      SELECT raw_data FROM orders 
-      WHERE status IN ('PENDING', 'SUBMITTED', 'ACTIVE', 'PARTIALLY_FILLED')
+      SELECT * FROM orders 
+      WHERE status IN ('PENDING', 'ACTIVE', 'PARTIALLY_FILLED')
       ORDER BY created_at DESC
     `),
     );
@@ -179,8 +205,8 @@ class StorageService {
     this.preparedStatements.set(
       "getOrdersByMaker",
       this.db.prepare(`
-      SELECT raw_data FROM orders 
-      WHERE json_extract(raw_data, '$.params.maker') = ?
+      SELECT * FROM orders 
+      WHERE json_extract(params, '$.maker') = ?
       ORDER BY created_at DESC
     `),
     );
@@ -188,7 +214,7 @@ class StorageService {
     this.preparedStatements.set(
       "getPendingOrders",
       this.db.prepare(`
-      SELECT raw_data FROM orders 
+      SELECT * FROM orders 
       WHERE status = 'PENDING'
       ORDER BY created_at ASC
     `),
@@ -198,7 +224,7 @@ class StorageService {
       "insertOrderEvent",
       this.db.prepare(`
       INSERT INTO order_events (
-        order_id, order_hash, type, timestamp,
+        order_id, order_hash, status, timestamp,
         tx_hash, filled_amount, remaining_amount, gas_used, error
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `),
@@ -207,31 +233,74 @@ class StorageService {
 
   async saveOrder(order: Order): Promise<void> {
     const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO orders (id, status, created_at, raw_data)
-      VALUES (?, ?, ?, ?)
+      INSERT OR REPLACE INTO orders (
+        id, signature, params, status, remaining_maker_amount, trigger_count,
+        next_trigger_value, created_at, executed_at, cancelled_at, filled_amount, tx_hash,
+        one_inch_order_hashes, one_inch_orders, order_hash, receiver, salt, expiry, trigger_price
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
       order.id,
+      order.signature,
+      order.params ? JSON.stringify(order.params) : null,
       order.status,
+      order.remainingMakerAmount,
+      order.triggerCount,
+      order.nextTriggerValue?.toString() || null,
       order.createdAt,
-      JSON.stringify(order)
+      order.executedAt || null,
+      order.cancelledAt || null,
+      order.filledAmount || null,
+      order.txHash || null,
+      order.oneInchOrderHashes ? JSON.stringify(order.oneInchOrderHashes) : null,
+      order.oneInchOrders ? JSON.stringify(order.oneInchOrders) : null,
+      order.orderHash || null,
+      order.receiver || null,
+      order.salt || null,
+      order.expiry || null,
+      order.triggerPrice || null
     );
 
     logger.debug(`Saved order ${order.id}`);
   }
   async getOrder(id: string): Promise<Order | null> {
     const stmt = this.preparedStatements.get("getOrder");
-    const result = stmt.get(id) as { raw_data: string } | null;
-    return result ? JSON.parse(result.raw_data) : null;
+    const row = stmt.get(id) as any;
+    return row ? this.rowToOrder(row) : null;
+  }
+  
+  private rowToOrder(row: any): Order {
+    return {
+      id: row.id,
+      signature: row.signature,
+      params: row.params ? JSON.parse(row.params) : undefined,
+      status: row.status,
+      remainingMakerAmount: row.remaining_maker_amount,
+      triggerCount: row.trigger_count,
+      nextTriggerValue: row.next_trigger_value ? 
+        (isNaN(Number(row.next_trigger_value)) ? row.next_trigger_value : Number(row.next_trigger_value)) : undefined,
+      createdAt: row.created_at,
+      executedAt: row.executed_at || undefined,
+      cancelledAt: row.cancelled_at || undefined,
+      filledAmount: row.filled_amount || undefined,
+      txHash: row.tx_hash || undefined,
+      oneInchOrderHashes: row.one_inch_order_hashes ? JSON.parse(row.one_inch_order_hashes) : undefined,
+      oneInchOrders: row.one_inch_orders ? JSON.parse(row.one_inch_orders) : undefined,
+      orderHash: row.order_hash || undefined,
+      receiver: row.receiver || undefined,
+      salt: row.salt || undefined,
+      expiry: row.expiry || undefined,
+      triggerPrice: row.trigger_price || undefined
+    };
   }
 
   async getOrderByHash(hash: string): Promise<Order | null> {
     const stmt = this.db.prepare(
-      `SELECT raw_data FROM orders WHERE json_extract(raw_data, '$.orderHash') = ?`,
+      `SELECT * FROM orders WHERE order_hash = ?`,
     );
-    const result = stmt.get(hash) as { raw_data: string } | null;
-    return result ? JSON.parse(result.raw_data) : null;
+    const row = stmt.get(hash) as any;
+    return row ? this.rowToOrder(row) : null;
   }
 
   async updateOrder(order: Order): Promise<void> {
@@ -250,29 +319,27 @@ class StorageService {
 
   async getActiveOrders(): Promise<Order[]> {
     const stmt = this.preparedStatements.get("getActiveOrders");
-    const results = stmt.all() as { raw_data: string }[];
-    return results.map((r) => JSON.parse(r.raw_data));
+    const results = stmt.all() as any[];
+    return results.map((row) => this.rowToOrder(row));
   }
 
   async getOrdersByMaker(makerAddress: string): Promise<Order[]> {
     const stmt = this.preparedStatements.get("getOrdersByMaker");
-    const results = stmt.all(makerAddress.toLowerCase()) as {
-      raw_data: string;
-    }[];
-    return results.map((r) => JSON.parse(r.raw_data));
+    const results = stmt.all(makerAddress.toLowerCase()) as any[];
+    return results.map((row) => this.rowToOrder(row));
   }
 
   async getPendingOrders(): Promise<Order[]> {
     const stmt = this.preparedStatements.get("getPendingOrders");
-    const results = stmt.all() as { raw_data: string }[];
-    return results.map((r) => JSON.parse(r.raw_data));
+    const results = stmt.all() as any[];
+    return results.map((row) => this.rowToOrder(row));
   }
 
   // Order event methods
   async saveOrderEvent(event: OrderEvent): Promise<void> {
     const stmt = this.db.prepare(`
       INSERT INTO order_events (
-        order_id, order_hash, type, timestamp,
+        order_id, order_hash, status, timestamp,
         tx_hash, filled_amount, remaining_amount,
         gas_used, error
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
