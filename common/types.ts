@@ -300,12 +300,10 @@ export enum OrderType {
 }
 
 export enum OrderStatus {
-  PENDING = "PENDING", // Created but not submitted
-  SUBMITTED = "SUBMITTED", // Submitted to orderbook
-  ACTIVE = "ACTIVE", // Active in orderbook
-  PARTIALLY_FILLED = "PARTIALLY_FILLED",
-  FILLED = "FILLED",
-  COMPLETED = "COMPLETED", // Fully completed (used for multi-part orders like TWAP)
+  PENDING = "PENDING", // Created but no 1inch order created yet
+  ACTIVE = "ACTIVE", // At least one 1inch order created, none filled
+  PARTIALLY_FILLED = "PARTIALLY_FILLED", // At least one underlying 1inch order partially/fully filled
+  FILLED = "FILLED", // All underlying 1inch orders completed
   CANCELLED = "CANCELLED",
   EXPIRED = "EXPIRED",
   FAILED = "FAILED",
@@ -338,6 +336,13 @@ export interface Order {
 
   // 1inch order tracking (1edge order can manage multiple 1inch orders)
   oneInchOrderHashes?: string[]; // Array of 1inch order hashes spawned by this order
+  oneInchOrders?: Array<{ // Details of 1inch orders for monitoring
+    hash: string;
+    makingAmount: string;
+    takingAmount: string;
+    limitPrice: string;
+    createdAt: number;
+  }>;
 
   // Missing properties for compatibility
   orderHash?: string; // Primary 1inch order hash (if applicable)

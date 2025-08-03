@@ -110,7 +110,6 @@ class OrderRegistryService {
     // Clean up extra fields that shouldn't be stored
     const { pair, validateOnly, ...cleanOrder } = order as any;
 
-    console.log("Order after processing:", cleanOrder);
 
     // Save the order to the database
     await saveOrder(cleanOrder);
@@ -191,7 +190,7 @@ class OrderRegistryService {
 
       // Process orders in batches to avoid blocking
       const orderIds = Array.from(this.activeOrders);
-      logger.info(`📊 Processing ${orderIds.length} active orders: [${orderIds.join(', ')}]`);
+      logger.debug(`📊 Processing ${orderIds.length} active orders: [${orderIds.join(', ')}]`);
       
       for (const orderId of orderIds) {
         try {
@@ -204,7 +203,7 @@ class OrderRegistryService {
   }
 
   private async processOrder(orderId: string) {
-    logger.info(`🔍 Processing order: ${orderId}`);
+    logger.debug(`🔍 Processing order: ${orderId}`);
     const order = await getOrder(orderId);
     if (!order) {
       logger.warn(`Order ${orderId} not found in database, removing from active set`);
@@ -216,7 +215,8 @@ class OrderRegistryService {
     if (
       order.status === OrderStatus.FILLED ||
       order.status === OrderStatus.CANCELLED ||
-      order.status === OrderStatus.FAILED
+      order.status === OrderStatus.FAILED ||
+      order.status === OrderStatus.EXPIRED
     ) {
       this.activeOrders.delete(orderId);
       return;
@@ -224,14 +224,14 @@ class OrderRegistryService {
 
     // Get the appropriate watcher for this order type
     const orderType = order.params?.type;
-    logger.info(`Order ${order.id} type: ${orderType}`);
+    logger.debug(`Order ${order.id} type: ${orderType}`);
     if (!orderType) {
       logger.warn(`Order ${order.id} missing type in params`);
       return;
     }
 
     const watcher = getOrderWatcher(orderType);
-    logger.info(`Watcher for ${orderType}: ${watcher ? 'found' : 'not found'}`);
+    logger.debug(`Watcher for ${orderType}: ${watcher ? 'found' : 'not found'}`);
     if (!watcher) {
       logger.warn(`No watcher found for order type: ${orderType}`);
       return;
@@ -247,13 +247,14 @@ class OrderRegistryService {
       // Check if order completed after update
       const updatedOrder = await getOrder(orderId);
       if (updatedOrder?.status === OrderStatus.FILLED) {
+        logger.info(`🎉 Order ${orderId.slice(0, 8)}... completed - all underlying 1inch orders filled`);
         this.activeOrders.delete(orderId);
         return;
       }
     }
 
     // Check if trigger conditions are met for PENDING orders
-    logger.info(`Order ${order.id} status: ${order.status}`);
+    logger.debug(`Order ${order.id} status: ${order.status}`);
     if (order.status === OrderStatus.PENDING) {
       // Check if order has expired before triggering
       if ((watcher as any).isExpired?.(order)) {
@@ -273,9 +274,9 @@ class OrderRegistryService {
         return;
       }
 
-      logger.info(`Checking if order ${order.id} should trigger...`);
+      logger.debug(`Checking if order ${order.id} should trigger...`);
       const shouldTrigger = await watcher.shouldTrigger(order);
-      logger.info(`Order ${order.id} shouldTrigger result: ${shouldTrigger}`);
+      logger.debug(`Order ${order.id} shouldTrigger result: ${shouldTrigger}`);
       if (!shouldTrigger) return;
 
       // Execute the order
@@ -304,7 +305,7 @@ class OrderRegistryService {
         // Create order event
         await saveOrderEvent({
           orderId: order.id,
-          status: OrderStatus.SUBMITTED,
+          status: OrderStatus.ACTIVE, // Order is now active with 1inch order created
           timestamp: Date.now(),
         });
       } catch (error) {

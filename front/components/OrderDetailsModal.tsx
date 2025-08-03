@@ -76,7 +76,7 @@ export function OrderDetailsModal({
     },
     {
       orderId: order.id,
-      status: OrderStatus.SUBMITTED,
+      status: OrderStatus.ACTIVE,
       timestamp: order.createdAt + 1000,
       orderHash: '0x1234...5678',
     },

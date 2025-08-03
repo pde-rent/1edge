@@ -321,7 +321,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
     isSell: boolean = true,
   ): number {
     const spread = ask - bid;
-    const spotAdjustment = spotPrice * 0.0005; // 0.05%
+    const spotAdjustment = spotPrice * 0.00025; // 0.025%
 
     if (isSell) {
       // For selling: price between spot and ask, but not too aggressive
@@ -329,14 +329,14 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         spotPrice + spotAdjustment,
         ask - spread / 4, // Stay within spread
       );
-      return Math.max(targetPrice, spotPrice * 0.9995); // Minimum 0.05% below spot
+      return targetPrice;
     } else {
       // For buying: price between spot and bid, but not too aggressive
       const targetPrice = Math.max(
         spotPrice - spotAdjustment,
         bid + spread / 4, // Stay within spread
       );
-      return Math.min(targetPrice, spotPrice * 1.0005); // Maximum 0.05% above spot
+      return targetPrice;
     }
   }
 
@@ -446,11 +446,23 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         this.keeper,
       );
 
-      // Store the order hash for tracking
+      // Store the order hash and details for tracking
       if (!order.oneInchOrderHashes) {
         order.oneInchOrderHashes = [];
       }
       order.oneInchOrderHashes.push(result.orderHash);
+      
+      // Store 1inch order details for monitoring
+      if (!order.oneInchOrders) {
+        order.oneInchOrders = [];
+      }
+      order.oneInchOrders.push({
+        hash: result.orderHash,
+        makingAmount: makingAmount,
+        takingAmount: dynamicTakingAmount,
+        limitPrice: limitPrice.toString(),
+        createdAt: Date.now()
+      });
       
       await saveOrder(order);
 
@@ -543,21 +555,24 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       }
 
       // Update order status based on fills
-      const remainingAmountStr = order.remainingMakerAmount.toFixed(18);
-      const originalTotal = ethers.parseUnits(remainingAmountStr, 18);
-      const fillPercentage =
-        (Number(totalFilled) / Number(originalTotal)) * 100;
+      const originalMakingAmount = order.params?.makingAmount || 0;
+      const originalTotal = ethers.parseUnits(originalMakingAmount.toFixed(18), 18);
+      const fillPercentage = originalMakingAmount > 0 ? (Number(totalFilled) / Number(originalTotal)) * 100 : 0;
 
-      if (totalFilled === originalTotal) {
+      // Check if the total 1edge order makingAmount is completely filled
+      const totalOrderFilled = totalFilled >= originalTotal;
+      
+      if (totalOrderFilled && totalFilled > 0n) {
         order.status = OrderStatus.FILLED;
         order.remainingMakerAmount = 0;
-        logger.info(`🎉 Order ${order.id.slice(0, 8)}... completely filled!`);
+        logger.info(`🎉 Order ${order.id.slice(0, 8)}... completely filled! Total makingAmount (${originalMakingAmount}) reached.`);
       } else if (hasPartialFills) {
+        // Any fill from underlying 1inch orders = PARTIALLY_FILLED for the 1edge order
         order.status = OrderStatus.PARTIALLY_FILLED;
         const remaining = originalTotal - totalFilled;
         order.remainingMakerAmount = parseFloat(ethers.formatUnits(remaining, 18));
         logger.info(
-          `📈 Order ${order.id.slice(0, 8)}... ${fillPercentage.toFixed(2)}% filled`,
+          `📈 Order ${order.id.slice(0, 8)}... ${fillPercentage.toFixed(2)}% filled (${ethers.formatUnits(totalFilled, 18)} of ${originalMakingAmount} WETH)`,
         );
       }
 
