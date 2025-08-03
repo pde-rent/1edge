@@ -22,10 +22,10 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
 
     const now = Date.now();
 
-    // Check if we have a valid next trigger time
+    // Initialize nextTriggerValue if not set (for new orders)
     if (!order.nextTriggerValue || typeof order.nextTriggerValue !== "number") {
-      logger.info(`TWAP order ${order.id} has no valid nextTriggerValue`);
-      return false;
+      order.nextTriggerValue = params.startDate;
+      logger.debug(`TWAP order ${order.id} initialized, starting at ${params.startDate}`);
     }
 
     // Check if start time has passed
@@ -34,9 +34,31 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
       return false;
     }
 
-    // Check if end time has passed
+    // For one-off TWAP (startDate == endDate), trigger immediately when start time reached
+    if (params.startDate === params.endDate) {
+      // If already triggered, no more triggers
+      if (order.triggerCount > 0) {
+        logger.debug(`TWAP order ${order.id} one-off already triggered (triggerCount: ${order.triggerCount})`);
+        return false;
+      }
+      
+      // Check max price constraint
+      if (this.exceedsMaxPrice(order, params.maxPrice)) {
+        logger.info(
+          `TWAP order ${order.id} skipped - price exceeds max price ${params.maxPrice}`,
+        );
+        return false;
+      }
+      
+      // Trigger if start time reached and not yet triggered
+      const shouldTrigger = now >= params.startDate;
+      logger.info(`TWAP order ${order.id} one-off trigger check: now=${now}, startDate=${params.startDate}, shouldTrigger=${shouldTrigger}`);
+      return shouldTrigger;
+    }
+
+    // For multi-interval TWAP, check if end time has passed
     if (now >= params.endDate) {
-      logger.info(`TWAP order ${order.id} completed - end time reached. Now: ${now}, End: ${params.endDate}`);
+      logger.info(`TWAP order ${order.id} multi-interval period ended. Now: ${now}, End: ${params.endDate}`);
       return false;
     }
 
@@ -48,9 +70,9 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
       return false;
     }
 
-    // Check if it's time to trigger
+    // Check if it's time for next interval trigger
     const shouldTrigger = now >= order.nextTriggerValue;
-    logger.info(`TWAP order ${order.id} trigger check: now=${now}, nextTrigger=${order.nextTriggerValue}, shouldTrigger=${shouldTrigger}`);
+    logger.info(`TWAP order ${order.id} multi-interval trigger check: now=${now}, nextTrigger=${order.nextTriggerValue}, shouldTrigger=${shouldTrigger}`);
     
     return shouldTrigger;
   }
@@ -89,7 +111,14 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
     const params = this.validateParams<TwapParams>(order);
     if (!params) return;
 
-    // For simple TWAP, just use the interval from params
+    // For one-off TWAP (startDate == endDate), no next trigger after execution
+    if (params.startDate === params.endDate) {
+      order.nextTriggerValue = null;
+      logger.debug(`TWAP order ${order.id} is one-off execution - no next trigger`);
+      return;
+    }
+
+    // For multi-interval TWAP, calculate next trigger
     const intervalMs = params.interval;
     if (intervalMs <= 0) {
       logger.debug(`TWAP order ${order.id} has no interval set`);
@@ -97,14 +126,18 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
     }
 
     const lastTriggerTime = (order.nextTriggerValue as number) || Date.now();
-    order.nextTriggerValue = this.getNextTriggerTime(
-      lastTriggerTime,
-      intervalMs,
-    );
-
-    logger.debug(
-      `TWAP order ${order.id} next trigger in ${(intervalMs / 1000).toFixed(0)}s`,
-    );
+    const nextTrigger = this.getNextTriggerTime(lastTriggerTime, intervalMs);
+    
+    // Don't schedule triggers beyond end date
+    if (nextTrigger >= params.endDate) {
+      order.nextTriggerValue = null;
+      logger.debug(`TWAP order ${order.id} completed - no more triggers beyond end date`);
+    } else {
+      order.nextTriggerValue = nextTrigger;
+      logger.debug(
+        `TWAP order ${order.id} next trigger in ${(intervalMs / 1000).toFixed(0)}s`,
+      );
+    }
   }
 
   /**
