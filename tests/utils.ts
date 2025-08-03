@@ -10,10 +10,10 @@ import type {
   IcebergParams,
   MomentumReversalParams,
   StopLimitParams,
-} from "@common/types";
-import { getConfig } from "@back/services/config";
-import { initStorage } from "@back/services/storage";
-import { createOrderRegistry } from "@back/services/orderRegistry";
+} from "../common/types";
+import { getConfig } from "../back/services/config";
+import { initStorage } from "../back/services/storage";
+import { createOrderRegistry } from "../back/services/orderRegistry";
 
 // Common test constants
 export const TEST_PRICES = {
@@ -514,7 +514,7 @@ export class TestScenarios {
     await orderRegistry.createOrder(order);
     await waitShort();
 
-    const updatedOrder = await import("@back/services/storage").then((m) =>
+    const updatedOrder = await import("../back/services/storage").then((m) =>
       m.getOrder(order.id),
     );
     expectOrderState(updatedOrder, {
@@ -535,7 +535,7 @@ export class TestScenarios {
     priceMock.setPrice(newPrice);
     await wait(waitTime);
 
-    const updatedOrder = await import("@back/services/storage").then((m) =>
+    const updatedOrder = await import("../back/services/storage").then((m) =>
       m.getOrder(orderId),
     );
     return updatedOrder!;
@@ -543,7 +543,7 @@ export class TestScenarios {
 
   static async timeTrigger(orderId: string, waitTime: number): Promise<Order> {
     await wait(waitTime);
-    const updatedOrder = await import("@back/services/storage").then((m) =>
+    const updatedOrder = await import("../back/services/storage").then((m) =>
       m.getOrder(orderId),
     );
     return updatedOrder!;
@@ -562,7 +562,7 @@ export class TestScenarios {
       }
       await wait(step.waitTime);
 
-      const updatedOrder = await import("@back/services/storage").then((m) =>
+      const updatedOrder = await import("../back/services/storage").then((m) =>
         m.getOrder(orderId),
       );
       if (updatedOrder) {
@@ -581,7 +581,7 @@ export class TestScenarios {
     await orderRegistry.createOrder(order);
     await wait(expiryWaitTime);
 
-    const expiredOrder = await import("@back/services/storage").then((m) =>
+    const expiredOrder = await import("../back/services/storage").then((m) =>
       m.getOrder(order.id),
     );
     return expiredOrder!;
@@ -761,7 +761,7 @@ export class OrderTestScenarios {
     );
     mockPriceCache(breakoutScenario);
     await wait(TEST_TIMEOUTS.MEDIUM);
-    return (await import("@back/services/storage").then((m) =>
+    return (await import("../back/services/storage").then((m) =>
       m.getOrder(orderId),
     ))!;
   }
@@ -776,7 +776,7 @@ export class OrderTestScenarios {
     for (const level of levels) {
       priceMock.setPrice(level);
       await wait(TEST_TIMEOUTS.SHORT);
-      const order = await import("@back/services/storage").then((m) =>
+      const order = await import("../back/services/storage").then((m) =>
         m.getOrder(orderId),
       );
       if (order) results.push(order);
@@ -790,7 +790,7 @@ export class OrderTestScenarios {
     expiryMs: number,
   ): Promise<Order> {
     await wait(expiryMs);
-    return (await import("@back/services/storage").then((m) =>
+    return (await import("../back/services/storage").then((m) =>
       m.getOrder(orderId),
     ))!;
   }
@@ -1092,5 +1092,241 @@ export class Multicall3Utils {
       blockNumber,
       chainId: Number(network.chainId)
     };
+  }
+}
+
+// E2E Test Helper Functions for concise testing
+export class E2EHelpers {
+  /**
+   * Setup and verify all prerequisites for E2E test in single call
+   */
+  static async setupE2ETest(config: {
+    chainId: number;
+    user: ethers.Wallet;
+    keeper: ethers.Wallet; 
+    provider: ethers.Provider;
+    wethAddress: string;
+    usdtAddress: string;
+    pairSymbol: string;
+  }): Promise<{
+    priceData: any;
+    balances: { user: string; keeper: string; weth: string; usdt: string };
+  }> {
+    const multicall = new Multicall3Utils(config.provider);
+    
+    // Single RPC call for network info + balances
+    const [networkInfo, balanceResults] = await Promise.all([
+      multicall.batchNetworkInfo(),
+      multicall.batchBalanceChecks(
+        [config.user.address, config.keeper.address],
+        [
+          { address: config.wethAddress, decimals: 18, symbol: "WETH" },
+          { address: config.usdtAddress, decimals: 6, symbol: "USDT" }
+        ]
+      )
+    ]);
+
+    // Initialize services
+    const { initStorage } = await import("../back/services/storage");
+    const { getConfig } = await import("../back/services/config");
+    const { createOrderRegistry } = await import("../back/services/orderRegistry");
+    const { priceCache } = await import("../back/services/priceCache");
+    
+    initStorage(getConfig().storage);
+    // Note: Order registry service should already be running
+    await priceCache.connect();
+    
+    // Wait for price data
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    const priceData = priceCache.getPrice(config.pairSymbol);
+    
+    if (!priceData?.mid) {
+      throw new Error(`Collector service not running - no price data for ${config.pairSymbol}`);
+    }
+
+    const balances = {
+      user: balanceResults.ethBalances[0],
+      keeper: balanceResults.ethBalances[1], 
+      weth: balanceResults.tokenBalances.WETH[0],
+      usdt: balanceResults.tokenBalances.USDT[0]
+    };
+
+    console.log(`✅ E2E Setup: Chain ${networkInfo.chainId}, Block ${networkInfo.blockNumber}, Price $${priceData.mid.toFixed(2)}`);
+    console.log(`💰 Balances - User: ${balances.user} BNB, ${balances.weth} WETH, ${balances.usdt} USDT`);
+    
+    return { priceData, balances };
+  }
+
+  /**
+   * Create and register order with single function call
+   */
+  static async createAndRegisterOrder(
+    orderRegistry: any,
+    user: ethers.Wallet,
+    params: {
+      orderId: string;
+      wethAmount: number;
+      spotPrice: number;
+      wethAddress: string;
+      usdtAddress: string;
+      chainId: number;
+      startDelayMs?: number;
+      durationMs?: number;
+    }
+  ): Promise<{ order: any; orderHash: string }> {
+    const { generateOrderId } = await import("../common/utils");
+    const { OrderType, OrderStatus } = await import("../common/types");
+    
+    const now = Date.now();
+    const twapParams = {
+      type: OrderType.TWAP,
+      makingAmount: params.wethAmount,
+      startDate: now + (params.startDelayMs || 10000),
+      endDate: now + (params.durationMs || 60000),
+      interval: 0,
+      maxPrice: 0,
+      expiry: 0,
+      maker: user.address,
+      makerAsset: params.wethAddress,
+      takerAsset: params.usdtAddress,
+      chainId: params.chainId,
+    };
+
+    const order = {
+      id: params.orderId,
+      signature: await user.signMessage(JSON.stringify(twapParams)),
+      params: twapParams,
+      status: OrderStatus.PENDING,
+      remainingMakerAmount: 0,
+      triggerCount: 0,
+      createdAt: now,
+      nextTriggerValue: twapParams.startDate,
+    };
+
+    await orderRegistry.createOrder(order);
+    
+    console.log(`📋 Order created: ${params.orderId.slice(0, 8)}... (${params.wethAmount} WETH @ $${params.spotPrice})`);
+    
+    return { order, orderHash: params.orderId };
+  }
+
+  /**
+   * Check and approve token with single function call
+   */
+  static async ensureApproval(
+    tokenAddress: string,
+    spender: string,
+    user: ethers.Wallet,
+    provider: ethers.Provider,
+    amountEther: string = "1"
+  ): Promise<boolean> {
+    const multicall = new Multicall3Utils(provider);
+    const amount = ethers.parseEther(amountEther);
+    
+    const [approvalCheck] = await multicall.batchAllowanceChecks(user.address, [{
+      tokenAddress,
+      spender,
+      symbol: "TOKEN",
+      decimals: 18,
+      amount
+    }]);
+
+    if (approvalCheck.needsApproval) {
+      const token = erc20(tokenAddress, provider);
+      const tx = await token.connect(user).approve(spender, amount);
+      await tx.wait();
+      console.log(`✅ Token approved: ${spender.slice(0, 8)}...`);
+      return true;
+    }
+    
+    console.log(`✅ Token already approved`);
+    return false;
+  }
+
+  /**
+   * Monitor order execution with real-time price tracking
+   */
+  static async monitorOrderExecution(
+    orderId: string,
+    maxAttempts: number = 12,
+    intervalMs: number = 5000,
+    pairSymbol: string
+  ): Promise<{ order: any; priceData: any; executed: boolean }> {
+    const { getOrder } = await import("../back/services/storage");
+    const { priceCache } = await import("../back/services/priceCache");
+    const { OrderStatus } = await import("../common/types");
+    
+    let attempts = 0;
+    let finalOrder: any = null;
+    
+    while (attempts < maxAttempts) {
+      finalOrder = await getOrder(orderId);
+      const currentPriceData = priceCache.getPrice(pairSymbol);
+      
+      if (finalOrder) {
+        const executed = [OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED].includes(finalOrder.status);
+        const hashCount = finalOrder.oneInchOrderHashes?.length || 0;
+        
+        console.log(`📊 Monitor [${attempts + 1}/${maxAttempts}]: ${finalOrder.status}, triggers=${finalOrder.triggerCount}, hashes=${hashCount}, price=$${currentPriceData?.mid?.toFixed(2) || 'N/A'}`);
+        
+        if (executed) {
+          console.log(`🎉 Order executed: ${finalOrder.status}`);
+          return { order: finalOrder, priceData: currentPriceData, executed: true };
+        }
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, intervalMs));
+      attempts++;
+    }
+    
+    return { order: finalOrder, priceData: priceCache.getPrice(pairSymbol), executed: false };
+  }
+
+  /**
+   * Verify order state with comprehensive checks
+   */
+  static verifyOrderExecution(
+    order: any,
+    expectations: {
+      minTriggers?: number;
+      hasHashes?: boolean;
+      validStatuses?: string[];
+    } = {}
+  ): { success: boolean; summary: string } {
+    const { OrderStatus } = require("../common/types");
+    
+    const {
+      minTriggers = 1,
+      hasHashes = true,
+      validStatuses = [OrderStatus.ACTIVE, OrderStatus.FILLED, OrderStatus.PARTIALLY_FILLED]
+    } = expectations;
+    
+    const checks = {
+      hasOrder: !!order,
+      triggerCount: order?.triggerCount >= minTriggers,
+      hasHashes: !hasHashes || (order?.oneInchOrderHashes?.length > 0),
+      validStatus: validStatuses.includes(order?.status)
+    };
+    
+    const success = Object.values(checks).every(Boolean);
+    const summary = `${order?.id?.slice(0, 8)}... - Status: ${order?.status}, Triggers: ${order?.triggerCount}, Hashes: ${order?.oneInchOrderHashes?.length || 0}`;
+    
+    return { success, summary };
+  }
+
+  /**
+   * Cleanup E2E test resources
+   */
+  static async cleanup(orderRegistry?: any): Promise<void> {
+    // Note: Don't stop orderRegistry - it's a shared service that should keep running
+    
+    try {
+      const { priceCache } = await import("../back/services/priceCache");
+      await priceCache.disconnect();
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+    
+    console.log(`🧹 E2E cleanup completed`);
   }
 }
