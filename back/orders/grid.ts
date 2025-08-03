@@ -16,7 +16,7 @@ interface GridState {
 class GridTradingOrderWatcher extends SteppedOrderWatcher {
   async shouldTrigger(order: Order): Promise<boolean> {
     const params = this.validateParams<GridTradingParams>(order);
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo || !params) return false;
 
     const { currentLevel, inRange } = this.calculateGridMetrics(
@@ -35,7 +35,7 @@ class GridTradingOrderWatcher extends SteppedOrderWatcher {
     takingAmount: string,
   ): Promise<void> {
     const params = this.validateParams<GridTradingParams>(order);
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo || !params) {
       logger.error(`Failed to get price info or params for order ${order.id}`);
       return;

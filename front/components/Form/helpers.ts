@@ -5,7 +5,7 @@ import { API_ENDPOINTS } from "../../config/api";
  * Params: amount, startDate, endDate, interval, maxPrice
  */
 export interface TwapParams {
-  amount: string;
+  makingAmount: string;
   startDate: number; // Timestamp
   endDate: number; // Timestamp
   interval: number; // Interval in ms
@@ -17,11 +17,11 @@ export interface TwapParams {
  * Params: amount, startPrice, endPrice, stepPct, expiry
  */
 export interface RangeOrderParams {
-  amount: string;
+  makingAmount: string;
   startPrice: number;
   endPrice: number;
   stepPct: number;
-  expiry: number; // Days
+  expiry: number; // Milliseconds
 }
 
 /**
@@ -29,18 +29,18 @@ export interface RangeOrderParams {
  * Params: amount, startPrice, endPrice, steps, expiry
  */
 export interface IcebergParams {
-  amount: string;
+  makingAmount: string;
   startPrice: number;
   endPrice: number;
   steps: number;
-  expiry: number; // Days
+  expiry: number; // Milliseconds
 }
 
 /**
  * Momentum Reversal Trading configuration
  */
 export interface MomentumReversalParams {
-  amount: string;
+  makingAmount: string;
   rsiPeriod: number;
   rsimaPeriod: number;
   tpPct: number;
@@ -53,7 +53,7 @@ export interface MomentumReversalParams {
  * Note: Missing amount param in docs - should be added
  */
 export interface RangeBreakoutParams {
-  amount: string;
+  makingAmount: string;
   adxPeriod: number;
   adxmaPeriod: number;
   emaPeriod: number;
@@ -65,19 +65,19 @@ export interface RangeBreakoutParams {
  * Stop-Limit Order configuration
  */
 export interface StopLimitParams {
-  amount: string;
+  makingAmount: string;
   stopPrice: number;
   limitPrice: number;
-  expiry: number; // Days
+  expiry: number; // Milliseconds
 }
 
 /**
  * Chase-Limit Order configuration
  */
 export interface ChaseLimitParams {
-  amount: string;
+  makingAmount: string;
   distancePct: number;
-  expiry: number; // Days
+  expiry: number; // Milliseconds
   maxPrice?: number;
 }
 
@@ -86,7 +86,7 @@ export interface ChaseLimitParams {
  * Params: amount, startDate, interval, maxPrice
  */
 export interface DCAParams {
-  amount: string;
+  makingAmount: string;
   startDate: number; // Timestamp
   interval: number; // Days
   maxPrice?: number;
@@ -97,7 +97,7 @@ export interface DCAParams {
  * Params: amount, startPrice, endPrice, stepPct, stepMultiplier, singleSide, tpPct
  */
 export interface GridTradingParams {
-  amount: string;
+  makingAmount: string;
   startPrice: number;
   endPrice: number;
   stepPct: number;
@@ -119,9 +119,6 @@ export type OrderParams =
 
 export interface FormData {
   // Common fields
-  size: string; // Changed from amount to size
-  fromCoin: string;
-  toCoin: string;
   amount: string;
 
   // TWAP/DCA fields
@@ -175,9 +172,6 @@ export const getDefaultExpiry = (): string => {
  */
 export const getDefaultFormValues = (): FormData => ({
   // Common fields
-  size: "",
-  fromCoin: "WETH", // Use wrapped version for DeFi
-  toCoin: "USDC",
   amount: "",
 
   // TWAP/DCA defaults
@@ -224,7 +218,7 @@ export const getRelevantParams = (
   switch (orderType) {
     case "TWAP":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         startDate: new Date(formData.startDate).getTime(),
         endDate: new Date(formData.endDate).getTime(),
         interval: parseInt(formData.interval) * 60 * 60 * 1000, // Convert hours to ms
@@ -233,25 +227,25 @@ export const getRelevantParams = (
 
     case "Range":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         startPrice: parseFloat(formData.startPrice),
         endPrice: parseFloat(formData.endPrice),
         stepPct: parseFloat(formData.stepPct),
-        expiry: parseInt(formData.expiry),
+        expiry: new Date(formData.expiry).getTime(), // Convert datetime string to milliseconds
       } as RangeOrderParams;
 
     case "Iceberg":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         startPrice: parseFloat(formData.startPrice),
         endPrice: parseFloat(formData.endPrice),
         steps: parseInt(formData.steps),
-        expiry: parseInt(formData.expiry),
+        expiry: new Date(formData.expiry).getTime(), // Convert datetime string to milliseconds
       } as IcebergParams;
 
     case "DCA":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         startDate: new Date(formData.startDate).getTime(),
         interval: parseInt(formData.interval), // Days
         maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
@@ -259,7 +253,7 @@ export const getRelevantParams = (
 
     case "GridMarketMaking":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         startPrice: parseFloat(formData.startPrice),
         endPrice: parseFloat(formData.endPrice),
         stepPct: parseFloat(formData.stepPct),
@@ -270,7 +264,7 @@ export const getRelevantParams = (
 
     case "MomentumReversal":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         rsiPeriod: parseInt(formData.rsiPeriod),
         rsimaPeriod: parseInt(formData.rsimaPeriod),
         tpPct: parseFloat(formData.tpPct),
@@ -279,7 +273,7 @@ export const getRelevantParams = (
 
     case "RangeBreakout":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         adxPeriod: parseInt(formData.adxPeriod),
         adxmaPeriod: parseInt(formData.adxmaPeriod),
         emaPeriod: parseInt(formData.emaPeriod),
@@ -289,17 +283,17 @@ export const getRelevantParams = (
 
     case "StopLimit":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         stopPrice: parseFloat(formData.stopPrice),
         limitPrice: parseFloat(formData.limitPrice),
-        expiry: parseInt(formData.expiry),
+        expiry: new Date(formData.expiry).getTime(), // Convert datetime string to milliseconds
       } as StopLimitParams;
 
     case "ChaseLimit":
       return {
-        amount: formData.amount,
+        makingAmount: formData.amount,
         distancePct: parseFloat(formData.distancePct),
-        expiry: parseInt(formData.expiry),
+        expiry: new Date(formData.expiry).getTime(), // Convert datetime string to milliseconds
         maxPrice: formData.maxPrice ? parseFloat(formData.maxPrice) : undefined,
       } as ChaseLimitParams;
 
@@ -335,9 +329,7 @@ export const applyOrderDefaults = (
     endDate: "endDate",
     interval: "interval",
     stepPct: "stepPct",
-    fromCoin: "fromCoin",
-    toCoin: "toCoin",
-    size: "size", // Changed from amount to size
+    amount: "amount",
   };
 
   Object.entries(fieldMappings).forEach(([defaultKey, formKey]) => {
@@ -394,4 +386,4 @@ export const submitStrategy = async (strategy: any): Promise<boolean> => {
     console.error("An error occurred while saving the strategy:", error);
     return false;
   }
-};
+}

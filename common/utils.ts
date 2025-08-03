@@ -424,10 +424,11 @@ export function addressToSymbol(
   for (const [symbol, chains] of Object.entries(tokenMapping)) {
     const chainAddress = chains[chainStr];
     if (chainAddress && chainAddress.toLowerCase() === lowercaseAddress) {
+      console.log(`Found symbol for address ${address}: ${symbol}`);
       return symbol;
     }
   }
-
+console.log(`No symbol found for address ${address}`);
   return "UNKNOWN";
 }
 

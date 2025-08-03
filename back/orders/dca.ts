@@ -22,7 +22,7 @@ class DCAOrderWatcher extends TimeBasedOrderWatcher {
     }
 
     // Check max price constraint
-    if (this.exceedsMaxPrice(order, params.maxPrice)) {
+    if (await this.exceedsMaxPrice(order, params.maxPrice)) {
       logger.debug(
         `DCA order ${order.id} skipped - price exceeds max price ${params.maxPrice}`,
       );
@@ -42,7 +42,7 @@ class DCAOrderWatcher extends TimeBasedOrderWatcher {
     if (!params) throw new Error("Invalid DCA parameters");
 
     // Get price info for logging
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Log execution

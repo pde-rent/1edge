@@ -320,7 +320,7 @@ export interface Order {
 
   // Order configuration params (union type based on order type)
   params?: OrderParams;
-
+  userSignedPayload: string;
   // Order status and tracking
   status: OrderStatus;
   remainingMakerAmount: number; // Remaining unfilled amount (float64 not bigint)

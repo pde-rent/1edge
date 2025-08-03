@@ -24,7 +24,7 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
     }
 
     // Get current price
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) return false;
 
     const currentPrice = priceInfo.price;
@@ -51,7 +51,7 @@ class RangeOrderWatcher extends SteppedOrderWatcher {
     const params = this.validateParams<RangeParams>(order);
     if (!params) throw new Error("Invalid range parameters");
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     const currentStep = this.getCurrentStep(order);

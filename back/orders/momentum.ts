@@ -18,7 +18,7 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
     if (!params) return false;
 
     // Get price info with analysis data
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo?.priceData?.analysis?.rsi) {
       logger.debug(
         `No RSI data available for momentum reversal order ${order.id}`,
@@ -70,7 +70,7 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
     const params = this.validateParams<MomentumReversalParams>(order);
     if (!params) throw new Error("Invalid momentum reversal parameters");
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Store entry price for TP/SL calculation

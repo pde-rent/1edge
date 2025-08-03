@@ -16,10 +16,14 @@ import { OrderStatus, OrderType } from "@common/types";
 import { sleep, generateId } from "@common/utils";
 import { getOrderWatcher } from "@back/orders";
 import { ethers } from "ethers";
+import { v4 as uuidV4 } from "uuid";
 import type { TwapParams, RangeOrderParams } from "@common/types";
 import { SERVICE_PORTS } from "@common/constants";
+
 import { oneInchOrderCache } from "./oneInchOrderCache";
 import { oneInchOrderMonitor } from "./oneInchOrderMonitor";
+import { priceCache } from "./priceCache";
+
 
 class OrderRegistryService {
   private config: KeeperConfig;
@@ -38,8 +42,8 @@ class OrderRegistryService {
   async start() {
     logger.info("Starting Order Registry service...");
     this.isRunning = true;
-
-    // Start 1inch order monitoring and caching services (skip in mock mode)
+      await priceCache.connect();
+      // Start 1inch order monitoring and caching services (skip in mock mode)
     if (!this.mockMode) {
       try {
         logger.info("Starting 1inch order monitoring services...");
@@ -82,17 +86,7 @@ class OrderRegistryService {
     }
 
     this.activeOrders.clear();
-
-    // Stop 1inch order monitoring services
-    if (!this.mockMode) {
-      try {
-        await oneInchOrderMonitor.stop();
-        await oneInchOrderCache.disconnect();
-        logger.info("✅ 1inch order monitoring services stopped");
-      } catch (error) {
-        logger.warn("Error stopping 1inch order monitoring services:", error);
-      }
-    }
+    
 
     // Stop HTTP server
     if (this.server) {
@@ -103,55 +97,57 @@ class OrderRegistryService {
     logger.info("Order Registry service stopped");
   }
 
-  async createOrder(order: Order) {
-    if (!this.validateOrderSignature(order)) {
-      throw new Error("Invalid order signature");
-    }
-
-    // Validate that order has required params
-    if (!order.params?.makingAmount) {
-      throw new Error("Order must have params.makingAmount defined");
-    }
-
-    // Initialize order fields with proper defaults
-    order.status = OrderStatus.PENDING;
-    order.triggerCount = 0;
-    order.remainingMakerAmount = order.params.makingAmount;
-    order.createdAt = Date.now();
-
-    // Set other required fields to null if not provided
-    order.orderHash = order.orderHash;
-    // strategyId removed - strategies are just fancy orders
-    order.receiver = order.receiver;
-    order.salt = order.salt;
-    order.nextTriggerValue = order.nextTriggerValue;
-    order.nextTriggerValue = order.nextTriggerValue;
-    order.filledAmount = order.filledAmount || "0";
-    order.executedAt = order.executedAt;
-    order.cancelledAt = order.cancelledAt;
-    order.txHash = order.txHash;
-    order.expiry = order.expiry;
-    order.oneInchOrderHashes = order.oneInchOrderHashes;
-
-    // Clean up extra fields that shouldn't be stored
-    const { pair, validateOnly, ...cleanOrder } = order as any;
-
-
-    // Save the order to the database
-    await saveOrder(cleanOrder);
-
-    // Create order event
-    await saveOrderEvent({
-      orderId: cleanOrder.id,
-      status: OrderStatus.PENDING,
-      timestamp: Date.now(),
-    });
-
-    // Add to active orders set
-    this.activeOrders.add(cleanOrder.id);
-
-    logger.info(`Order ${cleanOrder.id} registered successfully`);
+ async createOrder(order: Order) {
+  if (!this.validateOrderSignature(order)) {
+    throw new Error("Invalid order signature");
   }
+
+  // Validate that order has required params
+  if (!order.params?.makingAmount) {
+    throw new Error("Order must have params.makingAmount defined");
+  }
+
+  // Generate new UUID for the order
+  order.id = uuidV4();
+
+  // Initialize order fields with proper defaults
+  order.status = OrderStatus.PENDING;
+  order.triggerCount = 0;
+  order.remainingMakerAmount = order.params.makingAmount;
+  order.createdAt = Date.now();
+
+  // Set other required fields to null if not provided
+  order.orderHash = order.orderHash;
+  // strategyId removed - strategies are just fancy orders
+  order.receiver = order.receiver;
+  order.salt = order.salt;
+  order.nextTriggerValue = order.nextTriggerValue;
+  order.nextTriggerValue = order.nextTriggerValue;
+  order.filledAmount = order.filledAmount || "0";
+  order.executedAt = order.executedAt;
+  order.cancelledAt = order.cancelledAt;
+  order.txHash = order.txHash;
+  order.expiry = order.expiry;
+  order.oneInchOrderHashes = order.oneInchOrderHashes;
+
+  // Clean up extra fields that shouldn't be stored
+  const { pair, validateOnly, ...cleanOrder } = order as any;
+
+  // Save the order to the database
+  await saveOrder(cleanOrder);
+
+  // Create order event
+  await saveOrderEvent({
+    orderId: cleanOrder.id,
+    status: OrderStatus.PENDING,
+    timestamp: Date.now(),
+  });
+
+  // Add to active orders set
+  this.activeOrders.add(cleanOrder.id);
+
+  logger.info(`Order ${cleanOrder.id} registered successfully`);
+}
 
   async cancelOrder(orderId: string): Promise<void> {
     const order = await getOrder(orderId);
@@ -683,44 +679,43 @@ class OrderRegistryService {
     logger.info(`Order Registry HTTP server started on port ${port}`);
   }
 
-  private validateOrderSignature(order: Order): boolean {
-    if (!order.signature || !order.params) {
-      logger.warn("Order missing signature or params");
-      return false;
-    }
-
-    try {
-      // The user signs the OrderParams directly
-      const messageToSign = JSON.stringify(order.params);
-
-      logger.debug(`Message to verify: ${messageToSign}`);
-      const signerAddress = ethers.verifyMessage(
-        messageToSign,
-        order.signature,
-      );
-
-      const expectedMaker = order.params.maker;
-      logger.debug(
-        `Recovered signer: ${signerAddress}, Expected maker: ${expectedMaker}`,
-      );
-
-      const isValid =
-        signerAddress.toLowerCase() === expectedMaker.toLowerCase();
-
-      if (!isValid) {
-        logger.warn(
-          `Invalid signature: expected ${expectedMaker}, got ${signerAddress}`,
-        );
-      } else {
-        logger.info(`✅ Valid signature for order ${order.id}`);
-      }
-
-      return isValid;
-    } catch (error) {
-      logger.error("Error validating signature:", error);
-      return false;
-    }
+private validateOrderSignature(order: Order): boolean {
+  if (!order.signature || !order.params) {
+    logger.warn("Order missing signature or params");
+    return false;
   }
+
+  try {
+    let messageToSign: string;
+    
+    // The userSignedPayload contains {"params":{...}} structure
+    if (order.userSignedPayload) {
+      messageToSign = order.userSignedPayload;
+    } else {
+      // Fallback: wrap params in the same structure
+      messageToSign = JSON.stringify({ params: order.params });
+    }
+
+    logger.debug(`Message to verify: ${messageToSign}`);
+    const signerAddress = ethers.verifyMessage(messageToSign, order.signature);
+
+    const expectedMaker = order.params.maker;
+    logger.debug(`Recovered signer: ${signerAddress}, Expected maker: ${expectedMaker}`);
+
+    const isValid = signerAddress.toLowerCase() === expectedMaker.toLowerCase();
+
+    if (!isValid) {
+      logger.warn(`Invalid signature: expected ${expectedMaker}, got ${signerAddress}`);
+    } else {
+      logger.info(`✅ Valid signature for order ${order.id}`);
+    }
+
+    return isValid;
+  } catch (error) {
+    logger.error("Error validating signature:", error);
+    return false;
+  }
+}
 }
 
 // Export singleton instance

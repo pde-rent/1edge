@@ -43,7 +43,7 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
       }
       
       // Check max price constraint
-      if (this.exceedsMaxPrice(order, params.maxPrice)) {
+      if (await this.exceedsMaxPrice(order, params.maxPrice)) {
         logger.info(
           `TWAP order ${order.id} skipped - price exceeds max price ${params.maxPrice}`,
         );
@@ -63,7 +63,7 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
     }
 
     // Check max price constraint
-    if (this.exceedsMaxPrice(order, params.maxPrice)) {
+    if (await this.exceedsMaxPrice(order, params.maxPrice)) {
       logger.info(
         `TWAP order ${order.id} skipped - price exceeds max price ${params.maxPrice}`,
       );
@@ -82,10 +82,10 @@ export class TWAPOrderWatcher extends TimeBasedOrderWatcher {
     makingAmount: string,
     takingAmount: string,
   ): Promise<void> {
-    const params = this.validateParams<TwapParams>(order);
+    const params = order.params as TwapParams;
     if (!params) throw new Error("Invalid TWAP parameters");
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Calculate progress

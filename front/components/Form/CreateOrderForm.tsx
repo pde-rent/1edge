@@ -16,6 +16,7 @@ import {
   DollarSign,
   Settings,
   X,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PanelWrapper } from "../common/Panel";
@@ -60,7 +61,6 @@ import {
 } from "wagmi";
 import { getNetworkById } from "../../config/generated";
 import { API_BASE_URL } from "../../config/api";
-import { v4 as uuidv4 } from "uuid";
 
 // Order Type Enum to match API
 export enum APIOrderType {
@@ -90,7 +90,8 @@ const ORDER_TYPE_MAPPING: Record<string, APIOrderType> = {
   RangeBreakout: APIOrderType.RANGE_BREAKOUT,
 };
 
-// API configuration is imported from config/api.ts
+// Supported order types (only TWAP, Range, Iceberg for now)
+const SUPPORTED_ORDER_TYPES = ["TWAP", "Range", "Iceberg"];
 
 // ERC20 ABI for allowance
 const ERC20_ABI = [
@@ -164,7 +165,6 @@ const CreateOrderForm = () => {
       // Set the order type from orderbook click
       if (orderDefaults.orderType) {
         setOrderType(orderDefaults.orderType);
-
       }
 
       // Pre-fill form values from orderbook click
@@ -296,18 +296,16 @@ const CreateOrderForm = () => {
   };
 
   const createOrderPayload = (data: FormData, relevantParams: any) => {
-    const orderId = uuidv4();
     const apiOrderType = ORDER_TYPE_MAPPING[orderType];
 
     return {
-      id: orderId,
-      type: apiOrderType,
-      pair: currentPair || `${data.fromCoin}/${data.toCoin}`,
-      size: parseFloat(data.size),
-      maker: address,
-      makerAsset: makerAsset,
-      takerAsset: takerAsset,
-      params: relevantParams,
+      params: {
+        ...relevantParams,
+        type: apiOrderType,
+        maker: address,
+        makerAsset: makerAsset,
+        takerAsset: takerAsset,
+      },
     };
   };
 
@@ -405,7 +403,7 @@ const CreateOrderForm = () => {
         toast.info("Order created! Now please approve token allowance...");
         const allowanceTxHash = await handleAllowance(
           makerAsset || "0x0000000000000000000000000000000000000000",
-          (parseFloat(data.size) * 1e18).toString(), // Convert to wei equivalent
+          (parseFloat(data.amount) * 1e18).toString(), // Convert to wei equivalent
         );
 
         toast.success("Complete! Order is now active and allowance approved.");
@@ -454,6 +452,8 @@ const CreateOrderForm = () => {
     )?.name;
     return `Create ${orderTypeName} ${orderCategory}`;
   };
+
+  const isOrderTypeSupported = SUPPORTED_ORDER_TYPES.includes(orderType);
 
   return (
     <PanelWrapper>
@@ -542,6 +542,18 @@ const CreateOrderForm = () => {
         )}
       </div>
 
+      {/* Coming Soon Banner for unsupported order types */}
+      {!isOrderTypeSupported && (
+        <div className="mx-4 mb-4 p-3 bg-orange-500/20 border border-orange-500/30 rounded-lg">
+          <div className="flex items-center gap-2 text-orange-300">
+            <AlertCircle className="w-4 h-4" />
+            <span className="text-sm font-medium">
+              {orderTypes[orderCategory].find(t => t.id === orderType)?.name} functionality will be added soon
+            </span>
+          </div>
+        </div>
+      )}
+
       <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-background backdrop-blur-xl">
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -549,37 +561,10 @@ const CreateOrderForm = () => {
         >
           {/* Order Configuration - Scrollable */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-            {/* Size in USD */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-primary flex items-center gap-2">
-                Size (USD)
-                <div className="w-1 h-1 bg-primary"></div>
-              </label>
-              <Controller
-                name="size"
-                control={control}
-                rules={{ required: "Size is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    step="0.01"
-                    className="w-full bg-card backdrop-blur-sm border-primary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 hover:bg-card/80"
-                    placeholder="Enter amount in USD"
-                  />
-                )}
-              />
-              {errors.size && (
-                <span className="text-xs text-red-400 flex items-center gap-1">
-                  <div className="w-1 h-1 bg-red-400"></div>
-                  {errors.size.message}
-                </span>
-              )}
-            </div>
+           
 
             {/* Dynamic Form Fields Based on Order Type */}
-            <div className="space-y-3">
+            <div className="">
               <div className="border-t border-primary/50 pt-3 relative">
                 <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
                 <div className="flex items-center justify-between mb-3">
@@ -604,7 +589,7 @@ const CreateOrderForm = () => {
 
             <Button
               type="submit"
-              disabled={isSubmitting || !address}
+              disabled={isSubmitting || !address || !isOrderTypeSupported}
               className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>

@@ -23,7 +23,7 @@ class StopLimitOrderWatcher extends PriceBasedOrderWatcher {
     }
 
     // Get current price
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) return false;
 
     // Check if price has reached stop price
@@ -50,7 +50,7 @@ class StopLimitOrderWatcher extends PriceBasedOrderWatcher {
     const params = this.validateParams<StopLimitParams>(order);
     if (!params) throw new Error("Invalid stop limit parameters");
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Log execution

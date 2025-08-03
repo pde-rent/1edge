@@ -8,7 +8,6 @@ export interface Network {
   aggregatorV6: string;
   nativeSymbol: string;
   blockExplorer: string;
-  createXFactory?: string;
 }
 
 export interface TokenMapping {
@@ -45,7 +44,7 @@ export const CONFIG: FrontendConfig = {
     "56": {
       "chainId": 56,
       "name": "BSC",
-      "rpcUrl": "https://bsc-dataseed.binance.org",
+      "rpcUrl": "https://bsc-dataseed.bnbchain.org",
       "aggregatorV6": "0x111111125421cA6dc452d289314280a0f8842A65",
       "createXFactory": "0xba5Ed099633D3B313e4D5F7bdc1305d3c28ba5Ed",
       "nativeSymbol": "BNB",

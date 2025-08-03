@@ -140,11 +140,30 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
   /**
    * Get price data for an order
    */
-  protected getPriceInfo(order: Order): PriceInfo | null {
+  protected async getPriceInfo(order: Order): Promise<PriceInfo | null> {
     try {
+      // Alternate approach: Direct pub/sub connection if cache is empty
+      await priceCache.connect();
+      
+      // Wait for price cache to populate if it's empty (max 3 seconds)
+      let attempts = 0;
+      const maxAttempts = 30; // 30 * 100ms = 3 seconds max wait
+      while (priceCache.getAvailableSymbols().length === 0 && attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+        attempts++;
+      }
+      
+      // If cache is still empty, try direct HTTP request to collector
+      if (priceCache.getAvailableSymbols().length === 0) {
+        logger.warn("Price cache is empty after waiting, trying direct HTTP fallback");
+        return await this.getPriceInfoViaHTTP(order);
+      }
+      
       const chainId = order.params?.chainId || 1; // Default to Ethereum if not specified
       const makerAsset = order.params?.makerAsset;
       const takerAsset = order.params?.takerAsset;
+
+      logger.debug(`🔍 getPriceInfo debug: chainId=${chainId}, makerAsset=${makerAsset}, takerAsset=${takerAsset}`);
 
       if (!makerAsset || !takerAsset) {
         logger.warn("Order missing makerAsset or takerAsset in params");
@@ -159,20 +178,26 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       const makerSymbol = addressToSymbol(makerAsset, tokenMapping, chainId);
       const takerSymbol = addressToSymbol(takerAsset, tokenMapping, chainId);
 
+      logger.debug(`🔍 Symbol mapping: ${makerAsset} -> ${makerSymbol}, ${takerAsset} -> ${takerSymbol}`);
+
       // Map symbols for price feeds (WETH -> ETH, WBTC -> BTC)
       const mappedMakerSymbol = mapSymbolForFeed(makerSymbol);
       const mappedTakerSymbol = mapSymbolForFeed(takerSymbol);
+      logger.debug(`🔍 Feed mapping: ${makerSymbol} -> ${mappedMakerSymbol}, ${takerSymbol} -> ${mappedTakerSymbol}`);
 
       // Create price feed symbol
       const symbol =
         `agg:spot:${mappedMakerSymbol}${mappedTakerSymbol}` as PairSymbol;
+      
+      logger.debug(`🔍 Generated price symbol: ${symbol}`);
+      
       const priceData = priceCache.getPrice(symbol);
+      logger.debug(`🔍 Price data result: ${priceData ? `mid=${priceData.mid}` : 'null'}`);
 
       if (!priceData?.mid) {
         logger.warn(`No price data available for ${symbol}`);
         return null;
       }
-
       return {
         symbol,
         price: priceData.mid,
@@ -205,10 +230,10 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
   /**
    * Check if current price exceeds max price constraint
    */
-  protected exceedsMaxPrice(order: Order, maxPrice?: number): boolean {
+  protected async exceedsMaxPrice(order: Order, maxPrice?: number): Promise<boolean> {
     if (!maxPrice) return false;
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     return priceInfo ? priceInfo.price > maxPrice : false;
   }
 
@@ -383,7 +408,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
     try {
       // Get current price data for dynamic pricing
-      const priceInfo = this.getPriceInfo(order);
+      const priceInfo = await this.getPriceInfo(order);
       if (!priceInfo) {
         throw new Error(`No price data available for order ${order.id}`);
       }

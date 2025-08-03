@@ -19,7 +19,7 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
     }
 
     // Get current price
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) return false;
 
     const currentStep = this.getCurrentStep(order);
@@ -57,7 +57,7 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
     const params = this.validateParams<IcebergParams>(order);
     if (!params) throw new Error("Invalid iceberg parameters");
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     const currentStep = this.getCurrentStep(order);

@@ -11,7 +11,7 @@ class RangeBreakoutOrderWatcher extends PriceBasedOrderWatcher {
     const params = this.validateParams<RangeBreakoutParams>(order);
     if (!params) return false;
 
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) return false;
 
     const { price: currentPrice, priceData } = priceInfo;
@@ -53,7 +53,7 @@ class RangeBreakoutOrderWatcher extends PriceBasedOrderWatcher {
     makingAmount: string,
     takingAmount: string,
   ): Promise<void> {
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     order.nextTriggerValue = priceInfo.price;

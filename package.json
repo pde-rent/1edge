@@ -65,6 +65,7 @@
     "ethers": "^6.15.0",
     "glob": "^11.0.3",
     "technicalindicators": "^3.1.0",
+    "uuid": "^11.1.0",
     "viem": "^2.33.1",
     "ws": "^8.18.3"
   },
@@ -73,6 +74,7 @@
     "@types/flexsearch": "^0.7.42",
     "@types/node": "^22.16.5",
     "@types/prismjs": "^1.26.5",
+    "@types/uuid": "^10.0.0",
     "bun-plugin-dts": "^0.3.0",
     "oxlint": "^0.2.18",
     "playwright": "^1.54.1",

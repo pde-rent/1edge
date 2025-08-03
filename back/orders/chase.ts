@@ -19,7 +19,7 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
     }
 
     // Get current price
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) return false;
 
     // Check max price constraint
@@ -57,7 +57,7 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
     makingAmount: string,
     takingAmount: string,
   ): Promise<void> {
-    const priceInfo = this.getPriceInfo(order);
+    const priceInfo = await this.getPriceInfo(order);
     if (!priceInfo) throw new Error("Failed to get price info");
 
     // Update trigger price to current market price

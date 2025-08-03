@@ -13,6 +13,7 @@ import { OrderDetailsModal } from "./OrderDetailsModal";
 import { Order, OrderStatus, OrderType } from "@common/types";
 import { Settings, BarChart3, Edit2, X } from "lucide-react";
 import { API_ENDPOINTS } from "../config/api";
+import { usePrivy } from "@privy-io/react-auth";
 
 /**
  * OrdersPanel displays a table of orders and strategies across the platform.
@@ -22,22 +23,27 @@ export default function OrdersPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user } = usePrivy();
 
   useEffect(() => {
     const fetchOrders = async () => {
+      if (!user?.wallet?.address) {
+        console.log("No user wallet address available");
+        return;
+      }
+
       try {
-        const response = await fetch(API_ENDPOINTS.ORDERS);
+        const response = await fetch(`${API_ENDPOINTS.ORDERS}?makerAddress=${user.wallet.address}`);
         if (response.ok) {
           const data = await response.json();
           setOrders(data.data || []);
         } else {
-          // Mock data for development
-          setOrders(generateMockOrders());
+          console.error("Failed to fetch orders:", response.status, response.statusText);
+          setOrders([]);
         }
       } catch (error) {
         console.error("Failed to fetch orders:", error);
-        // Fallback to mock data
-        setOrders(generateMockOrders());
+        setOrders([]);
       }
     };
 
@@ -45,76 +51,7 @@ export default function OrdersPanel() {
     const interval = setInterval(fetchOrders, 5000);
 
     return () => clearInterval(interval);
-  }, []);
-
-  const generateMockOrders = (): Order[] => [
-    {
-      id: "ord_1",
-      type: OrderType.TWAP,
-      status: OrderStatus.ACTIVE,
-      size: "1000.0",
-      remainingSize: "750.0",
-      createdAt: Date.now() - 3600000,
-      triggerCount: 3,
-      nextTriggerValue: "42500.0",
-      makerAsset: "0x...",
-      takerAsset: "0x...",
-      makingAmount: "1000",
-      takingAmount: "42000000",
-      maker: "0x...",
-      params: {
-        amount: "1000.0",
-        startDate: Date.now() - 3600000,
-        endDate: Date.now() + 86400000,
-        interval: 1800000,
-        maxPrice: 43000,
-      },
-    },
-    {
-      id: "ord_2",
-      type: OrderType.STOP_LIMIT,
-      status: OrderStatus.PENDING,
-      size: "500.0",
-      remainingSize: "500.0",
-      createdAt: Date.now() - 1800000,
-      triggerCount: 0,
-      nextTriggerValue: "41000.0",
-      makerAsset: "0x...",
-      takerAsset: "0x...",
-      makingAmount: "500",
-      takingAmount: "20500000",
-      maker: "0x...",
-      params: {
-        amount: "500.0",
-        stopPrice: 41000,
-        limitPrice: 40800,
-        expiry: 7,
-      },
-    },
-    {
-      id: "ord_3",
-      type: OrderType.GRID_TRADING,
-      status: OrderStatus.PARTIALLY_FILLED,
-      size: "2000.0",
-      remainingSize: "1200.0",
-      createdAt: Date.now() - 7200000,
-      triggerCount: 8,
-      nextTriggerValue: "42200.0",
-      makerAsset: "0x...",
-      takerAsset: "0x...",
-      makingAmount: "2000",
-      takingAmount: "84000000",
-      maker: "0x...",
-      params: {
-        amount: "2000.0",
-        startPrice: 41000,
-        endPrice: 44000,
-        stepPct: 0.5,
-        singleSide: false,
-        tpPct: 2.0,
-      },
-    },
-  ];
+  }, [user?.wallet?.address]);
 
   const formatTimestamp = (timestamp?: number) => {
     if (!timestamp) return "N/A";
