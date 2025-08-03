@@ -187,10 +187,11 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
    * Check if order has expired
    */
   protected isExpired(order: Order, expiryDays?: number): boolean {
-    // Check explicit expiry timestamp first (in ms)
+    // Check explicit expiry from order params (in days from frontend)
     if (order.params?.expiry && order.params.expiry > 0) {
       const now = Date.now();
-      return now >= order.params.expiry;
+      const expiryTime = order.createdAt + (order.params.expiry * 24 * 60 * 60 * 1000);
+      return now >= expiryTime;
     }
 
     // Fallback to days-based expiry for backwards compatibility
@@ -428,7 +429,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         maker: this.delegateProxy.target.toString(), // DelegateProxy as maker
         receiver: order.params!.maker, // User receives the assets
         salt: BigInt(order.params?.salt || this.generateSalt()),
-        expirationMs: order.params?.expiry && order.params.expiry > 0 ? order.params.expiry : undefined,
+        expirationMs: order.params?.expiry && order.params.expiry > 0 ? Date.now() + (order.params.expiry * 24 * 60 * 60 * 1000) : undefined,
         partialFillsEnabled: true, // Enable partial fills by default
       };
 
@@ -483,7 +484,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         - Spot Price: $${priceInfo.price.toFixed(6)}
         - Is Sell: ${isSell}
         - API Success: ${result.success}
-        - Expiry: ${order.params?.expiry ? new Date(order.params.expiry).toISOString() : 'none'}
+        - Expiry: ${order.params?.expiry ? `${order.params.expiry} days (${new Date(order.createdAt + order.params.expiry * 24 * 60 * 60 * 1000).toISOString()})` : 'none'}
         - Chain ID: ${this.chainId || 1}`);
 
       if (!result.success) {

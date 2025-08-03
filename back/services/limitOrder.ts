@@ -28,6 +28,13 @@ function convertToCreateOrderParams(params: OneInchLimitOrderParams): {
   nonce?: bigint;
   partialFillsEnabled?: boolean;
 } {
+  // Convert expiry days to milliseconds if provided
+  let expirationMs = params.expirationMs;
+  if (params.expiry && !expirationMs) {
+    // params.expiry is in days from frontend
+    expirationMs = Date.now() + (params.expiry * 24 * 60 * 60 * 1000);
+  }
+
   return {
     makerAsset: new Address(params.makerAsset),
     takerAsset: new Address(params.takerAsset),
@@ -36,7 +43,7 @@ function convertToCreateOrderParams(params: OneInchLimitOrderParams): {
     maker: new Address(params.maker),
     receiver: params.receiver ? new Address(params.receiver) : undefined,
     salt: params.salt ? (typeof params.salt === 'string' ? BigInt(params.salt) : params.salt) : undefined,
-    expirationMs: params.expirationMs,
+    expirationMs: expirationMs,
     nonce: params.nonce ? (typeof params.nonce === 'string' ? BigInt(params.nonce) : params.nonce) : undefined,
     partialFillsEnabled: params.partialFillsEnabled,
   };
@@ -295,7 +302,7 @@ export async function createQuickOrder(
     makingAmount: bigint;
     takingAmount: bigint;
     receiverAddress?: string;
-    expirationMinutes?: number;
+    expirationDays?: number; // Changed from expirationMinutes to expirationDays
   },
 ): Promise<SubmitOrderResult> {
   const service = createLimitOrderService(authKey, chainId, makerWallet, provider);
@@ -307,7 +314,7 @@ export async function createQuickOrder(
     takingAmount: params.takingAmount,
     maker: makerWallet.address,
     receiver: params.receiverAddress,
-    expirationMs: params.expirationMinutes ? Date.now() + (params.expirationMinutes * 60 * 1000) : undefined,
+    expirationMs: params.expirationDays ? Date.now() + (params.expirationDays * 24 * 60 * 60 * 1000) : undefined, // Convert days to milliseconds
   };
 
   return service.createAndSubmitOrder(orderParams, makerWallet.address, makerWallet);

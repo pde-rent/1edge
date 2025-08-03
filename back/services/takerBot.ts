@@ -7,9 +7,7 @@ import { logger } from '../utils/logger';
 import { PairSymbol } from '../../common/types';
 
 // --- Configuration ---
-const MAKER_ADDRESSES = [
-    '0xfeb52d099ade0b5902690f20dfe88c78f81329d6',
-];
+const MAKER_ADDRESS = '0xfeb52d099ade0b5902690f20dfe88c78f81329d6';
 const CHAIN_ID = 56; // BSC Mainnet
 const ONEINCH_API_BASE_URL = 'https://api.1inch.dev/orderbook/v4.0';
 const API_KEY = process.env.ONE_INCH_API_KEY;
@@ -97,9 +95,7 @@ export class TakerBot {
     private async checkAndFillOrders() {
         logger.info('Running order check cycle...');
         try {
-            for (const address of MAKER_ADDRESSES) {
-                await this.processMaker(address);
-            }
+            await this.processMaker(MAKER_ADDRESS);
         } catch (error) {
             logger.error('Error in Taker Bot check cycle', { error });
         }
