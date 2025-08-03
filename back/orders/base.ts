@@ -15,6 +15,7 @@ import { LimitOrderService, createLimitOrderService } from "@back/services/limit
 import { ethers } from "ethers";
 import { getConfig } from "@back/services/config";
 import { priceCache } from "@back/services/priceCache";
+import { oneInchOrderCache } from "@back/services/oneInchOrderCache";
 import {
   getSymbolFromAssets,
   addressToSymbol,
@@ -501,20 +502,16 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
   }
 
   /**
-   * Monitor and update order status from 1inch
+   * Monitor and update order status from 1inch using cached data
    */
   async updateOrderFromOnChain(order: Order): Promise<void> {
-    if (
-      this.mockMode ||
-      !this.delegateProxy ||
-      !order.oneInchOrderHashes?.length
-    ) {
-      logger.debug(`Skipping updateOrderFromOnChain: mockMode=${this.mockMode}, delegateProxy=${!!this.delegateProxy}, orderHashes=${order.oneInchOrderHashes?.length || 0}`);
+    if (this.mockMode || !order.oneInchOrderHashes?.length) {
+      logger.debug(`Skipping updateOrderFromOnChain: mockMode=${this.mockMode}, orderHashes=${order.oneInchOrderHashes?.length || 0}`);
       return;
     }
 
     try {
-      logger.debug(`🔍 Updating order ${order.id.slice(0, 8)}... from on-chain:
+      logger.debug(`🔍 Updating order ${order.id.slice(0, 8)}... from 1inch cache:
         - Order Hashes: ${order.oneInchOrderHashes.map(h => h.slice(0, 10) + '...').join(', ')}
         - Remaining Amount: ${order.remainingMakerAmount}
         - Status: ${order.status}`);
@@ -528,6 +525,115 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         return;
       }
 
+      // Ensure 1inch order cache is connected
+      if (!oneInchOrderCache.getStats().isConnected) {
+        logger.warn(`1inch order cache not connected, attempting to connect...`);
+        try {
+          await oneInchOrderCache.connect();
+        } catch (error) {
+          logger.error(`Failed to connect to 1inch order cache: ${error}`);
+          // Fallback to direct blockchain query if cache unavailable
+          return this.updateOrderFromBlockchain(order);
+        }
+      }
+
+      // Get cached order states
+      const cachedOrders = oneInchOrderCache.getOrders(order.oneInchOrderHashes);
+      
+      // Check if we have data for all orders
+      const missingOrders = cachedOrders.filter(o => o === null).length;
+      if (missingOrders > 0) {
+        logger.warn(`${missingOrders}/${order.oneInchOrderHashes.length} 1inch orders missing from cache for order ${order.id.slice(0, 8)}...`);
+        
+        // If some orders missing, fallback to blockchain query
+        if (missingOrders === order.oneInchOrderHashes.length) {
+          logger.debug(`All 1inch orders missing from cache, falling back to blockchain query`);
+          return this.updateOrderFromBlockchain(order);
+        }
+      }
+
+      // Calculate aggregated state using cache utility
+      const aggregatedState = oneInchOrderCache.calculateAggregatedState(order.oneInchOrderHashes);
+      
+      logger.debug(`📊 Aggregated 1inch state for order ${order.id.slice(0, 8)}...: 
+        - Total Filled: ${aggregatedState.totalFilled}
+        - Total Remaining: ${aggregatedState.totalRemaining}
+        - Has Partial Fills: ${aggregatedState.hasPartialFills}
+        - Completely Filled: ${aggregatedState.isCompletelyFilled}
+        - All Valid: ${aggregatedState.allOrdersValid}
+        - Invalid Reasons: ${aggregatedState.invalidReasons.join(', ')}`);
+
+      // Update order status based on aggregated fills
+      const originalMakingAmount = order.params?.makingAmount || 0;
+      const fillPercentage = originalMakingAmount > 0 ? (aggregatedState.totalFilled / originalMakingAmount) * 100 : 0;
+
+      if (aggregatedState.isCompletelyFilled) {
+        order.status = OrderStatus.FILLED;
+        order.remainingMakerAmount = 0;
+        logger.info(`🎉 Order ${order.id.slice(0, 8)}... completely filled! Total makingAmount (${originalMakingAmount}) reached via 1inch cache.`);
+      } else if (aggregatedState.hasPartialFills) {
+        // Any fill from underlying 1inch orders = PARTIALLY_FILLED for the 1edge order
+        order.status = OrderStatus.PARTIALLY_FILLED;
+        order.remainingMakerAmount = Math.max(0, originalMakingAmount - aggregatedState.totalFilled);
+        logger.info(
+          `📈 Order ${order.id.slice(0, 8)}... ${fillPercentage.toFixed(2)}% filled (${aggregatedState.totalFilled} of ${originalMakingAmount} WETH) via 1inch cache`,
+        );
+      }
+
+      // Handle invalid orders
+      if (!aggregatedState.allOrdersValid && aggregatedState.invalidReasons.length > 0) {
+        logger.warn(`⚠️ Order ${order.id.slice(0, 8)}... has invalid 1inch orders: ${aggregatedState.invalidReasons.join(', ')}`);
+        
+        // If all orders are invalid, mark order as expired/failed
+        if (aggregatedState.invalidReasons.every(reason => 
+          ['order expired', 'order cancelled', 'removed_from_api'].includes(reason)
+        )) {
+          order.status = OrderStatus.EXPIRED;
+          order.cancelledAt = Date.now();
+          logger.info(`🚫 Order ${order.id.slice(0, 8)}... marked as expired due to invalid 1inch orders`);
+        }
+      }
+
+      // Save updated order
+      await saveOrder(order);
+      
+      // Log detailed order states for monitoring
+      for (let i = 0; i < order.oneInchOrderHashes.length; i++) {
+        const hash = order.oneInchOrderHashes[i];
+        const cachedOrder = cachedOrders[i];
+        if (cachedOrder) {
+          const remaining = parseFloat(cachedOrder.remainingMakerAmount);
+          const original = parseFloat(cachedOrder.data.makingAmount);
+          const filled = Math.max(0, original - remaining);
+          const fillPct = original > 0 ? (filled / original) * 100 : 0;
+          
+          logger.debug(`  📋 1inch Order ${hash.slice(0, 10)}...: ${fillPct.toFixed(1)}% filled (${filled}/${original}) - ${cachedOrder.orderInvalidReason || 'active'}`);
+        }
+      }
+      
+    } catch (error) {
+      logger.error(
+        `Failed to update order ${order.id} from 1inch cache: ${error}`,
+      );
+      
+      // Fallback to blockchain query on cache errors
+      logger.debug(`Falling back to blockchain query due to cache error`);
+      return this.updateOrderFromBlockchain(order);
+    }
+  }
+
+  /**
+   * Fallback method to update order status directly from blockchain
+   * Used when 1inch order cache is unavailable
+   */
+  private async updateOrderFromBlockchain(order: Order): Promise<void> {
+    if (!this.delegateProxy || !order.oneInchOrderHashes?.length) {
+      return;
+    }
+
+    try {
+      logger.debug(`🔗 Updating order ${order.id.slice(0, 8)}... from blockchain (cache fallback)`);
+      
       // Check status of all 1inch orders for this order
       const orderData = await this.delegateProxy.getOrderData(
         order.oneInchOrderHashes,
@@ -540,7 +646,6 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         const data = orderData[i];
         // Convert decimal amount to wei using parseUnits with 18 decimals
         const remainingAmountStr = order.remainingMakerAmount.toFixed(18);
-        logger.debug(`Converting decimal ${order.remainingMakerAmount} to fixed(18): ${remainingAmountStr}`);
         const originalAmount = ethers.parseUnits(remainingAmountStr, 18);
         const filled = originalAmount - data.remainingAmount;
 
@@ -565,14 +670,14 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       if (totalOrderFilled && totalFilled > 0n) {
         order.status = OrderStatus.FILLED;
         order.remainingMakerAmount = 0;
-        logger.info(`🎉 Order ${order.id.slice(0, 8)}... completely filled! Total makingAmount (${originalMakingAmount}) reached.`);
+        logger.info(`🎉 Order ${order.id.slice(0, 8)}... completely filled! Total makingAmount (${originalMakingAmount}) reached via blockchain.`);
       } else if (hasPartialFills) {
         // Any fill from underlying 1inch orders = PARTIALLY_FILLED for the 1edge order
         order.status = OrderStatus.PARTIALLY_FILLED;
         const remaining = originalTotal - totalFilled;
         order.remainingMakerAmount = parseFloat(ethers.formatUnits(remaining, 18));
         logger.info(
-          `📈 Order ${order.id.slice(0, 8)}... ${fillPercentage.toFixed(2)}% filled (${ethers.formatUnits(totalFilled, 18)} of ${originalMakingAmount} WETH)`,
+          `📈 Order ${order.id.slice(0, 8)}... ${fillPercentage.toFixed(2)}% filled (${ethers.formatUnits(totalFilled, 18)} of ${originalMakingAmount} WETH) via blockchain`,
         );
       }
 
@@ -580,7 +685,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       await saveOrder(order);
     } catch (error) {
       logger.error(
-        `Failed to update order ${order.id} from on-chain: ${error}`,
+        `Failed to update order ${order.id} from blockchain: ${error}`,
       );
     }
   }
