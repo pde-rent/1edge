@@ -53,6 +53,10 @@ tsconfig.tsbuildinfo
 # Database files
 data/
 
+# SDK source build artifacts (submodule tracked separately)
+sdk-source/node_modules/
+sdk-source/dist/
+
 # Next.js build output
 front/.next
 
