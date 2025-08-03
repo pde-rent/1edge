@@ -6,8 +6,8 @@
   "author": "1edge Team",
   "description": "Advanced order manager for 1inch limit order protocol with automated trading strategies",
   "scripts": {
-    "postinstall": "git submodule update --init --recursive && bun run build:sdk",
-    "build:sdk": "cd sdk-source && npm install && npm run build",
+    "postinstall": "git submodule update --init sdk-source && bun run build:sdk",
+    "build:sdk": "cd sdk-source && npm install --legacy-peer-deps --production=false && npm run build",
     "clean:sdk": "rm -rf sdk-source/node_modules sdk-source/dist",
     "kill:back": "bun ./scripts/kill-on-port.ts ${API_PORT:-40005}",
     "kill:front": "bun ./scripts/kill-on-port.ts ${NEXT_PORT:-40006}",
