@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "composite": true /* Enable constraints that allow a TypeScript project to be used with project references. */,
+    "composite": false /* Enable constraints that allow a TypeScript project to be used with project references. */,
     "target": "ESNext" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
     "lib": ["ESNext", "DOM"],
     "jsx": "react-jsx",
@@ -13,7 +13,8 @@
       "@common/*": ["common/*"],
       "@back/*": ["back/*"],
       "@front/*": ["front/*"],
-      "@contracts/*": ["contracts/*"]
+      "@contracts/*": ["contracts/*"],
+      "@1inch/limit-order-sdk": ["sdk-source/dist/esm/index.js"]
     },
     "types": ["@types/bun"],
     "allowImportingTsExtensions": false,
@@ -22,13 +23,14 @@
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./build" /* Specify an output folder for all emitted files. */,
-    "noEmit": false,
+    "noEmit": true,
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true /* Enable all strict type-checking options. */,
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true /* Skip type checking all .d.ts files. */,
+    "allowArbitraryExtensions": true
   },
   "include": [
     "common/**/*.ts",
@@ -37,5 +39,5 @@
     "package.json",
     "deployments.json"
   ],
-  "exclude": ["node_modules", "dist", "build", "contracts"]
+  "exclude": ["node_modules", "dist", "build", "contracts", "sdk-source"]
 }

@@ -8,6 +8,7 @@ export interface Network {
   aggregatorV6: string;
   nativeSymbol: string;
   blockExplorer: string;
+  createXFactory?: string;
 }
 
 export interface TokenMapping {

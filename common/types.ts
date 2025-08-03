@@ -75,19 +75,34 @@ export interface NetworkConfig {
 }
 
 /**
- * Represents a 1inch limit order
+ * Represents a 1inch limit order creation parameters
  */
 export interface OneInchLimitOrderParams {
   makerAsset: string; // Token address
   takerAsset: string; // Token address
-  makingAmount: string; // Amount of maker asset
-  takingAmount: string; // Amount of taker asset
+  makingAmount: string | bigint; // Amount of maker asset
+  takingAmount: string | bigint; // Amount of taker asset
   maker: string; // Maker address
   receiver?: string; // Optional receiver address
-  salt?: string; // Order salt for uniqueness
+  salt?: string | bigint; // Order salt for uniqueness
+  expirationMs?: number; // Expiration in milliseconds (optional)
+  nonce?: string | bigint; // Nonce (optional)
+  partialFillsEnabled?: boolean; // Partial fills (optional, default: enabled)
+  // Legacy fields for API compatibility
   offsets?: string; // Encoded offsets
   interactions?: string; // Encoded interactions
-  expiry?: number; // Expiration timestamp
+  expiry?: number; // Expiration timestamp (legacy)
+}
+
+/**
+ * Result of submitting a 1inch limit order
+ */
+export interface SubmitOrderResult {
+  orderHash: string;
+  signature: string;
+  apiResponse?: any;
+  success: boolean;
+  error?: string;
 }
 
 /**
@@ -181,6 +196,8 @@ export interface RangeOrderParams extends BaseOrderParams {
   startPrice: number; // Start price (float64)
   endPrice: number; // End price (float64)
   stepPct: number; // Step percentage (float64)
+  steps: number; // Number of steps
+  amount: number; // Total amount
 }
 
 /**
@@ -260,6 +277,7 @@ export interface GridTradingParams extends BaseOrderParams {
   stepMultiplier?: number; // Step multiplier (float64)
   singleSide: boolean;
   tpPct?: number; // Take profit percentage (float64)
+  amount?: string; // Total amount for grid trading
 }
 
 export enum OrderType {
@@ -323,7 +341,7 @@ export interface Order {
 
   // Missing properties for compatibility
   orderHash?: string; // Primary 1inch order hash (if applicable)
-  strategyId?: string; // Strategy ID for strategy-based orders
+  // strategyId removed - strategies are just fancy orders, use id instead
   receiver?: string; // Receiver address (if different from maker)
   salt?: string; // Salt value for uniqueness
   expiry?: number; // Expiry timestamp
@@ -458,6 +476,7 @@ export interface AggregatedTickerConfig {
 /** Aggregated ticker data */
 export interface AggregatedTicker extends TickerFeed {
   sources: Record<PairSymbol, TickerFeed>;
+  lookback?: any; // Optional lookback data
 }
 
 // Storage configuration
@@ -559,7 +578,7 @@ export interface Strategy extends StrategyConfig {
 /** Position tracking for strategies */
 export interface Position {
   id: string;
-  strategyId: string;
+  orderId: string; // Parent order ID (strategies are just fancy orders)
   symbol: PairSymbol;
   side: "LONG" | "SHORT";
   entryPrice: number;

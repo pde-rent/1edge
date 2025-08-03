@@ -342,7 +342,7 @@ export const applyOrderDefaults = (
 
   Object.entries(fieldMappings).forEach(([defaultKey, formKey]) => {
     if (orderDefaults[defaultKey] !== undefined) {
-      updates[formKey] = orderDefaults[defaultKey];
+      (updates as any)[formKey] = (orderDefaults as any)[defaultKey];
     }
   });
 
