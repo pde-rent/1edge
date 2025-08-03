@@ -71,6 +71,13 @@ const privyConfig = {
       connectionOptions: "smartWalletOnly" as const,
     },
   },
+  appearance: {
+    theme: "dark" as const,
+    accentColor: THEME.primary, 
+    logo: "/logo.svg", 
+    showWalletLoginFirst: true,
+    walletChainType: "ethereum-only" as const,
+  },
 };
 
 const darkTheme = createTheme({
