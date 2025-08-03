@@ -69,7 +69,7 @@ graph TD
     B --> C[Stop condition met?]
     C --> D[Yes] --stops--> A
     C --"No"--> A
-    D --updates db--> F[Order status: FILLED]
+    D --updates db--> F[Order status: FILLED when all 1inch orders complete]
 ```
 
 ## Complete Flow
@@ -227,15 +227,33 @@ Cancels an order and stops its watcher.
 
 ## Order Statuses
 
-| Status           | Description                       |
-| ---------------- | --------------------------------- |
-| PENDING          | Order created, watcher monitoring |
-| ACTIVE           | Submitted to 1inch, awaiting fill |
-| PARTIALLY_FILLED | Partially executed                |
-| FILLED           | Completely executed               |
-| CANCELLED        | Cancelled by user/system          |
-| EXPIRED          | Expired without execution         |
-| FAILED           | Execution failed                  |
+| Status           | Description                                           |
+| ---------------- | ----------------------------------------------------- |
+| PENDING          | Order created, no 1inch orders created yet           |
+| ACTIVE           | At least one 1inch order created, none filled        |
+| PARTIALLY_FILLED | At least one underlying 1inch order partially filled |
+| FILLED           | All underlying 1inch orders completed                |
+| CANCELLED        | Cancelled by user/system                             |
+| EXPIRED          | Expired without execution                            |
+| FAILED           | Execution failed                                     |
+
+## Order Status Flow
+
+The order status follows this lifecycle:
+
+```
+PENDING → ACTIVE → PARTIALLY_FILLED → FILLED
+    ↓         ↓            ↓             ↓
+EXPIRED   CANCELLED   CANCELLED     [Complete]
+    ↓         ↓            ↓
+  FAILED    FAILED     FAILED
+```
+
+**Key Transitions:**
+- **PENDING → ACTIVE**: When first 1inch order is created and submitted
+- **ACTIVE → PARTIALLY_FILLED**: When at least one underlying 1inch order is partially or fully filled
+- **PARTIALLY_FILLED → FILLED**: When ALL underlying 1inch orders are completely filled
+- **Any Status → CANCELLED/EXPIRED/FAILED**: Error conditions or user actions
 
 ## Multi-Call Order Status Batching
 
