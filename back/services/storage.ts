@@ -3,7 +3,6 @@ import { join } from "path";
 import { mkdir } from "fs/promises";
 import type {
   Order,
-  Position,
   Strategy,
   TickerFeed,
   AggregatedTicker,
@@ -57,37 +56,13 @@ class StorageService {
   }
 
   private setupTables() {
-    // Orders table
+    // Orders table - simplified schema with minimal columns + raw_data
     this.db.run(`
       CREATE TABLE IF NOT EXISTS orders (
         id TEXT PRIMARY KEY,
-        order_hash TEXT UNIQUE,
-        strategy_id TEXT,
-        type TEXT NOT NULL,
         status TEXT NOT NULL,
-        maker_asset TEXT NOT NULL,
-        taker_asset TEXT NOT NULL,
-        making_amount TEXT NOT NULL,
-        taking_amount TEXT NOT NULL,
-        maker TEXT NOT NULL,
-        receiver TEXT,
-        salt TEXT,
-        signature TEXT,
-        size TEXT NOT NULL,
-        remaining_size TEXT NOT NULL,
-        trigger_count INTEGER DEFAULT 0,
-        next_trigger_value TEXT,
-        trigger_price REAL,
-        filled_amount TEXT DEFAULT '0',
         created_at INTEGER NOT NULL,
-        executed_at INTEGER,
-        cancelled_at INTEGER,
-        tx_hash TEXT,
-        network INTEGER NOT NULL,
-        expiry INTEGER,
-        user_signed_payload TEXT,
-        one_inch_order_hashes TEXT, -- JSON array of order hashes
-        raw_data TEXT NOT NULL -- Complete JSON serialized Order object
+        raw_data TEXT NOT NULL -- Complete Order object as JSON
       )
     `);
 
@@ -108,23 +83,7 @@ class StorageService {
       )
     `);
 
-    // Positions table
-    this.db.run(`
-      CREATE TABLE IF NOT EXISTS positions (
-        id TEXT PRIMARY KEY,
-        strategy_id TEXT NOT NULL,
-        symbol TEXT NOT NULL,
-        side TEXT NOT NULL,
-        entry_price REAL NOT NULL,
-        current_price REAL,
-        size TEXT NOT NULL,
-        size_usd REAL NOT NULL,
-        pnl REAL,
-        pnl_percent REAL,
-        opened_at INTEGER NOT NULL,
-        closed_at INTEGER
-      )
-    `);
+    // Positions table removed - not needed anymore
 
     // Strategies table
     this.db.run(`
@@ -169,13 +128,9 @@ class StorageService {
       )
     `);
 
-    // Create performance-critical indexes for maximum retrieval speed
+    // Create simplified indexes for the minimal schema
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)`,
-    );
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_orders_maker ON orders(maker)`);
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_orders_hash ON orders(order_hash)`,
     );
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC)`,
@@ -184,23 +139,7 @@ class StorageService {
       `CREATE INDEX IF NOT EXISTS idx_orders_status_created ON orders(status, created_at DESC)`,
     );
     this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_orders_maker_created ON orders(maker, created_at DESC)`,
-    );
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_orders_maker_status ON orders(maker, status)`,
-    );
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_orders_strategy ON orders(strategy_id)`,
-    );
-    this.db.run(`CREATE INDEX IF NOT EXISTS idx_orders_type ON orders(type)`);
-    this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_order_events_order ON order_events(order_id)`,
-    );
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_positions_strategy ON positions(strategy_id)`,
-    );
-    this.db.run(
-      `CREATE INDEX IF NOT EXISTS idx_positions_status ON positions(closed_at)`,
     );
     this.db.run(
       `CREATE INDEX IF NOT EXISTS idx_token_decimals ON token_decimals(chain_id, token_address)`,
@@ -241,7 +180,7 @@ class StorageService {
       "getOrdersByMaker",
       this.db.prepare(`
       SELECT raw_data FROM orders 
-      WHERE maker = ? 
+      WHERE json_extract(raw_data, '$.params.maker') = ?
       ORDER BY created_at DESC
     `),
     );
@@ -268,55 +207,18 @@ class StorageService {
 
   async saveOrder(order: Order): Promise<void> {
     const stmt = this.db.prepare(`
-    INSERT OR REPLACE INTO orders (
-      id, order_hash, strategy_id, type, status,
-      maker_asset, taker_asset, making_amount, taking_amount,
-      maker, receiver, salt, signature, size, remaining_size,
-      trigger_count, next_trigger_value, trigger_price,
-      filled_amount, created_at, executed_at, cancelled_at, tx_hash,
-      network, expiry, one_inch_order_hashes, raw_data
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-    const makingAmount = order.params?.makingAmount?.toString() || "0";
-    const takingAmount = order.params?.takingAmount?.toString() || "0";
-    const remainingMakerAmount = order.remainingMakerAmount || 0;
+      INSERT OR REPLACE INTO orders (id, status, created_at, raw_data)
+      VALUES (?, ?, ?, ?)
+    `);
 
     stmt.run(
       order.id,
-      order.orderHash || null,
-      order.strategyId || null,
-      order.params?.type || "UNKNOWN",
       order.status,
-      order.params?.makerAsset || "",
-      order.params?.takerAsset || "",
-      makingAmount, // Ensure this is never null
-      takingAmount, // Ensure this is never null
-      order.params?.maker || "",
-      order.params?.receiver || null,
-      order.params?.salt || null,
-      order.signature || null,
-      makingAmount, // Use makingAmount as size for compatibility
-      remainingMakerAmount.toString(),
-      order.triggerCount || 0,
-      order.nextTriggerValue ? String(order.nextTriggerValue) : null,
-      order.triggerPrice ? String(order.triggerPrice) : null,
-      order.filledAmount || "0",
       order.createdAt,
-      order.executedAt || null,
-      order.cancelledAt || null,
-      order.txHash || null,
-      1, // Default to Ethereum mainnet
-      order.params?.expiry || null,
-      order.oneInchOrderHashes
-        ? JSON.stringify(order.oneInchOrderHashes)
-        : null,
-      JSON.stringify(order), // Complete order object for reliable reconstruction
+      JSON.stringify(order)
     );
 
-    logger.debug(
-      `Saved order ${order.id} with makingAmount: ${makingAmount}, takingAmount: ${takingAmount}`,
-    );
+    logger.debug(`Saved order ${order.id}`);
   }
   async getOrder(id: string): Promise<Order | null> {
     const stmt = this.preparedStatements.get("getOrder");
@@ -326,21 +228,25 @@ class StorageService {
 
   async getOrderByHash(hash: string): Promise<Order | null> {
     const stmt = this.db.prepare(
-      `SELECT raw_data FROM orders WHERE order_hash = ?`,
+      `SELECT raw_data FROM orders WHERE json_extract(raw_data, '$.orderHash') = ?`,
     );
     const result = stmt.get(hash) as { raw_data: string } | null;
     return result ? JSON.parse(result.raw_data) : null;
   }
 
-  async getOrdersByStrategy(strategyId: string): Promise<Order[]> {
-    const stmt = this.db.prepare(`
-      SELECT raw_data FROM orders 
-      WHERE strategy_id = ? 
-      ORDER BY created_at DESC
-    `);
-    const results = stmt.all(strategyId) as { raw_data: string }[];
-    return results.map((r) => JSON.parse(r.raw_data));
+  async updateOrder(order: Order): Promise<void> {
+    // Update is same as save since we use INSERT OR REPLACE
+    await this.saveOrder(order);
   }
+
+  async deleteOrder(id: string): Promise<void> {
+    const stmt = this.db.prepare(`DELETE FROM orders WHERE id = ?`);
+    stmt.run(id);
+    logger.debug(`Deleted order ${id}`);
+  }
+
+  // getOrdersByStrategy removed - strategies are just fancy orders
+  // Use getOrderById or getOrders instead
 
   async getActiveOrders(): Promise<Order[]> {
     const stmt = this.preparedStatements.get("getActiveOrders");
@@ -406,53 +312,11 @@ class StorageService {
     return stmt.all(orderId) as OrderEvent[];
   }
 
-  // Position methods
-  async savePosition(position: Position): Promise<void> {
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO positions (
-        id, strategy_id, symbol, side, entry_price,
-        current_price, size, size_usd, pnl, pnl_percent,
-        opened_at, closed_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+  // Position methods removed - not needed anymore
 
-    stmt.run(
-      position.id,
-      position.strategyId,
-      position.symbol,
-      position.side,
-      position.entryPrice,
-      position.currentPrice || null,
-      position.size,
-      position.sizeUsd,
-      position.pnl || null,
-      position.pnlPercent || null,
-      position.openedAt,
-      position.closedAt || null,
-    );
+  // getPosition removed - not needed anymore
 
-    logger.debug(`Saved position ${position.id}`);
-  }
-
-  async getPosition(id: string): Promise<Position | null> {
-    const stmt = this.db.prepare(`SELECT * FROM positions WHERE id = ?`);
-    return stmt.get(id) as Position | null;
-  }
-
-  async getOpenPositions(strategyId?: string): Promise<Position[]> {
-    let query = `SELECT * FROM positions WHERE closed_at IS NULL`;
-    const params: any[] = [];
-
-    if (strategyId) {
-      query += ` AND strategy_id = ?`;
-      params.push(strategyId);
-    }
-
-    query += ` ORDER BY opened_at DESC`;
-
-    const stmt = this.db.prepare(query);
-    return stmt.all(...params) as Position[];
-  }
+  // getOpenPositions removed - not needed anymore
 
   // Strategy methods
   async saveStrategy(strategy: Strategy): Promise<void> {
@@ -610,12 +474,13 @@ export function getStorage(): StorageService {
 }
 
 // Export convenience methods
+// Order CRUD operations
 export const saveOrder = (order: Order) => getStorage().saveOrder(order);
 export const getOrder = (id: string) => getStorage().getOrder(id);
+export const updateOrder = (order: Order) => getStorage().updateOrder(order);
+export const deleteOrder = (id: string) => getStorage().deleteOrder(id);
 export const getOrderByHash = (hash: string) =>
   getStorage().getOrderByHash(hash);
-export const getOrdersByStrategy = (strategyId: string) =>
-  getStorage().getOrdersByStrategy(strategyId);
 export const getActiveOrders = () => getStorage().getActiveOrders();
 export const getOrdersByMaker = (makerAddress: string) =>
   getStorage().getOrdersByMaker(makerAddress);
@@ -624,11 +489,7 @@ export const saveOrderEvent = (event: OrderEvent) =>
   getStorage().saveOrderEvent(event);
 export const getOrderEvents = (orderId: string) =>
   getStorage().getOrderEvents(orderId);
-export const savePosition = (position: Position) =>
-  getStorage().savePosition(position);
-export const getPosition = (id: string) => getStorage().getPosition(id);
-export const getOpenPositions = (strategyId?: string) =>
-  getStorage().getOpenPositions(strategyId);
+// Position functions removed - not needed anymore
 export const saveStrategy = (strategy: Strategy) =>
   getStorage().saveStrategy(strategy);
 export const getStrategy = (id: string) => getStorage().getStrategy(id);

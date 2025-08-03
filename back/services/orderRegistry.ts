@@ -95,7 +95,7 @@ class OrderRegistryService {
 
     // Set other required fields to null if not provided
     order.orderHash = order.orderHash;
-    order.strategyId = order.strategyId;
+    // strategyId removed - strategies are just fancy orders
     order.receiver = order.receiver;
     order.salt = order.salt;
     order.nextTriggerValue = order.nextTriggerValue;

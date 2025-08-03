@@ -339,7 +339,7 @@ class CollectorService {
       // Every 60 seconds
       const stats = pubSubServer.getStats();
       logger.info(
-        `Collector stats: ${this.indexData.size} indexes | Clients: ${stats.totalClients} | Performance: ${JSON.stringify(this.getPerformanceStats())}`,
+        `Collector stats: ${this.indexData.size} indexes | Clients: ${(stats as any).totalClients || stats.connectedClients} | Performance: ${JSON.stringify(this.getPerformanceStats())}`,
       );
       this.lastStatsLog = now;
     }

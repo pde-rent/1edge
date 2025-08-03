@@ -5,9 +5,8 @@ import { getServiceConfig, getConfig, getStorageConfig } from "./config";
 import {
   initStorage,
   getActiveOrders,
-  getOrdersByStrategy,
   getActiveStrategies,
-  getOpenPositions,
+  // getOpenPositions removed - positions no longer exist
   getCachedTicker,
   saveStrategy,
   getAllStrategies,
@@ -70,9 +69,9 @@ class ApiServer {
       ? origin
       : allowedOrigins[0];
 
-    const headers = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": allowOrigin,
+      "Access-Control-Allow-Origin": allowOrigin || "*",
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
@@ -117,7 +116,7 @@ class ApiServer {
       }
 
       if (path === "/positions") {
-        return this.handleGetPositions(url, headers);
+        return this.jsonResponse({ success: false, error: "Positions feature removed" }, headers);
       }
 
       if (path === "/ping") {
@@ -258,7 +257,7 @@ class ApiServer {
 
     // Combine config with live data like bet-bot does
     const feeds = Object.entries(tickerConfigs).map(([symbol, config]) => {
-      const priceData = activePrices[symbol] || {};
+      const priceData = (activePrices as any)[symbol] || {};
       return {
         symbol,
         config,
@@ -308,7 +307,7 @@ class ApiServer {
     );
 
     // Check if this symbol exists in config
-    if (!tickerConfigs[symbol]) {
+    if (!(tickerConfigs as any)[symbol]) {
       return this.jsonResponse(
         { success: false, error: "Ticker not found" },
         headers,
@@ -317,10 +316,10 @@ class ApiServer {
     }
 
     // Build the ticker data like in handleGetTickers
-    const priceData = activePrices[symbol] || {};
+    const priceData = (activePrices as any)[symbol] || {};
     const ticker = {
       symbol,
-      config: tickerConfigs[symbol],
+      config: (tickerConfigs as any)[symbol],
       last:
         priceData.last || priceData.mid
           ? {
@@ -390,14 +389,8 @@ class ApiServer {
     );
   }
 
-  private async handleGetOrdersByStrategy(
-    path: string,
-    headers: any,
-  ): Promise<Response> {
-    const strategyId = path.replace("/orders/strategy/", "");
-    const orders = await getOrdersByStrategy(strategyId);
-    return this.jsonResponse({ success: true, data: orders }, headers);
-  }
+  // handleGetOrdersByStrategy removed - strategies are just fancy orders
+  // Use regular order endpoints instead
 
   private async handleGetStrategies(headers: any): Promise<Response> {
     const strategies = await getAllStrategies();
@@ -425,11 +418,7 @@ class ApiServer {
     }
   }
 
-  private async handleGetPositions(url: URL, headers: any): Promise<Response> {
-    const strategyId = url.searchParams.get("strategyId") || undefined;
-    const positions = await getOpenPositions(strategyId);
-    return this.jsonResponse({ success: true, data: positions }, headers);
-  }
+  // handleGetPositions removed - positions feature no longer exists
 
   private async handleGetTickerHistory(
     path: string,
@@ -445,7 +434,7 @@ class ApiServer {
     logger.info(`📊 Fetching history for ticker: "${symbol}"`);
 
     // Check if this symbol exists in config
-    if (!tickerConfigs[symbol]) {
+    if (!(tickerConfigs as any)[symbol]) {
       return this.jsonResponse(
         { success: false, error: "Ticker not found" },
         headers,
@@ -454,7 +443,7 @@ class ApiServer {
     }
 
     // Get price data with history
-    const priceData = activePrices[symbol] || {};
+    const priceData = (activePrices as any)[symbol] || {};
 
     // Build response with 5 minutes of history (or all available)
     const now = Date.now();
@@ -470,12 +459,12 @@ class ApiServer {
       v: [],
     };
     const filteredHistory = {
-      ts: [],
-      o: [],
-      h: [],
-      l: [],
-      c: [],
-      v: [],
+      ts: [] as any[],
+      o: [] as any[],
+      h: [] as any[],
+      l: [] as any[],
+      c: [] as any[],
+      v: [] as any[],
     };
 
     // History arrays are stored with newest first, so iterate backwards
@@ -501,7 +490,7 @@ class ApiServer {
 
     const response = {
       symbol,
-      config: tickerConfigs[symbol],
+      config: (tickerConfigs as any)[symbol],
       last:
         priceData.last || priceData.mid
           ? {
@@ -582,7 +571,7 @@ class ApiServer {
         logger.info(
           `Reconstructing market overview for chain ${chain} (limit: ${limit})`,
         );
-        orderbook = await orderbookReconstructor.getMarketOverview(
+        orderbook = await (orderbookReconstructor as any).getMarketOverview(
           chain,
           limit,
         );

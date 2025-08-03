@@ -65,7 +65,7 @@ export class OHLCStorageService {
   private cacheStorage: Map<string, Map<OHLCTimeframe, CacheEntry>> = new Map();
   private saveQueues: Map<string, Map<OHLCTimeframe, OHLCCandle[]>> = new Map();
   private isSaving: Map<string, Set<OHLCTimeframe>> = new Map();
-  private ccxtExchange: ccxt.binance;
+  private ccxtExchange: any;
 
   // Stored timeframes (saved to disk)
   private readonly STORED_TIMEFRAMES = [
@@ -148,7 +148,7 @@ export class OHLCStorageService {
       [OHLCTimeframe.M5]: "candles_5m",
       [OHLCTimeframe.M30]: "candles_30m",
     };
-    return names[timeframe];
+    return (names as any)[timeframe];
   }
 
   /**
@@ -201,7 +201,7 @@ export class OHLCStorageService {
       for (const tf of this.CACHED_TIMEFRAMES) {
         this.cacheStorage.get(pair)!.set(tf, {
           candles: [],
-          maxSize: this.CACHE_LIMITS[tf],
+          maxSize: (this.CACHE_LIMITS as any)[tf],
         });
         this.saveQueues.get(pair)!.set(tf, []);
       }
@@ -790,7 +790,7 @@ export class OHLCStorageService {
       [OHLCTimeframe.M5]: "5m",
       [OHLCTimeframe.M30]: "30m",
     };
-    return mapping[timeframe] || null;
+    return (mapping as any)[timeframe] || null;
   }
 
   /**
@@ -833,7 +833,7 @@ export class OHLCStorageService {
             : null,
         };
       } catch (error) {
-        stats[`${timeframe}s`] = { error: error.message };
+        stats[`${timeframe}s`] = { error: (error as any)?.message || error };
       }
     }
 

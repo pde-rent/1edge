@@ -405,9 +405,9 @@ function initSrc(
   srcCfg: TickerConfig,
   timestamp: number,
 ): TickerFeed {
-  if (!agg.sources[srcCfg.id]) {
-    const parsed = parseSymbol(srcCfg.id);
-    agg.sources[srcCfg.id] = {
+  if (!(agg.sources as any)[srcCfg.id]) {
+    const parsed = parseSymbol(srcCfg.id as any);
+    (agg.sources as any)[srcCfg.id] = {
       id: srcCfg.id,
       exchange: parsed?.exchangeId || "unknown",
       tf: srcCfg.tf,
@@ -417,7 +417,7 @@ function initSrc(
       updatedAt: timestamp,
     };
   }
-  return agg.sources[srcCfg.id];
+  return (agg.sources as any)[srcCfg.id];
 }
 
 /**
@@ -618,7 +618,7 @@ async function startBatchedTickerLoop(
               await sleep(100);
             } catch (tickerError) {
               logger.warn(
-                `[Batch:${exchangeId}] Failed to fetch ${symbol}: ${tickerError.message}`,
+                `[Batch:${exchangeId}] Failed to fetch ${symbol}: ${(tickerError as any)?.message || tickerError}`,
               );
             }
           }
@@ -778,7 +778,7 @@ async function handleWebSocketFallback(
           const baseVolume = trade.amount;
 
           // Get previous bid/ask or estimate from price
-          const prevFeed = aggregatedDataStore[aggSymbol]?.sources[srcCfg.id];
+          const prevFeed = (aggregatedDataStore as any)[aggSymbol]?.sources[(srcCfg.id as any)];
           const bid =
             trade.side === "sell" ? price : prevFeed?.last.bid || price;
           const ask =
@@ -816,7 +816,7 @@ async function handleWebSocketFallback(
       } catch (wsError) {
         logger.warn(
           `[WS:${exchangeId}] WebSocket fallback failed for ${tickerSymbol}:`,
-          wsError.message,
+          (wsError as any)?.message || wsError,
         );
       }
     }
@@ -836,7 +836,7 @@ async function addBatchedSubscription(
   onError: (err: any) => void,
   reconnectMs: number,
 ): Promise<void> {
-  const parsed = parseSymbol(srcCfg.id);
+  const parsed = parseSymbol(srcCfg.id as any);
   if (!parsed) {
     onError(new Error(`Invalid symbol: ${srcCfg.id}`));
     return;
@@ -872,7 +872,7 @@ async function addBatchedSubscription(
  * Remove a ticker subscription from the batched connection.
  */
 function removeBatchedSubscription(srcCfg: TickerConfig): void {
-  const parsed = parseSymbol(srcCfg.id);
+  const parsed = parseSymbol(srcCfg.id as any);
   if (!parsed) return;
 
   const { exchangeId, tickerSymbol } = parsed;
@@ -923,7 +923,7 @@ export function subToTickerFeeds(
 
     for (const [sk, sc] of Object.entries(aggCfg.sources)) {
       const fullCfg = buildFullSrcCfg(sk, sc, aggCfg);
-      const parsed = parseSymbol(fullCfg.id);
+      const parsed = parseSymbol(fullCfg.id as any);
       if (!parsed) continue;
 
       const { exchangeId } = parsed;
