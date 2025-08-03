@@ -37,6 +37,9 @@ class ApiServer {
   async start() {
     const port = this.config.port || 40009;
 
+    // Initialize OHLC storage first
+    await getOHLCStorage().initialize();
+
     // Connect to price cache
     await priceCache.connect();
 
@@ -442,23 +445,14 @@ class ApiServer {
       );
     }
 
-    // Get price data with history
+    // Get current price data
     const priceData = (activePrices as any)[symbol] || {};
 
-    // Build response with 5 minutes of history (or all available)
+    // Get historical data from OHLC storage (24 hours worth, 1-minute resolution)
     const now = Date.now();
-    const fiveMinutesAgo = now - 5 * 60 * 1000; // 5 minutes in milliseconds
-
-    // Filter history for last 5 minutes
-    const history = priceData.history || {
-      ts: [],
-      o: [],
-      h: [],
-      l: [],
-      c: [],
-      v: [],
-    };
-    const filteredHistory = {
+    const twentyFourHoursAgo = now - 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    
+    let ohlcHistory = {
       ts: [] as any[],
       o: [] as any[],
       h: [] as any[],
@@ -467,26 +461,74 @@ class ApiServer {
       v: [] as any[],
     };
 
-    // History arrays are stored with newest first, so iterate backwards
-    for (let i = history.ts.length - 1; i >= 0; i--) {
-      const timestamp = history.ts[i] * 1000; // Convert to milliseconds
-      if (timestamp >= fiveMinutesAgo) {
-        filteredHistory.ts.push(history.ts[i]);
-        filteredHistory.o.push(history.o[i]);
-        filteredHistory.h.push(history.h[i]);
-        filteredHistory.l.push(history.l[i]);
-        filteredHistory.c.push(history.c[i]);
-        filteredHistory.v.push(history.v[i]);
-      }
-    }
+    try {
+      // Get 1-minute OHLC data from storage
+      const ohlcStorage = getOHLCStorage();
+      const candles = await ohlcStorage.getCandles(
+        symbol as any, // PairSymbol
+        60, // 1 minute timeframe
+        twentyFourHoursAgo,
+        now,
+        undefined // no limit, get all available
+      );
 
-    // Reverse arrays to have oldest first for frontend
-    filteredHistory.ts.reverse();
-    filteredHistory.o.reverse();
-    filteredHistory.h.reverse();
-    filteredHistory.l.reverse();
-    filteredHistory.c.reverse();
-    filteredHistory.v.reverse();
+      logger.info(`📈 Retrieved ${candles.length} historical candles for ${symbol}`);
+
+      // Convert OHLC candles to the expected format
+      if (candles.length > 0) {
+        ohlcHistory = {
+          ts: candles.map(c => Math.floor(c.timestamp / 1000)), // Convert to seconds
+          o: candles.map(c => c.open),
+          h: candles.map(c => c.high),
+          l: candles.map(c => c.low),
+          c: candles.map(c => c.close),
+          v: candles.map(c => c.volume),
+        };
+      }
+    } catch (error) {
+      logger.warn(`Failed to get OHLC history for ${symbol}:`, error);
+      // Fallback to price cache history if OHLC storage fails
+      const fallbackHistory = priceData.history || {
+        ts: [],
+        o: [],
+        h: [],
+        l: [],
+        c: [],
+        v: [],
+      };
+      
+      // Filter fallback history for last 2 weeks
+      const filteredHistory = {
+        ts: [] as any[],
+        o: [] as any[],
+        h: [] as any[],
+        l: [] as any[],
+        c: [] as any[],
+        v: [] as any[],
+      };
+
+      for (let i = fallbackHistory.ts.length - 1; i >= 0; i--) {
+        const timestamp = fallbackHistory.ts[i] * 1000; // Convert to milliseconds
+        if (timestamp >= twentyFourHoursAgo) {
+          filteredHistory.ts.push(fallbackHistory.ts[i]);
+          filteredHistory.o.push(fallbackHistory.o[i]);
+          filteredHistory.h.push(fallbackHistory.h[i]);
+          filteredHistory.l.push(fallbackHistory.l[i]);
+          filteredHistory.c.push(fallbackHistory.c[i]);
+          filteredHistory.v.push(fallbackHistory.v[i]);
+        }
+      }
+
+      // Reverse arrays to have oldest first for frontend
+      filteredHistory.ts.reverse();
+      filteredHistory.o.reverse();
+      filteredHistory.h.reverse();
+      filteredHistory.l.reverse();
+      filteredHistory.c.reverse();
+      filteredHistory.v.reverse();
+
+      ohlcHistory = filteredHistory;
+    }
 
     const response = {
       symbol,
@@ -502,7 +544,7 @@ class ApiServer {
               timestamp: priceData.timestamp || Date.now(),
             }
           : null,
-      history: filteredHistory,
+      history: ohlcHistory,
       analysis: priceData.analysis || null,
     };
 
