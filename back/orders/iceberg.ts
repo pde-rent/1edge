@@ -89,7 +89,7 @@ class IcebergOrderWatcher extends SteppedOrderWatcher {
     if (!params) return "0";
 
     const currentStep = this.getCurrentStep(order);
-    return this.calculateStepAmount(params.amount, params.steps, currentStep);
+    return this.calculateStepAmount(String(params.amount || 0), params.steps, currentStep);
   }
 }
 

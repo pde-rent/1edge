@@ -9,12 +9,9 @@ import {
   LimitOrder,
   LimitOrderContract,
   Address,
-  Uint256,
   MakerTraits,
-  Api,
 } from "@1inch/limit-order-sdk";
-import { FetchProviderConnector } from "@common/utils";
-
+import { LimitOrderService, createLimitOrderService } from "@back/services/limitOrder";
 import { ethers } from "ethers";
 import { getConfig } from "@back/services/config";
 import { priceCache } from "@back/services/priceCache";
@@ -94,8 +91,8 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
   protected contractAddress?: string;
   protected chainId?: number;
   protected delegateProxy?: ethers.Contract;
-  protected limitOrderApi?: Api;
   protected keeper?: ethers.Wallet;
+  protected limitOrderService?: LimitOrderService;
 
   constructor(mockMode: boolean = false) {
     this.mockMode = mockMode;
@@ -124,13 +121,14 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         );
       }
 
-      // Setup 1inch API
+      // Setup limit order service
       if (process.env.ONE_INCH_API_KEY) {
-        this.limitOrderApi = new Api({
-          networkId: this.chainId,
-          authKey: process.env.ONE_INCH_API_KEY,
-          httpConnector: new FetchProviderConnector(),
-        });
+        this.limitOrderService = createLimitOrderService(
+          process.env.ONE_INCH_API_KEY,
+          this.chainId,
+          this.keeper,
+          this.provider,
+        );
       }
     }
   }
@@ -364,7 +362,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
   }
 
   /**
-   * Trigger order with specified amounts - creates and submits 1inch limit order
+   * Trigger order with specified amounts - creates and submits 1inch limit order using LimitOrderService
    */
   async trigger(
     order: Order,
@@ -375,8 +373,11 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       logger.info(
         `[MOCK] Would trigger 1inch limit order: ${makingAmount} tokens from ${order.params?.makerAsset} -> ${takingAmount} tokens of ${order.params?.takerAsset}`,
       );
-
       return;
+    }
+
+    if (!this.limitOrderService || !this.delegateProxy) {
+      throw new Error("LimitOrderService or DelegateProxy not configured");
     }
 
     try {
@@ -398,211 +399,68 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         `[${order.params?.type || "UNKNOWN"}] Triggering order ${order.id.slice(0, 8)}... at optimized limit price $${limitPrice.toFixed(6)} (spot: $${priceInfo.price.toFixed(6)}, ${isSell ? "sell" : "buy"})`,
       );
 
-      // Calculate dynamic taking amount based on limit price and proper decimals
-      // For ETH/USDT trading: WETH has 18 decimals, USDT has 6 decimals
+      // Calculate dynamic taking amount based on limit price
       const makingAmountFloat = parseFloat(makingAmount);
       let dynamicTakingAmount: string;
       
       if (isSell) {
         // Selling WETH for USDT: takingAmount = makingAmount * limitPrice
-        // Result should be in USDT with 6 decimals
         const usdtAmount = makingAmountFloat * limitPrice;
         dynamicTakingAmount = usdtAmount.toFixed(6);
       } else {
-        // Buying WETH with USDT: takingAmount = makingAmount / limitPrice
-        // This case is less common for TWAP but handle it properly
-        const usdtAmount = makingAmountFloat * limitPrice; // Actually for buy, we spend USDT to get WETH
+        // Buying WETH with USDT
+        const usdtAmount = makingAmountFloat * limitPrice;
         dynamicTakingAmount = usdtAmount.toFixed(6);
       }
       
       logger.debug(`Calculated takingAmount: ${dynamicTakingAmount} USDT for ${makingAmount} WETH at $${limitPrice}`);
 
-      // Configure expiration based on order expiry
-      let makerTraits = MakerTraits.default();
+      // Parse amounts with proper decimals
+      const makingAmountWei = ethers.parseUnits(parseFloat(makingAmount).toFixed(18), 18); // WETH has 18 decimals
+      const takingAmountWei = ethers.parseUnits(parseFloat(dynamicTakingAmount).toFixed(6), 6); // USDT has 6 decimals
 
-      // Only set expiry if explicitly provided and > 0
-      // Default behavior: no expiry (0 means no expiration in our system)
-      if (order.params?.expiry && order.params.expiry > 0) {
-        // Convert from ms timestamp to unix timestamp
-        const expirationUnix = BigInt(Math.floor(order.params.expiry / 1000));
-        makerTraits = makerTraits.withExpiration(expirationUnix);
-        logger.debug(
-          `Set 1inch order expiration to ${new Date(order.params.expiry).toISOString()}`,
-        );
-      } else {
-        logger.debug(`No expiry set for order (expiry=${order.params?.expiry}), 1inch order will not expire`);
-      }
+      // Create order parameters for LimitOrderService
+      const orderParams: OneInchLimitOrderParams = {
+        makerAsset: order.params!.makerAsset,
+        takerAsset: order.params!.takerAsset,
+        makingAmount: makingAmountWei,
+        takingAmount: takingAmountWei,
+        maker: this.delegateProxy.target.toString(), // DelegateProxy as maker
+        receiver: order.params!.maker, // User receives the assets
+        salt: BigInt(order.params?.salt || this.generateSalt()),
+        expirationMs: order.params?.expiry && order.params.expiry > 0 ? order.params.expiry : undefined,
+        partialFillsEnabled: true, // Enable partial fills by default
+      };
 
-      // Generate salt using order salt or new one
-      const salt = BigInt(order.params?.salt || this.generateSalt());
-
-      // Parse amounts with proper decimals (round to avoid precision issues)
-      const roundedMakingAmount = parseFloat(makingAmount).toFixed(18);
-      const roundedTakingAmount = parseFloat(dynamicTakingAmount).toFixed(6);
-      const makingAmountWei = ethers.parseUnits(roundedMakingAmount, 18); // WETH has 18 decimals
-      const takingAmountWei = ethers.parseUnits(roundedTakingAmount, 6); // USDT has 6 decimals
-      
-      logger.debug(`Amount conversion: ${makingAmount} WETH -> ${makingAmountWei} wei, ${dynamicTakingAmount} USDT -> ${takingAmountWei} wei`);
-
-      // For simple orders without extensions, ensure salt doesn't have extension hash bits
-      // 1inch salt format: 96 bits order salt + 160 bits extension hash
-      // For no extensions, we need extension hash = 0
-      const simpleSalt = salt & ((1n << 96n) - 1n); // Keep only lower 96 bits, clear extension hash
-      
-      // Create 1inch LimitOrder instance for tracking and on-chain execution
-      // Note: Contract acts as maker, handles ERC-1271 validation when filled
-      const limitOrder = new LimitOrder(
-        {
-          salt: simpleSalt,
-          maker: new Address(this.delegateProxy!.target.toString()), // Contract as maker
-          receiver: new Address(order.params!.maker), // User receives the assets
-          makerAsset: new Address(order.params!.makerAsset),
-          takerAsset: new Address(order.params!.takerAsset),
-          makingAmount: makingAmountWei,
-          takingAmount: takingAmountWei,
-        },
-        makerTraits,
-      );
-
-      // Get order hash for tracking
-      const orderHash = limitOrder.getOrderHash(this.chainId || 1);
-      logger.debug(`Generated 1inch order hash: ${orderHash}`);
-
-      // Store the order hash for tracking BEFORE attempting DelegateProxy call
-      if (!order.oneInchOrderHashes) {
-        order.oneInchOrderHashes = [];
-      }
-      order.oneInchOrderHashes.push(orderHash);
-      logger.debug(`Stored order hash, total hashes: ${order.oneInchOrderHashes.length}`);
-
-      // Update order in database BEFORE attempting potentially slow operations
+      // Update order tracking before submission
       const oldTriggerCount = order.triggerCount || 0;
       order.triggerCount = oldTriggerCount + 1;
       order.status = order.status === OrderStatus.PENDING ? OrderStatus.ACTIVE : order.status;
+      
       logger.debug(`Updating order: triggerCount ${oldTriggerCount} -> ${order.triggerCount}, status: ${order.status}`);
+
+      // Use LimitOrderService to create and submit the order
+      const result = await this.limitOrderService.createAndSubmitOrder(
+        orderParams,
+        order.params!.maker,
+        this.keeper,
+      );
+
+      // Store the order hash for tracking
+      if (!order.oneInchOrderHashes) {
+        order.oneInchOrderHashes = [];
+      }
+      order.oneInchOrderHashes.push(result.orderHash);
+      
       await saveOrder(order);
 
       logger.info(
-        `🎯 Order ${order.id.slice(0, 8)}... triggered successfully - Hash: ${orderHash.slice(0, 10)}..., Amount: ${makingAmount}, Limit: $${limitPrice.toFixed(6)}`,
+        `🎯 Order ${order.id.slice(0, 8)}... triggered successfully - Hash: ${result.orderHash.slice(0, 10)}..., Amount: ${makingAmount}, Limit: $${limitPrice.toFixed(6)}`,
       );
 
-      // Create 1inch limit order struct for DelegateProxy
-      if (this.delegateProxy) { // Re-enabled with fixed Address encoding
-        try {
-          const _1inchOrder = {
-            salt,
-            maker: new Address(this.delegateProxy.target.toString()).toBigint(),
-            receiver: new Address(order.params!.maker).toBigint(),
-            makerAsset: new Address(order.params!.makerAsset).toBigint(),
-            takerAsset: new Address(order.params!.takerAsset).toBigint(),
-            makingAmount: makingAmountWei,
-            takingAmount: takingAmountWei,
-            makerTraits: makerTraits.asBigInt(),
-          };
-
-          logger.debug(`Creating 1inch order on DelegateProxy: salt=${salt}, maker=${_1inchOrder.maker}, receiver=${_1inchOrder.receiver}`);
-          
-          // Create order on DelegateProxy with timeout (BSC can be slow)
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('DelegateProxy timeout')), 20000)
-          );
-          
-          logger.debug(`About to call create1inchOrder on contract...`);
-          const contractPromise = (async () => {
-            logger.debug(`Calling delegateProxy.create1inchOrder...`);
-            const createTx = await this.delegateProxy.create1inchOrder(
-              _1inchOrder,
-              order.params?.maker || "0x0",
-            );
-            logger.info(`📤 DelegateProxy transaction sent: ${createTx.hash}, waiting for confirmation...`);
-            await createTx.wait();
-            logger.info(`✅ DelegateProxy transaction confirmed: ${createTx.hash}`);
-            return createTx;
-          })();
-          
-          logger.debug(`Starting Promise.race with 20s timeout...`);
-          const createTx = await Promise.race([contractPromise, timeoutPromise]);
-          logger.info(
-            `✅ Created 1inch order on DelegateProxy (tx: ${(createTx as any).hash})`,
-          );
-          
-          // Order is now created on-chain and approved - proceed to API submission
-          logger.debug(`DelegateProxy order creation completed successfully`);
-        } catch (contractError) {
-          logger.warn(`Failed to create order on DelegateProxy: ${contractError}. Continuing with API submission only.`);
-        }
-      } else {
-        logger.debug(`DelegateProxy disabled for testing, skipping contract order creation`);
-      }
-
-      // LimitOrder instance and orderHash already created above
-
-      // Submit to 1inch API if available
-      if (this.limitOrderApi) { // Re-enabled for proper testing
-        try {
-          logger.info(`📡 Attempting to submit order to 1inch API orderbook...`);
-          logger.debug(`1inch LimitOrder object:`, {
-            salt: limitOrder.salt.toString(),
-            maker: limitOrder.maker.toString(),
-            receiver: limitOrder.receiver.toString(),
-            makerAsset: limitOrder.makerAsset.toString(),
-            takerAsset: limitOrder.takerAsset.toString(),
-            makingAmount: limitOrder.makingAmount.toString(),
-            takingAmount: limitOrder.takingAmount.toString(),
-            makerTraits: `0x${limitOrder.makerTraits.asBigInt().toString(16)}`,
-          });
-          
-          // For DelegateProxy orders, use empty signature for ERC-1271 contract validation
-          // The contract will validate the signature via isValidSignature() when the order is filled
-          logger.debug(`Using empty signature for ERC-1271 contract order`);
-          
-          // Add timeout for API submission
-          const apiTimeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('1inch API timeout after 10s')), 10000)
-          );
-          
-          logger.debug(`Calling 1inch API submitOrder with empty signature for ERC-1271...`);
-          const apiPromise = this.limitOrderApi.submitOrder(limitOrder, "0x");
-          
-          const apiResult = await Promise.race([apiPromise, apiTimeoutPromise]);
-          
-          // SUCCESS: Log proof of 1inch accepting our order
-          logger.info(
-            `✅ SUCCESS: 1inch API accepted order ${orderHash.slice(0, 10)}... for orderbook`,
-          );
-          logger.info(`📋 1inch API Response: ${JSON.stringify(apiResult, null, 2)}`);
-          logger.info(`🔗 Order is now live on 1inch orderbook and can be filled by takers`);
-          
-        } catch (apiError: any) {
-          // FAILURE: Log proof of 1inch rejecting our order as ERROR
-          logger.error(`❌ FAILED: 1inch API rejected order ${orderHash.slice(0, 10)}...`);
-          logger.error(`📄 Error details: ${apiError?.message || apiError}`);
-          
-          if (apiError?.response) {
-            logger.error(`📡 HTTP Status: ${apiError.response.status} ${apiError.response.statusText}`);
-            if (apiError.response.data) {
-              logger.error(`📋 Response body: ${JSON.stringify(apiError.response.data, null, 2)}`);
-            }
-          }
-          
-          if (apiError?.code) {
-            logger.error(`🔧 Error code: ${apiError.code}`);
-          }
-          
-          logger.error(`💥 1inch API submission completely failed - order NOT in public orderbook`);
-          logger.info(`⚠️ However: Order is still created on DelegateProxy and can be filled directly via 1inch protocol contracts`);
-          logger.info(`🔗 Direct fill possible via: 1inch settlement contracts, aggregator routing, or manual taker`);
-          // Don't let API failure stop the order from being tracked
-        }
-      } else {
-        logger.debug(`1inch API disabled, skipping API submission`);
-      }
-
-      // Order hash storage and database update already done above
-      
       // Enhanced logging for debugging
       logger.info(`📋 1inch Order Details:
-        - Full Hash: ${orderHash}
+        - Full Hash: ${result.orderHash}
         - Order ID: ${order.id}
         - Type: ${order.params?.type}
         - Maker Asset: ${order.params?.makerAsset}
@@ -612,9 +470,14 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         - Limit Price: $${limitPrice.toFixed(6)}
         - Spot Price: $${priceInfo.price.toFixed(6)}
         - Is Sell: ${isSell}
-        - Salt: ${salt}
+        - API Success: ${result.success}
         - Expiry: ${order.params?.expiry ? new Date(order.params.expiry).toISOString() : 'none'}
         - Chain ID: ${this.chainId || 1}`);
+
+      if (!result.success) {
+        logger.warn(`⚠️ Order created on DelegateProxy but API submission failed: ${result.error}`);
+      }
+
     } catch (error) {
       logger.error(`❌ Failed to trigger order ${order.id}: ${error}`);
       throw error;

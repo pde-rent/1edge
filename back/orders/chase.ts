@@ -35,12 +35,12 @@ class ChaseLimitOrderWatcher extends PriceBasedOrderWatcher {
 
     // Calculate distance threshold
     const distanceThreshold = this.calculatePercentage(
-      currentTriggerPrice,
+      Number(currentTriggerPrice),
       params.distancePct,
     );
 
     // Check if price has moved beyond the distance threshold
-    const priceDifference = Math.abs(priceInfo.price - currentTriggerPrice);
+    const priceDifference = Math.abs(priceInfo.price - Number(currentTriggerPrice));
     const shouldChase = priceDifference >= distanceThreshold;
 
     if (shouldChase) {

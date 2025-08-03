@@ -20,7 +20,7 @@ class RangeBreakoutOrderWatcher extends PriceBasedOrderWatcher {
     const isStrongTrend = this.checkTechnicalCondition(
       priceData,
       "adx",
-      (adx) => adx > params.adxThreshold,
+      (adx) => adx > (params.adxThreshold || 25),
     );
 
     const isTrendStrengthening = this.checkTechnicalCondition(

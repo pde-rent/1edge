@@ -15,9 +15,9 @@ interface GridState {
  */
 class GridTradingOrderWatcher extends SteppedOrderWatcher {
   async shouldTrigger(order: Order): Promise<boolean> {
-    const params = this.validateOrderState<GridTradingParams>(order);
+    const params = this.validateParams<GridTradingParams>(order);
     const priceInfo = this.getPriceInfo(order);
-    if (!priceInfo) return false;
+    if (!priceInfo || !params) return false;
 
     const { currentLevel, inRange } = this.calculateGridMetrics(
       params,
@@ -34,9 +34,12 @@ class GridTradingOrderWatcher extends SteppedOrderWatcher {
     makingAmount: string,
     takingAmount: string,
   ): Promise<void> {
-    const params = this.validateOrderState<GridTradingParams>(order);
+    const params = this.validateParams<GridTradingParams>(order);
     const priceInfo = this.getPriceInfo(order);
-    if (!priceInfo) this.handleOrderError(order.id, "Failed to get price info");
+    if (!priceInfo || !params) {
+      logger.error(`Failed to get price info or params for order ${order.id}`);
+      return;
+    }
 
     const { currentLevel, totalLevels } = this.calculateGridMetrics(
       params,
@@ -65,9 +68,10 @@ class GridTradingOrderWatcher extends SteppedOrderWatcher {
   }
 
   getTriggerAmount(order: Order): string {
-    const params = this.validateOrderState<GridTradingParams>(order);
+    const params = this.validateParams<GridTradingParams>(order);
+    if (!params) return "0";
     const { totalLevels } = this.calculateGridMetrics(params, 0);
-    return (parseFloat(params.amount) / totalLevels).toFixed(8);
+    return (parseFloat(params.amount || "0") / totalLevels).toFixed(8);
   }
 
   private calculateGridMetrics(

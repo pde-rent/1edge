@@ -44,7 +44,7 @@ class MomentumReversalOrderWatcher extends PriceBasedOrderWatcher {
     const rsiMAStart = rsiData.length - params.rsimaPeriod;
     const recentRSIValues = rsiData.slice(rsiMAStart);
     const rsiMA =
-      recentRSIValues.reduce((sum, val) => sum + val, 0) / params.rsimaPeriod;
+      recentRSIValues.reduce((sum: number, val: number) => sum + val, 0) / params.rsimaPeriod;
 
     // Check for reversal conditions
     const isOversoldReversal = currentRSI < RSI_OVERSOLD && currentRSI > rsiMA;
