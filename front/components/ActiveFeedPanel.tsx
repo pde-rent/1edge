@@ -198,7 +198,7 @@ export default function ActiveFeedPanel({
         tickBufferRef.current = {};
       };
     }
-  }, [feedId, isConnected, subscribe, unsubscribe, chartType, timeframe]);
+  }, [feedId, isConnected, chartType, timeframe]);
 
   // Chart creation
   useEffect(() => {
@@ -564,7 +564,6 @@ export default function ActiveFeedPanel({
                   })}
               </SelectContent>
             </Select>
-            <AuthComponent variant="compact" />
           </div>
 
           {/* Center: Current Price */}

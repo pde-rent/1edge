@@ -13,6 +13,8 @@ import { OrderDetailsModal } from "./OrderDetailsModal";
 import { Order, OrderStatus, OrderType } from "@common/types";
 import { Settings, BarChart3, Edit2, X } from "lucide-react";
 import { API_ENDPOINTS } from "../config/api";
+import AuthComponent from "./AuthComponent";
+import { useAccount } from "wagmi";
 
 /**
  * OrdersPanel displays a table of orders and strategies across the platform.
@@ -22,6 +24,7 @@ export default function OrdersPanel() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { address } = useAccount();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -50,20 +53,18 @@ export default function OrdersPanel() {
   const generateMockOrders = (): Order[] => [
     {
       id: "ord_1",
-      type: OrderType.TWAP,
+      signature: "0x...",
       status: OrderStatus.ACTIVE,
-      size: "1000.0",
-      remainingSize: "750.0",
+      remainingMakerAmount: 750.0,
       createdAt: Date.now() - 3600000,
       triggerCount: 3,
       nextTriggerValue: "42500.0",
-      makerAsset: "0x...",
-      takerAsset: "0x...",
-      makingAmount: "1000",
-      takingAmount: "42000000",
-      maker: "0x...",
       params: {
-        amount: "1000.0",
+        type: OrderType.TWAP,
+        maker: "0x...",
+        makerAsset: "0x...",
+        takerAsset: "0x...",
+        makingAmount: 1000,
         startDate: Date.now() - 3600000,
         endDate: Date.now() + 86400000,
         interval: 1800000,
@@ -72,20 +73,18 @@ export default function OrdersPanel() {
     },
     {
       id: "ord_2",
-      type: OrderType.STOP_LIMIT,
+      signature: "0x...",
       status: OrderStatus.PENDING,
-      size: "500.0",
-      remainingSize: "500.0",
+      remainingMakerAmount: 500.0,
       createdAt: Date.now() - 1800000,
       triggerCount: 0,
       nextTriggerValue: "41000.0",
-      makerAsset: "0x...",
-      takerAsset: "0x...",
-      makingAmount: "500",
-      takingAmount: "20500000",
-      maker: "0x...",
       params: {
-        amount: "500.0",
+        type: OrderType.STOP_LIMIT,
+        maker: "0x...",
+        makerAsset: "0x...",
+        takerAsset: "0x...",
+        makingAmount: 500,
         stopPrice: 41000,
         limitPrice: 40800,
         expiry: 7,
@@ -93,20 +92,18 @@ export default function OrdersPanel() {
     },
     {
       id: "ord_3",
-      type: OrderType.GRID_TRADING,
+      signature: "0x...",
       status: OrderStatus.PARTIALLY_FILLED,
-      size: "2000.0",
-      remainingSize: "1200.0",
+      remainingMakerAmount: 1200.0,
       createdAt: Date.now() - 7200000,
       triggerCount: 8,
       nextTriggerValue: "42200.0",
-      makerAsset: "0x...",
-      takerAsset: "0x...",
-      makingAmount: "2000",
-      takingAmount: "84000000",
-      maker: "0x...",
       params: {
-        amount: "2000.0",
+        type: OrderType.GRID_TRADING,
+        maker: "0x...",
+        makerAsset: "0x...",
+        takerAsset: "0x...",
+        makingAmount: 2000,
         startPrice: 41000,
         endPrice: 44000,
         stepPct: 0.5,
@@ -145,7 +142,6 @@ export default function OrdersPanel() {
       case OrderStatus.ACTIVE:
         return "bg-primary/20 border-primary text-primary";
       case OrderStatus.FILLED:
-      case OrderStatus.COMPLETED:
         return "bg-success/20 border-success text-success";
       case OrderStatus.CANCELLED:
       case OrderStatus.EXPIRED:
@@ -232,7 +228,11 @@ export default function OrdersPanel() {
 
           {/* Table Body - Scrollable */}
           <div className="flex-1 overflow-y-auto bg-background">
-            {orders.length > 0 ? (
+            {!address ? (
+              <div className="flex-1 flex items-center justify-center py-12">
+                <AuthComponent variant="default" />
+              </div>
+            ) : orders.length > 0 ? (
               orders.map((order) => {
                 return (
                   <Tooltip key={order.id}>
@@ -254,9 +254,9 @@ export default function OrdersPanel() {
                         <div className="col-span-1 flex items-center relative z-10">
                           <Badge
                             variant="outline"
-                            className={`text-xs h-5 px-2 ${getTypeBadgeStyle(order.type)}`}
+                            className={`text-xs h-5 px-2 ${getTypeBadgeStyle(order.params?.type || '')}`}
                           >
-                            {order.type}
+                            {order.params?.type || 'Unknown'}
                           </Badge>
                         </div>
 

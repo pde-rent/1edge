@@ -179,7 +179,7 @@ export function WebSocketProvider({ children, url }: WebSocketProviderProps) {
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [url]);
 
   const value: WebSocketContextType = {
     isConnected,

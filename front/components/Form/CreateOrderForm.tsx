@@ -42,6 +42,7 @@ import StopLimitForm from "./components/StopLimitForm";
 import ChaseLimitForm from "./components/ChaseLimitForm";
 import { toast } from "sonner";
 import { useOrderStore } from "@/stores/orderStore";
+import AuthComponent from "../AuthComponent";
 import {
   FormData,
   OrderType,
@@ -523,6 +524,9 @@ const CreateOrderForm = () => {
         </Select>
 
         <div className="flex-1" />
+
+        {/* Wallet Connection */}
+        <AuthComponent variant="compact" />
 
         {/* Show indicator if order was triggered from orderbook */}
         {orderDefaults && (

@@ -68,7 +68,7 @@ export default function FeedsPanel({ onSelect, selectedFeedId }: { onSelect: (fe
         };
       }
     }
-  }, [isConnected, subscribe, feedsToDisplay]);
+  }, [isConnected, feedsToDisplay]);
 
   if (error && feedsToDisplay.length === 0)
     return (

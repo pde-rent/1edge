@@ -41,7 +41,6 @@ export function OrderDetailsModal({
       case OrderStatus.ACTIVE:
         return 'bg-primary/20 border-primary text-primary';
       case OrderStatus.FILLED:
-      case OrderStatus.COMPLETED:
         return 'bg-success/20 border-success text-success';
       case OrderStatus.CANCELLED:
       case OrderStatus.EXPIRED:
@@ -137,14 +136,14 @@ export function OrderDetailsModal({
               <div className="space-y-1">
                 <ModalKeyValue 
                   label="Type" 
-                  value={<Badge variant="outline" className="bg-primary/10 border-primary/50 text-primary">{order.type}</Badge>}
+                  value={<Badge variant="outline" className="bg-primary/10 border-primary/50 text-primary">{order.params?.type || 'Unknown'}</Badge>}
                 />
                 <ModalKeyValue 
                   label="Status" 
                   value={<Badge variant="outline" className={getStatusBadgeStyle(order.status)}>{order.status}</Badge>}
                 />
-                <ModalKeyValue label="Total Size" value={formatAmount(order.size)} />
-                <ModalKeyValue label="Remaining" value={formatAmount(order.remainingSize)} />
+                <ModalKeyValue label="Total Size" value={formatAmount(String(order.params?.makingAmount || 0))} />
+                <ModalKeyValue label="Remaining" value={formatAmount(String(order.remainingMakerAmount))} />
                 <ModalKeyValue label="Created At" value={formatTimestamp(order.createdAt)} />
                 <ModalKeyValue label="Trigger Count" value={order.triggerCount} />
                 {order.nextTriggerValue && (
