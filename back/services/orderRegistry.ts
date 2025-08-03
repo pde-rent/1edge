@@ -18,6 +18,8 @@ import { getOrderWatcher } from "@back/orders";
 import { ethers } from "ethers";
 import type { TwapParams, RangeOrderParams } from "@common/types";
 import { SERVICE_PORTS } from "@common/constants";
+import { oneInchOrderCache } from "./oneInchOrderCache";
+import { oneInchOrderMonitor } from "./oneInchOrderMonitor";
 
 class OrderRegistryService {
   private config: KeeperConfig;
@@ -36,6 +38,19 @@ class OrderRegistryService {
   async start() {
     logger.info("Starting Order Registry service...");
     this.isRunning = true;
+
+    // Start 1inch order monitoring and caching services (skip in mock mode)
+    if (!this.mockMode) {
+      try {
+        logger.info("Starting 1inch order monitoring services...");
+        await oneInchOrderMonitor.start();
+        await oneInchOrderCache.connect();
+        logger.info("✅ 1inch order monitoring services started");
+      } catch (error) {
+        logger.warn("Failed to start 1inch order monitoring services:", error);
+        logger.warn("Continuing without 1inch order monitoring - orders will use blockchain fallback");
+      }
+    }
 
     // Start HTTP server (skip in mock mode)
     if (!this.mockMode) {
@@ -67,6 +82,17 @@ class OrderRegistryService {
     }
 
     this.activeOrders.clear();
+
+    // Stop 1inch order monitoring services
+    if (!this.mockMode) {
+      try {
+        await oneInchOrderMonitor.stop();
+        await oneInchOrderCache.disconnect();
+        logger.info("✅ 1inch order monitoring services stopped");
+      } catch (error) {
+        logger.warn("Error stopping 1inch order monitoring services:", error);
+      }
+    }
 
     // Stop HTTP server
     if (this.server) {
@@ -483,6 +509,154 @@ class OrderRegistryService {
             return new Response(JSON.stringify({ success: true, newOrderId }), {
               headers: { "Content-Type": "application/json", ...corsHeaders },
             });
+          }
+
+          // Get 1inch orders for a specific 1edge order
+          if (path.startsWith("/orders/") && path.endsWith("/1inch") && method === "GET") {
+            const orderId = path.split("/")[2];
+            const order = await getOrder(orderId);
+
+            if (!order) {
+              return new Response(
+                JSON.stringify({ success: false, error: "Order not found" }),
+                {
+                  status: 404,
+                  headers: { "Content-Type": "application/json", ...corsHeaders },
+                },
+              );
+            }
+
+            if (!order.oneInchOrderHashes?.length) {
+              return new Response(
+                JSON.stringify({ success: true, data: [] }),
+                {
+                  headers: { "Content-Type": "application/json", ...corsHeaders },
+                },
+              );
+            }
+
+            // Get cached 1inch order data
+            const oneInchOrders = oneInchOrderCache.getOrders(order.oneInchOrderHashes);
+            const validOrders = oneInchOrders.filter(o => o !== null);
+
+            // Include aggregated state
+            const aggregatedState = oneInchOrderCache.calculateAggregatedState(order.oneInchOrderHashes);
+
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                data: {
+                  oneInchOrders: validOrders,
+                  aggregatedState,
+                  missingOrders: oneInchOrders.length - validOrders.length
+                }
+              }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
+          }
+
+          // Get specific 1inch order by hash
+          if (path.startsWith("/1inch-orders/") && method === "GET") {
+            const orderHash = path.split("/")[2];
+            const oneInchOrder = oneInchOrderCache.getOrder(orderHash);
+
+            if (!oneInchOrder) {
+              return new Response(
+                JSON.stringify({ success: false, error: "1inch order not found" }),
+                {
+                  status: 404,
+                  headers: { "Content-Type": "application/json", ...corsHeaders },
+                },
+              );
+            }
+
+            return new Response(
+              JSON.stringify({ success: true, data: oneInchOrder }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
+          }
+
+          // Get all cached 1inch orders
+          if (path === "/1inch-orders" && method === "GET") {
+            const makerAddress = url.searchParams.get("maker");
+            const statusFilter = url.searchParams.get("status");
+            
+            let oneInchOrders;
+
+            if (makerAddress) {
+              oneInchOrders = oneInchOrderCache.getOrdersByMaker(makerAddress);
+            } else {
+              oneInchOrders = oneInchOrderCache.getAllOrders();
+            }
+
+            // Apply status filtering
+            if (statusFilter) {
+              if (statusFilter === "active") {
+                oneInchOrders = oneInchOrderCache.getActiveOrders();
+              } else if (statusFilter === "filled") {
+                oneInchOrders = oneInchOrderCache.getFilledOrders();
+              } else {
+                oneInchOrders = oneInchOrderCache.getOrdersByStatus(statusFilter);
+              }
+            }
+
+            // Include cache statistics
+            const stats = oneInchOrderCache.getStats();
+
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                data: oneInchOrders,
+                stats 
+              }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
+          }
+
+          // Get 1inch order monitoring stats
+          if (path === "/1inch-monitor/stats" && method === "GET") {
+            const monitorStats = oneInchOrderMonitor.getStats();
+            const cacheStats = oneInchOrderCache.getStats();
+
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                data: {
+                  monitor: monitorStats,
+                  cache: cacheStats
+                }
+              }),
+              {
+                headers: { "Content-Type": "application/json", ...corsHeaders },
+              },
+            );
+          }
+
+          // Force 1inch monitor poll (for testing/debugging)
+          if (path === "/1inch-monitor/poll" && method === "POST") {
+            try {
+              await oneInchOrderMonitor.forcePoll();
+              return new Response(
+                JSON.stringify({ success: true, message: "Poll completed" }),
+                {
+                  headers: { "Content-Type": "application/json", ...corsHeaders },
+                },
+              );
+            } catch (error: any) {
+              return new Response(
+                JSON.stringify({ success: false, error: error.message }),
+                {
+                  status: 500,
+                  headers: { "Content-Type": "application/json", ...corsHeaders },
+                },
+              );
+            }
           }
 
           // 404 for unknown endpoints
