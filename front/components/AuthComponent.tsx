@@ -92,7 +92,7 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
     return (
       <Button
         onClick={login}
-        className="bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium transition-all duration-300"
+        className="px-6 py-2 bg-[#4fd1c5] text-black font-semibold rounded-xl hover:bg-[#4fd1c5]/90 transition-all duration-300 group"
       >
         <Wallet className="w-4 h-4 mr-2" />
         Connect Wallet
