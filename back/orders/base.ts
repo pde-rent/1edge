@@ -144,7 +144,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
     try {
       // Alternate approach: Direct pub/sub connection if cache is empty
       await priceCache.connect();
-      
+
       // Wait for price cache to populate if it's empty (max 3 seconds)
       let attempts = 0;
       const maxAttempts = 30; // 30 * 100ms = 3 seconds max wait
@@ -152,13 +152,13 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
         attempts++;
       }
-      
+
       // If cache is still empty, try direct HTTP request to collector
       if (priceCache.getAvailableSymbols().length === 0) {
         logger.warn("Price cache is empty after waiting, trying direct HTTP fallback");
         return await this.getPriceInfoViaHTTP(order);
       }
-      
+
       const chainId = order.params?.chainId || 1; // Default to Ethereum if not specified
       const makerAsset = order.params?.makerAsset;
       const takerAsset = order.params?.takerAsset;
@@ -180,28 +180,61 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       logger.debug(`🔍 Symbol mapping: ${makerAsset} -> ${makerSymbol}, ${takerAsset} -> ${takerSymbol}`);
 
+      // Check if symbol mapping was successful
+      if (!makerSymbol || !takerSymbol) {
+        logger.warn(`Failed to map token addresses to symbols: ${makerAsset} -> ${makerSymbol}, ${takerAsset} -> ${takerSymbol}`);
+        return null;
+      }
+
       // Map symbols for price feeds (WETH -> ETH, WBTC -> BTC)
       const mappedMakerSymbol = mapSymbolForFeed(makerSymbol);
       const mappedTakerSymbol = mapSymbolForFeed(takerSymbol);
       logger.debug(`🔍 Feed mapping: ${makerSymbol} -> ${mappedMakerSymbol}, ${takerSymbol} -> ${mappedTakerSymbol}`);
 
-      // Create price feed symbol
-      const symbol =
-        `agg:spot:${mappedMakerSymbol}${mappedTakerSymbol}` as PairSymbol;
-      
-      logger.debug(`🔍 Generated price symbol: ${symbol}`);
-      
-      const priceData = priceCache.getPrice(symbol);
-      logger.debug(`🔍 Price data result: ${priceData ? `mid=${priceData.mid}` : 'null'}`);
+      // Try multiple symbol formats to find price data
+      const possibleSymbols = [
+        `agg:spot:${mappedMakerSymbol}${mappedTakerSymbol}`,
+        `agg:spot:${mappedTakerSymbol}${mappedMakerSymbol}`, // Reverse pair
+        `${mappedMakerSymbol}${mappedTakerSymbol}`,
+        `${mappedTakerSymbol}${mappedMakerSymbol}`, // Reverse pair without prefix
+      ];
 
-      if (!priceData?.mid) {
-        logger.warn(`No price data available for ${symbol}`);
+      logger.debug(`🔍 Trying symbol formats: ${possibleSymbols.join(', ')}`);
+      logger.debug(`🔍 Available symbols in cache: ${priceCache.getAvailableSymbols().join(', ')}`);
+
+      let priceData = null;
+      let symbol = null;
+      let isReversed = false;
+
+      for (const testSymbol of possibleSymbols) {
+        priceData = priceCache.getPrice(testSymbol as PairSymbol);
+        if (priceData?.mid) {
+          symbol = testSymbol as PairSymbol;
+          isReversed = testSymbol.includes(`${mappedTakerSymbol}${mappedMakerSymbol}`);
+          logger.debug(`🔍 Found price data for symbol: ${symbol}, reversed: ${isReversed}`);
+          break;
+        }
+      }
+
+      if (!priceData?.mid || !symbol) {
+        logger.warn(`No price data available for any symbol format: ${possibleSymbols.join(', ')}`);
+        logger.warn(`Available symbols: ${priceCache.getAvailableSymbols().slice(0, 10).join(', ')}...`);
         return null;
       }
+
+      // Adjust price if using reversed pair
+      const adjustedPrice = isReversed && priceData.mid ? 1 / priceData.mid : priceData.mid;
+
+      logger.debug(`🔍 Final price: ${adjustedPrice} (original: ${priceData.mid}, reversed: ${isReversed})`);
+
       return {
         symbol,
-        price: priceData.mid,
-        priceData,
+        price: adjustedPrice,
+        priceData: {
+          ...priceData,
+          mid: adjustedPrice,
+          isReversed
+        },
       };
     } catch (error) {
       logger.error(`Failed to get price info: ${error}`);
@@ -210,13 +243,111 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
   }
 
   /**
+   * HTTP fallback method for getting price data when cache is unavailable
+   */
+  private async getPriceInfoViaHTTP(order: Order): Promise<PriceInfo | null> {
+    try {
+      logger.debug("Attempting HTTP fallback for price data");
+
+      // Try to get price data via direct HTTP request to the feeds API
+      const response = await fetch('http://localhost:40005/api/feeds');
+      if (!response.ok) {
+        logger.warn(`HTTP price fallback failed: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const apiResponse = await response.json();
+      if (!apiResponse.success || !apiResponse.data) {
+        logger.warn(`HTTP price fallback failed: Invalid API response`);
+        return null;
+      }
+
+      // Convert feeds array to price mapping format
+      const prices: Record<string, any> = {};
+      for (const feed of apiResponse.data) {
+        if (feed.symbol && feed.last) {
+          prices[feed.symbol] = {
+            bid: feed.last.bid,
+            ask: feed.last.ask,
+            mid: feed.last.mid,
+            last: feed.last.last,
+            timestamp: feed.last.timestamp
+          };
+        }
+      }
+
+      logger.debug(`HTTP fallback got ${Object.keys(prices).length} price symbols: ${Object.keys(prices).slice(0, 5).join(', ')}...`);
+
+      // Use the same symbol resolution logic as the cache method
+      const chainId = order.params?.chainId || 1;
+      const makerAsset = order.params?.makerAsset;
+      const takerAsset = order.params?.takerAsset;
+
+      if (!makerAsset || !takerAsset) {
+        return null;
+      }
+
+      const config = getConfig();
+      const tokenMapping = config.tokenMapping;
+
+      const makerSymbol = addressToSymbol(makerAsset, tokenMapping, chainId);
+      const takerSymbol = addressToSymbol(takerAsset, tokenMapping, chainId);
+
+      if (!makerSymbol || !takerSymbol) {
+        logger.warn(`HTTP fallback: Failed to map symbols: ${makerAsset} -> ${makerSymbol}, ${takerAsset} -> ${takerSymbol}`);
+        return null;
+      }
+
+      const mappedMakerSymbol = mapSymbolForFeed(makerSymbol);
+      const mappedTakerSymbol = mapSymbolForFeed(takerSymbol);
+
+      const possibleSymbols = [
+        `agg:spot:${mappedMakerSymbol}${mappedTakerSymbol}`,
+        `agg:spot:${mappedTakerSymbol}${mappedMakerSymbol}`,
+        `${mappedMakerSymbol}${mappedTakerSymbol}`,
+        `${mappedTakerSymbol}${mappedMakerSymbol}`,
+      ];
+
+      logger.debug(`HTTP fallback trying symbols: ${possibleSymbols.join(', ')}`);
+
+      for (const testSymbol of possibleSymbols) {
+        const priceData = prices[testSymbol];
+        if (priceData?.mid) {
+          const isReversed = testSymbol.includes(`${mappedTakerSymbol}${mappedMakerSymbol}`);
+          const finalPrice = isReversed ? 1 / priceData.mid : priceData.mid;
+
+          logger.debug(`HTTP fallback found price for ${testSymbol}: ${finalPrice} (reversed: ${isReversed})`);
+
+          return {
+            symbol: testSymbol as PairSymbol,
+            price: finalPrice,
+            priceData: {
+              ...priceData,
+              mid: finalPrice,
+              isReversed
+            },
+          };
+        }
+      }
+
+      logger.warn(`HTTP fallback: No price data found for symbols: ${possibleSymbols.join(', ')}`);
+      logger.warn(`Available symbols: ${Object.keys(prices).slice(0, 10).join(', ')}...`);
+      return null;
+    } catch (error) {
+      logger.error(`HTTP price fallback failed: ${error}`);
+      return null;
+    }
+  }
+
+  /**
    * Check if order has expired
    */
   protected isExpired(order: Order, expiryDays?: number): boolean {
-    // Check explicit expiry timestamp first (in ms)
+    // Check explicit expiry from order params (in days from frontend)
     if (order.params?.expiry && order.params.expiry > 0) {
       const now = Date.now();
-      return now >= order.params.expiry;
+      const expiryTime = order.createdAt + (order.params.expiry * 24 * 60 * 60 * 1000);
+      return now >= expiryTime;
     }
 
     // Fallback to days-based expiry for backwards compatibility
@@ -428,7 +559,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       // Calculate dynamic taking amount based on limit price
       const makingAmountFloat = parseFloat(makingAmount);
       let dynamicTakingAmount: string;
-      
+
       if (isSell) {
         // Selling WETH for USDT: takingAmount = makingAmount * limitPrice
         const usdtAmount = makingAmountFloat * limitPrice;
@@ -438,7 +569,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         const usdtAmount = makingAmountFloat * limitPrice;
         dynamicTakingAmount = usdtAmount.toFixed(6);
       }
-      
+
       logger.debug(`Calculated takingAmount: ${dynamicTakingAmount} USDT for ${makingAmount} WETH at $${limitPrice}`);
 
       // Parse amounts with proper decimals
@@ -462,7 +593,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       const oldTriggerCount = order.triggerCount || 0;
       order.triggerCount = oldTriggerCount + 1;
       order.status = order.status === OrderStatus.PENDING ? OrderStatus.ACTIVE : order.status;
-      
+
       logger.debug(`Updating order: triggerCount ${oldTriggerCount} -> ${order.triggerCount}, status: ${order.status}`);
 
       // Use LimitOrderService to create and submit the order
@@ -477,7 +608,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         order.oneInchOrderHashes = [];
       }
       order.oneInchOrderHashes.push(result.orderHash);
-      
+
       // Store 1inch order details for monitoring
       if (!order.oneInchOrders) {
         order.oneInchOrders = [];
@@ -489,7 +620,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         limitPrice: limitPrice.toString(),
         createdAt: Date.now()
       });
-      
+
       await saveOrder(order);
 
       logger.info(
@@ -540,7 +671,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         - Order Hashes: ${order.oneInchOrderHashes.map(h => h.slice(0, 10) + '...').join(', ')}
         - Remaining Amount: ${order.remainingMakerAmount}
         - Status: ${order.status}`);
-        
+
       // Check if order has expired
       if (this.isExpired(order)) {
         logger.info(
@@ -564,12 +695,12 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Get cached order states
       const cachedOrders = oneInchOrderCache.getOrders(order.oneInchOrderHashes);
-      
+
       // Check if we have data for all orders
       const missingOrders = cachedOrders.filter(o => o === null).length;
       if (missingOrders > 0) {
         logger.warn(`${missingOrders}/${order.oneInchOrderHashes.length} 1inch orders missing from cache for order ${order.id.slice(0, 8)}...`);
-        
+
         // If some orders missing, fallback to blockchain query
         if (missingOrders === order.oneInchOrderHashes.length) {
           logger.debug(`All 1inch orders missing from cache, falling back to blockchain query`);
@@ -579,7 +710,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Calculate aggregated state using cache utility
       const aggregatedState = oneInchOrderCache.calculateAggregatedState(order.oneInchOrderHashes);
-      
+
       logger.debug(`📊 Aggregated 1inch state for order ${order.id.slice(0, 8)}...: 
         - Total Filled: ${aggregatedState.totalFilled}
         - Total Remaining: ${aggregatedState.totalRemaining}
@@ -608,9 +739,9 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       // Handle invalid orders
       if (!aggregatedState.allOrdersValid && aggregatedState.invalidReasons.length > 0) {
         logger.warn(`⚠️ Order ${order.id.slice(0, 8)}... has invalid 1inch orders: ${aggregatedState.invalidReasons.join(', ')}`);
-        
+
         // If all orders are invalid, mark order as expired/failed
-        if (aggregatedState.invalidReasons.every(reason => 
+        if (aggregatedState.invalidReasons.every(reason =>
           ['order expired', 'order cancelled', 'removed_from_api'].includes(reason)
         )) {
           order.status = OrderStatus.EXPIRED;
@@ -621,7 +752,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Save updated order
       await saveOrder(order);
-      
+
       // Log detailed order states for monitoring
       for (let i = 0; i < order.oneInchOrderHashes.length; i++) {
         const hash = order.oneInchOrderHashes[i];
@@ -631,16 +762,16 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
           const original = parseFloat(cachedOrder.data.makingAmount);
           const filled = Math.max(0, original - remaining);
           const fillPct = original > 0 ? (filled / original) * 100 : 0;
-          
+
           logger.debug(`  📋 1inch Order ${hash.slice(0, 10)}...: ${fillPct.toFixed(1)}% filled (${filled}/${original}) - ${cachedOrder.orderInvalidReason || 'active'}`);
         }
       }
-      
+
     } catch (error) {
       logger.error(
         `Failed to update order ${order.id} from 1inch cache: ${error}`,
       );
-      
+
       // Fallback to blockchain query on cache errors
       logger.debug(`Falling back to blockchain query due to cache error`);
       return this.updateOrderFromBlockchain(order);
@@ -658,7 +789,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
     try {
       logger.debug(`🔗 Updating order ${order.id.slice(0, 8)}... from blockchain (cache fallback)`);
-      
+
       // Check status of all 1inch orders for this order
       const orderData = await this.delegateProxy.getOrderData(
         order.oneInchOrderHashes,
@@ -691,7 +822,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Check if the total 1edge order makingAmount is completely filled
       const totalOrderFilled = totalFilled >= originalTotal;
-      
+
       if (totalOrderFilled && totalFilled > 0n) {
         order.status = OrderStatus.FILLED;
         order.remainingMakerAmount = 0;
