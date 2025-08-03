@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/router';
 import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export interface TreeItemData {
   id: string;
@@ -81,10 +82,12 @@ export function TreeItem({
     <div className={className}>
       {item.type === 'directory' || item.children ? (
         <div>
-          <button
+          <Button
+            variant="ghost"
+            size="s"
             onClick={() => setIsOpen(!isOpen)}
             className={cn(
-              'flex items-center gap-2 w-full text-left px-3 py-1 rounded-md text-sm transition-all duration-200 cursor-pointer group',
+              'h-auto w-full justify-start px-3 py-1',
               hasActiveChild 
                 ? 'bg-primary/10 text-foreground' 
                 : 'text-muted-foreground hover:text-foreground hover:bg-primary/5'
@@ -93,7 +96,7 @@ export function TreeItem({
           >
             {showIcons && renderIcon && renderIcon(item, isOpen)}
             <span className="font-medium truncate">{item.name}</span>
-          </button>
+          </Button>
           {isOpen && item.children && (
             <div className="mt-0.5">
               {item.children.map((child) => (
@@ -115,11 +118,13 @@ export function TreeItem({
         <div>
           {item.path ? (
             showLoadingStates ? (
-              <button
+              <Button
+                variant="ghost"
+                size="s"
                 onClick={() => handleNavigation(item.path!)}
                 disabled={isNavigating}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1 rounded-md text-sm transition-all duration-200 group cursor-pointer w-full text-left',
+                  'h-auto w-full justify-start px-3 py-1',
                   isActive
                     ? 'bg-primary/10 text-primary border-l-2 border-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-primary/5',
@@ -133,7 +138,7 @@ export function TreeItem({
                   showIcons && renderIcon && renderIcon(item)
                 )}
                 <span className="truncate">{item.name}</span>
-              </button>
+              </Button>
             ) : (
               <Link href={item.path} className="block" onClick={onItemClick}>
                 <div
@@ -151,7 +156,9 @@ export function TreeItem({
               </Link>
             )
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              size="s"
               onClick={() => {
                 // Handle click for non-link items (like TOC items)
                 if (item.id && onItemClick) {
@@ -166,16 +173,16 @@ export function TreeItem({
                 onItemClick?.();
               }}
               className={cn(
-                'flex items-center gap-2 w-full text-left px-3 py-1 rounded-md text-sm transition-all duration-200 cursor-pointer',
+                'h-auto w-full justify-start px-3 py-1',
                 isActive
                   ? 'text-primary bg-primary/10 font-semibold border-l-2 border-primary shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-l-2 hover:border-primary/30'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-primary/5 hover:border-l-2 hover:border-primary/15'
               )}
               style={{ paddingLeft }}
             >
               {showIcons && renderIcon && renderIcon(item)}
               <span className="truncate">{item.name}</span>
-            </button>
+            </Button>
           )}
         </div>
       )}

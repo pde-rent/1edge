@@ -26,7 +26,7 @@ export function ToggleSelector({ value, onValueChange, options, className = "" }
       onValueChange={(newValue) => {
         if (newValue) onValueChange(newValue);
       }}
-      className={`bg-card backdrop-blur-sm border border-primary/50 p-1 ${className}`}
+      className={`bg-card backdrop-blur-sm border border-primary/25 p-1 ${className}`}
     >
       {options.map((option) => (
         <ToggleGroupItem

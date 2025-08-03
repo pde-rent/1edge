@@ -19,7 +19,7 @@ const CoinDropdown = ({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-3 p-3 bg-gradient-to-br from-primary/30 to-background/30 border border-primary/40 rounded-xl text-primary-foreground backdrop-blur-sm shadow-lg shadow-primary/20 transition-all hover:border-primary/50 focus:ring-2 focus:ring-primary/50 focus:border-primary/50 ${
+        className={`w-full flex items-center justify-between gap-3 p-3 bg-gradient-to-br from-primary/30 to-background/30 border border-primary/40 rounded-xl text-primary-foreground backdrop-blur-sm shadow-lg shadow-primary/20 transition-all hover:border-primary/25 focus:ring-2 focus:ring-primary/50 focus:border-primary/25 ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
       >
@@ -60,7 +60,7 @@ const CoinDropdown = ({
             onClick={() => setIsOpen(false)}
           />
           
-          <div className="absolute top-full left-0 right-0 mt-2 bg-gradient-to-br from-gray-900/98 via-background/95 to-gray-800/98 backdrop-blur-xl rounded-xl border-2 border-primary/50 shadow-2xl shadow-primary/40 z-50 max-h-60 overflow-y-auto ring-1 ring-primary/20">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-gradient-to-br from-gray-900/98 via-background/95 to-gray-800/98 backdrop-blur-xl rounded-xl border-2 border-primary/25 shadow-2xl shadow-primary/40 z-50 max-h-60 overflow-y-auto ring-1 ring-primary/20">
             {coins.map((coin:any) => (
               <button
                 key={coin.id}
@@ -69,7 +69,7 @@ const CoinDropdown = ({
                   onSelect(coin.id);
                   setIsOpen(false);
                 }}
-                className="w-full flex items-center gap-3 p-3 text-left hover:bg-gradient-to-r hover:from-primary/40 hover:to-primary/30 transition-all duration-200 first:rounded-t-xl last:rounded-b-xl border-b border-gray-700/50 last:border-b-0 hover:border-primary/30"
+                className="w-full flex items-center gap-3 p-3 text-left hover:bg-gradient-to-r hover:from-primary/40 hover:to-primary/30 transition-all duration-200 first:rounded-t-xl last:rounded-b-xl border-b border-gray-700/50 last:border-b-0 hover:border-primary/15"
               >
                 <div className="w-8 h-8 square overflow-hidden bg-gray-800/60 flex items-center justify-center border border-primary/40 backdrop-blur-sm shadow-lg shadow-primary/30">
                   <img 

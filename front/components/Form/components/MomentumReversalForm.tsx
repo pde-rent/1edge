@@ -59,11 +59,11 @@ const MomentumReversalForm = ({ control, errors }: any) => {
           defaultValue="12" // 12 hours
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select RSI period" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {rsiPeriodOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 
@@ -102,11 +102,11 @@ const MomentumReversalForm = ({ control, errors }: any) => {
           defaultValue="12" // 12 hours
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select RSI MA period" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {rsimaPeriodOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 
@@ -148,11 +148,11 @@ const MomentumReversalForm = ({ control, errors }: any) => {
           defaultValue="2.0" // 2%
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select take profit percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {takeProfitOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 
@@ -194,11 +194,11 @@ const MomentumReversalForm = ({ control, errors }: any) => {
           defaultValue="1.0" // 1%
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select stop loss percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {stopLossOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 

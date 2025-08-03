@@ -125,16 +125,16 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
       
       <TooltipContent 
         side="top" 
-        className="w-80 max-w-none bg-card border border-primary/50 text-foreground p-0"
+        className="w-80 max-w-none bg-background/95 backdrop-blur-sm border border-primary/25 text-foreground p-0 shadow-lg"
         sideOffset={8}
       >
-        <div className="p-3 border-b border-primary/50">
+        <div className="p-3 border-b border-primary/25">
           <h3 className="text-sm font-semibold text-primary">System Status</h3>
         </div>
         
         <div className="max-h-64 overflow-y-auto">
           {/* Internal Services */}
-          <div className="p-2 bg-card">
+          <div className="p-2 bg-background/50">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
               Internal Services
             </div>
@@ -170,7 +170,7 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
           {/* External Services */}
           {services.filter(s => !s.pingUrl?.startsWith('internal:')).length > 0 && (
             <>
-              <div className="p-2 bg-card border-t border-primary/50">
+              <div className="p-2 bg-background/50 border-t border-primary/25">
                 <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">
                   External Services
                 </div>
@@ -206,7 +206,7 @@ export default function StatusIndicator({ className = '' }: StatusIndicatorProps
           )}
         </div>
         
-        <div className="p-2 border-t border-primary/50 bg-card">
+        <div className="p-2 border-t border-primary/25 bg-background/50">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>Updated: {new Date().toLocaleTimeString()}</span>
             <span>{services.filter(s => s.status === ServiceStatus.UP).length}/{services.length} UP</span>

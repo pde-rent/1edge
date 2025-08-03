@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Navigation, Percent, Calendar, TrendingUp, DollarSign } from "lucide-react";
+import OrderDirectionToggle from "./OrderDirectionToggle";
 
 const ChaseLimitForm = ({ control, errors }: any) => {
   const spotPrice = 3750;
@@ -34,6 +35,9 @@ const ChaseLimitForm = ({ control, errors }: any) => {
 
   return (
     <div className="space-y-6">
+      {/* Buy/Sell Toggle */}
+      <OrderDirectionToggle control={control} />
+      
           <div className="space-y-2">
   <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
     <DollarSign className="w-4 h-4" />
@@ -85,7 +89,7 @@ const ChaseLimitForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select chase distance" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {distanceOptions.map((option) => (
                   <SelectItem
                     key={option.value}

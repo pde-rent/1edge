@@ -1,6 +1,7 @@
 // @ts-nocheck
 import useSWR from 'swr';
 import { fetcher } from '../utils/fetcher';
+import { Button } from '@/components/ui/button';
 
 /**
  * StrategyControls displays a list of strategies and allows starting/stopping them.
@@ -35,8 +36,20 @@ export default function StrategyControls() {
         {strategies.map((strat: any) => (
           <li key={strat.id}>
             {strat.id} ({strat.symbol})
-            <button onClick={() => handleAction(strat.id, 'start')}>Start</button>
-            <button onClick={() => handleAction(strat.id, 'stop')}>Stop</button>
+            <Button 
+              size="s" 
+              variant="primary" 
+              onClick={() => handleAction(strat.id, 'start')}
+            >
+              Start
+            </Button>
+            <Button 
+              size="s" 
+              variant="bordered" 
+              onClick={() => handleAction(strat.id, 'stop')}
+            >
+              Stop
+            </Button>
           </li>
         ))}
       </ul>

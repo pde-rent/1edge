@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import CoinDropdown from "./CoinsDropdown";
+import { SimpleButton } from "@/components/ui/simple-button";
 
 const COINGECKO_BASE_URL = 'https://api.coingecko.com/api/v3';
 
@@ -176,8 +177,9 @@ const fetchCoins = async (useMockData = true) => {
 
   {/* Swap Button */}
   <div className=" pt-3 flex justify-center">
-    <button
-      type="button"
+    <SimpleButton
+      variant="primary"
+      size="s"
       onClick={swapCoins}
       className="p-2 bg-gradient-to-br from-primary/30 via-primary/25 to-primary/30 square border border-primary/40 backdrop-blur-sm shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all transform hover:scale-110 text-primary-foreground"
       title="Swap coins"
@@ -185,7 +187,7 @@ const fetchCoins = async (useMockData = true) => {
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
       </svg>
-    </button>
+    </SimpleButton>
   </div>
 
   {/* TO */}

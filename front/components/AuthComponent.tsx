@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import { useSetActiveWallet } from "@privy-io/wagmi";
 import { useAccount, useSwitchChain } from "wagmi";
-import { Button } from "@/components/ui/button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import {
   Dialog,
   DialogContent,
@@ -28,17 +28,28 @@ import {
   ExternalLink,
   Network,
 } from "lucide-react";
-import {
-  mainnet,
-  sepolia,
-  polygon,
-  arbitrum,
-  base,
-  optimism,
-} from "viem/chains";
 import { toast } from "sonner";
+import { getAllChainIds, getNetworkById, getAllNetworks } from "../config/generated";
 
-const SUPPORTED_CHAINS = [mainnet, sepolia, polygon, arbitrum, base, optimism];
+// Create supported chains from our config
+const SUPPORTED_CHAINS = getAllChainIds().map(chainId => {
+  const network = getNetworkById(chainId)!;
+  return {
+    id: chainId,
+    name: network.name,
+    nativeCurrency: {
+      name: network.nativeSymbol,
+      symbol: network.nativeSymbol,
+      decimals: 18,
+    },
+    rpcUrls: {
+      default: { http: [network.rpcUrl] },
+    },
+    blockExplorers: {
+      default: { name: network.name, url: network.blockExplorer },
+    },
+  };
+});
 
 interface AuthComponentProps {
   variant?: "default" | "compact";
@@ -90,13 +101,15 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
   // Not authenticated state
   if (!authenticated) {
     return (
-      <Button
+      <SimpleButton
+        variant="primary"
+        size="m"
         onClick={login}
-        className="px-6 py-2 bg-[#4fd1c5] text-black font-semibold rounded-xl hover:bg-[#4fd1c5]/90 transition-all duration-300 group"
+        className="px-6 py-2 font-semibold text-base"
       >
         <Wallet className="w-4 h-4 mr-2" />
         Connect Wallet
-      </Button>
+      </SimpleButton>
     );
   }
 
@@ -105,29 +118,23 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-black/40 border-slate-600/50 text-slate-300 hover:bg-slate-800/50 flex items-center gap-2 px-2 py-1 h-8"
+          <SimpleButton
+            variant="primary"
+            size="m"
+            className="flex items-center gap-2 text-base"
           >
-            {/* Network indicator */}
-            {chain && (
-              <div className="flex items-center gap-1">
-                <Wallet className="w-3 h-3 text-emerald-400" />
-                <span className="text-xs font-medium">{chain.name}</span>
-              </div>
-            )}
+            <Wallet className="w-4 h-4" />
 
             {/* Wallet address */}
             {address && (
-              <span className="text-xs font-mono">
+              <span className="text-sm font-mono">
                 {formatAddress(address)}
               </span>
             )}
             <ChevronDown className="w-3 h-3" />
-          </Button>
+          </SimpleButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-black/95 border-slate-700/50 text-white min-w-[280px]">
+        <DropdownMenuContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl text-white min-w-[280px] mr-4">
           {/* Network Section */}
           <div className="px-3 py-2 text-xs text-slate-400">Network</div>
           <div className="px-1 mb-2">
@@ -163,24 +170,24 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
                   {formatAddress(address)}
                 </div>
                 <div className="flex gap-2">
-                  <Button
+                  <SimpleButton
                     onClick={copyAddress}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs hover:bg-slate-700/50"
+                    size="s"
+                    variant="bordered"
+                    className="h-6 px-2 text-sm hover:bg-slate-700/50"
                   >
                     <Copy className="w-3 h-3 mr-1" />
                     Copy
-                  </Button>
-                  <Button
+                  </SimpleButton>
+                  <SimpleButton
                     onClick={openEtherscan}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs hover:bg-slate-700/50"
+                    size="s"
+                    variant="bordered"
+                    className="h-6 px-2 text-sm hover:bg-slate-700/50"
                   >
                     <ExternalLink className="w-3 h-3 mr-1" />
                     Explorer
-                  </Button>
+                  </SimpleButton>
                 </div>
               </div>
             </>
@@ -247,16 +254,16 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
           onOpenChange={setIsNetworkDialogOpen}
         >
           <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
+            <SimpleButton
+              variant="bordered"
+              size="s"
               className="bg-black/40 border-slate-600/50 text-slate-300 hover:bg-slate-800/50 flex items-center gap-2"
             >
               <span className="text-xs font-medium">{chain.name}</span>
               <Network className="w-3 h-3" />
-            </Button>
+            </SimpleButton>
           </DialogTrigger>
-          <DialogContent className="bg-black/95 border-slate-700/50 text-white">
+          <DialogContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl text-white">
             <DialogHeader>
               <DialogTitle className="text-teal-400">
                 Switch Network
@@ -264,7 +271,7 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
             </DialogHeader>
             <div className="space-y-2">
               {SUPPORTED_CHAINS.map((supportedChain) => (
-                <Button
+                <SimpleButton
                   key={supportedChain.id}
                   onClick={() => {
                     switchChain({ chainId: supportedChain.id });
@@ -272,7 +279,7 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
                   }}
                   disabled={isSwitchingChain || chain?.id === supportedChain.id}
                   variant={
-                    chain?.id === supportedChain.id ? "default" : "outline"
+                    chain?.id === supportedChain.id ? "primary" : "bordered"
                   }
                   className={`w-full justify-start ${
                     chain?.id === supportedChain.id
@@ -286,7 +293,7 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
                       Current
                     </span>
                   )}
-                </Button>
+                </SimpleButton>
               ))}
             </div>
           </DialogContent>
@@ -296,20 +303,21 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
       {/* Wallet Display & Manager */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button
-            variant="outline"
-            className="bg-black/40 border-slate-600/50 text-slate-300 hover:bg-slate-800/50 flex items-center gap-2"
+          <SimpleButton
+            variant="primary"
+            size="m"
+            className="flex items-center gap-2 text-base"
           >
-            <Wallet className="w-4 h-4 text-emerald-400" />
+            <Wallet className="w-4 h-4" />
             {address && (
-              <span className="text-sm font-mono">
+              <span className="text-base font-mono">
                 {formatAddress(address)}
               </span>
             )}
             <ChevronDown className="w-3 h-3" />
-          </Button>
+          </SimpleButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="bg-black/95 border-slate-700/50 text-white min-w-[250px]">
+        <DropdownMenuContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl text-white min-w-[250px]">
           {/* Current Wallet Info */}
           {address && (
             <>
@@ -321,24 +329,24 @@ const AuthComponent: React.FC<AuthComponentProps> = ({
                   {formatAddress(address)}
                 </div>
                 <div className="flex gap-2">
-                  <Button
+                  <SimpleButton
                     onClick={copyAddress}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs hover:bg-slate-700/50"
+                    size="s"
+                    variant="bordered"
+                    className="h-6 px-2 text-sm hover:bg-slate-700/50"
                   >
                     <Copy className="w-3 h-3 mr-1" />
                     Copy
-                  </Button>
-                  <Button
+                  </SimpleButton>
+                  <SimpleButton
                     onClick={openEtherscan}
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 px-2 text-xs hover:bg-slate-700/50"
+                    size="s"
+                    variant="bordered"
+                    className="h-6 px-2 text-sm hover:bg-slate-700/50"
                   >
                     <ExternalLink className="w-3 h-3 mr-1" />
                     Explorer
-                  </Button>
+                  </SimpleButton>
                 </div>
               </div>
               <DropdownMenuSeparator className="bg-slate-700/50" />

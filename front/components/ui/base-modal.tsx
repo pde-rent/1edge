@@ -72,7 +72,7 @@ export function BaseModal({
     >
       <Card
         className={cn(
-          'w-full bg-background/95 border-primary/50 shadow-2xl rounded-xl overflow-hidden',
+          'w-full bg-background/95 border-primary/25 shadow-2xl rounded-xl overflow-hidden',
           maxWidthClasses[maxWidth],
           className
         )}
@@ -81,7 +81,7 @@ export function BaseModal({
       >
         {/* Header */}
         {(title || titleIcon || showCloseButton) && (
-          <div className="flex items-center justify-between border-b border-primary/50 px-6 py-4 flex-shrink-0">
+          <div className="flex items-center justify-between border-b border-primary/25 px-6 py-4 flex-shrink-0">
             {(title || titleIcon) && (
               <div className="flex items-center gap-3">
                 {titleIcon}
@@ -109,7 +109,7 @@ export function BaseModal({
         <div 
           className={cn(
             'flex-1 overflow-hidden',
-            footer && 'border-b border-primary/50',
+            footer && 'border-b border-primary/25',
             contentClassName
           )}
           style={{ 

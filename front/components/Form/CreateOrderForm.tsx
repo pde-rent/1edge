@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { PanelWrapper } from "../common/Panel";
-import { Button } from "@/components/ui/button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -40,6 +40,7 @@ import MomentumReversalForm from "./components/MomentumReversalForm";
 import RangeBreakoutForm from "./components/RangeBreakoutForm";
 import StopLimitForm from "./components/StopLimitForm";
 import ChaseLimitForm from "./components/ChaseLimitForm";
+import OrderDirectionToggle from "./components/OrderDirectionToggle";
 import { toast } from "sonner";
 import { useOrderStore } from "@/stores/orderStore";
 import AuthComponent from "../AuthComponent";
@@ -465,7 +466,7 @@ const CreateOrderForm = () => {
 
         {/* Order Type Selector */}
         <Select value={orderType} onValueChange={setOrderType}>
-          <SelectTrigger className="flex items-center gap-2 px-4 py-3 bg-primary/20 backdrop-blur-sm rounded-lg text-foreground hover:bg-primary/30 transition-all duration-300 border-0 w-auto cursor-pointer">
+          <SelectTrigger className="flex items-center gap-2 px-4 py-3 !bg-slate-800 !text-primary !border-0 shadow-sm hover:!bg-slate-700 hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 rounded-xl w-auto cursor-pointer font-semibold">
             <SelectValue>
               <div className="flex items-center gap-2">
                 {(() => {
@@ -482,7 +483,7 @@ const CreateOrderForm = () => {
               </div>
             </SelectValue>
           </SelectTrigger>
-          <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/50 shadow-2xl">
+          <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
             <SelectGroup>
               <SelectLabel className="text-primary font-medium">Orders</SelectLabel>
               {orderTypes.Order.map((type) => {
@@ -534,14 +535,14 @@ const CreateOrderForm = () => {
             <div className="text-xs bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full border border-yellow-500/30">
               From Orderbook
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
+            <SimpleButton
+              variant="bordered"
+              size="s"
               onClick={handleClearOrderbookData}
               className="text-slate-400 hover:text-white p-1 h-auto"
             >
               <X className="w-3 h-3" />
-            </Button>
+            </SimpleButton>
           </div>
         )}
       </div>
@@ -554,46 +555,16 @@ const CreateOrderForm = () => {
           {/* Order Configuration - Scrollable */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
 
-            {/* Size in USD */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-primary flex items-center gap-2">
-                Size (USD)
-                <div className="w-1 h-1 bg-primary"></div>
-              </label>
-              <Controller
-                name="size"
-                control={control}
-                rules={{ required: "Size is required" }}
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    type="number"
-                    step="0.01"
-                    className="w-full bg-card backdrop-blur-sm border-primary/50 text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all duration-300 hover:bg-card/80"
-                    placeholder="Enter amount in USD"
-                  />
-                )}
-              />
-              {errors.size && (
-                <span className="text-xs text-red-400 flex items-center gap-1">
-                  <div className="w-1 h-1 bg-red-400"></div>
-                  {errors.size.message}
-                </span>
-              )}
-            </div>
-
             {/* Dynamic Form Fields Based on Order Type */}
             <div className="space-y-3">
-              <div className="border-t border-primary/50 pt-3 relative">
-                <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
+              <div className="pt-3">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-primary flex items-center gap-2">
+                  <span className="text-sm font-medium text-primary">
                     {(() => {
                       const allOrderTypes = [...orderTypes.Order, ...orderTypes.Strategy];
                       const selectedType = allOrderTypes.find(t => t.id === orderType);
                       return selectedType?.name;
                     })()} Parameters
-                    <div className="w-1 h-1 bg-success"></div>
                   </span>
                 </div>
 
@@ -603,17 +574,17 @@ const CreateOrderForm = () => {
           </div>
 
           {/* Footer with Submit Button */}
-          <div className="border-t border-primary/50 bg-background backdrop-blur-md p-4 flex-shrink-0 relative">
-            <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
+          <div className="bg-background backdrop-blur-md p-4 flex-shrink-0">
 
-            <Button
+            <SimpleButton
               type="submit"
+              variant="primary"
+              size="l"
               disabled={isSubmitting || !address}
-              className="w-full py-3 bg-gradient-to-r from-teal-600 via-emerald-600 to-cyan-600 hover:from-teal-500 hover:via-emerald-500 hover:to-cyan-500 text-white font-medium text-sm transition-all duration-300 transform hover:scale-[1.02] border border-teal-400/30 backdrop-blur-sm relative overflow-hidden group disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="w-full"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-white/10 via-transparent to-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-              <span className="relative z-10">{getButtonText()}</span>
-            </Button>
+              {getButtonText()}
+            </SimpleButton>
 
             {/* Info Footer */}
             <div className="mt-3 p-3 bg-black/40 backdrop-blur-sm border border-slate-600/30 relative">

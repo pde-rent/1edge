@@ -21,7 +21,7 @@ const TokenSelector = ({ selectedToken, onTokenSelect, tokens }: any) => {
             onClick={() => onTokenSelect(token)}
             className={`flex items-center gap-3 p-4 rounded-xl backdrop-blur-sm transition-all shadow-lg ${
               selectedToken === token
-                ? `${tokenInfo.bg} hover:from-primary/30 hover:to-primary/30 text-primary ${tokenInfo.border} hover:border-primary/50`
+                ? `${tokenInfo.bg} hover:from-primary/30 hover:to-primary/30 text-primary ${tokenInfo.border} hover:border-primary/25`
                 : 'bg-gradient-to-r from-gray-800/40 to-gray-900/40 hover:from-gray-700/50 hover:to-gray-800/50 text-gray-300 border border-gray-600/30 hover:border-gray-500/50'
             }`}
           >

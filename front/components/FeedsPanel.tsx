@@ -18,7 +18,7 @@ function FeedTag({ children }: { children: React.ReactNode }) {
   return (
     <Badge
       variant="outline"
-      className="ml-1 text-xs px-1.5 py-0 h-4 font-semibold uppercase bg-primary/10 border-primary/50 text-primary hover:bg-primary/20"
+      className="ml-1 text-xs px-1.5 py-0 h-4 font-semibold uppercase bg-primary/10 border-primary/25 text-primary hover:bg-primary/20"
     >
       {children}
     </Badge>

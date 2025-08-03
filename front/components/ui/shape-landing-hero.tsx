@@ -26,7 +26,7 @@ import {
   Target,
   Book,
 } from "lucide-react";
-import AuthComponent from "../AuthComponent";
+import { SimpleButton } from "@/components/ui/simple-button";
 
 function ElegantShape({
   className,
@@ -110,7 +110,14 @@ function Navbar() {
               alt="1edge"
               className="h-[36px] w-[90px] object-contain brightness-110 contrast-125"
             />
-            <AuthComponent />
+            <SimpleButton
+              variant="primary"
+              size="m"
+              onClick={() => window.location.href = "/app"}
+              className="px-6 py-2 font-semibold"
+            >
+              App
+            </SimpleButton>
           </div>
         </div>
       </div>
@@ -166,13 +173,13 @@ function ExploreOrderTypes() {
         <div className="mb-12 opacity-0 animate-[fadeInUp_0.8s_ease-out_0.2s_forwards]">
           <div className="flex items-center gap-3 mb-6">
             <span className="text-[#4fd1c5] font-medium">
-              Explore Order Types
+              ORDER TYPES
             </span>
             <div className="h-px bg-gradient-to-r from-[#4fd1c5] to-transparent flex-1" />
           </div>
           <div className="text-right">
             <span className="text-white/60 text-sm">
-              A message from SEI re: USDC AND USDT
+              See full list in the docs
             </span>
           </div>
         </div>
@@ -259,7 +266,7 @@ function FeaturesSection() {
       icon: <Shield className="w-12 h-12" />,
       title: "MEV Resistant",
       description:
-        "Carbon DeFi's irreversible nature makes it immune to sandwich attacks.",
+        "1inch's limit order-protocol intent-centric nature makes it immune to sandwich attacks.",
     },
     {
       icon: <Zap className="w-12 h-12" />,
@@ -546,22 +553,26 @@ function HeroSection() {
                 : "opacity-0 translate-y-8"
             }`}
           >
-            <button
+            <SimpleButton
               onClick={handleLaunchApp}
-              className="group relative px-8 py-4 bg-[#4fd1c5] text-black font-semibold rounded-xl hover:bg-[#4fd1c5]/90 transition-all duration-300 flex items-center gap-2 shadow-[0_0_30px_rgba(79,209,197,0.3)] hover:shadow-[0_0_40px_rgba(79,209,197,0.5)] hover:scale-105"
+              className="group relative px-8 py-4 font-semibold flex items-center gap-2"
+              variant="primary"
+              size="l"
             >
               <Rocket className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               Launch App
-            </button>
+            </SimpleButton>
 
-            <button
+            <SimpleButton
               onClick={handleDocs}
-              className="group px-8 py-4 border-2 border-[#4fd1c5]/30 text-white font-semibold rounded-xl hover:border-[#4fd1c5] hover:bg-[#4fd1c5]/5 transition-all duration-300 flex items-center gap-2 hover:scale-105"
+              className="group px-8 py-4 font-semibold flex items-center gap-2"
+              variant="primary"
+              size="l"
             >
               <BookOpen className="w-5 h-5 group-hover:rotate-12 transition-transform" />
               Docs
               <ExternalLink className="w-4 h-4 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </button>
+            </SimpleButton>
           </div>
         </div>
       </div>

@@ -102,7 +102,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select ADX period" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {adxPeriodOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -145,7 +145,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select ADX MA period" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {adxmaPeriodOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -188,7 +188,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select EMA period" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {emaPeriodOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -234,7 +234,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select take profit percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {takeProfitOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -280,7 +280,7 @@ const RangeBreakoutForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select stop loss percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {stopLossOptions.map((option) => (
                   <SelectItem
                     key={option.value}

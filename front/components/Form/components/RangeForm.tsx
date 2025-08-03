@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DollarSign, TrendingUp, TrendingDown, Calendar, Percent } from "lucide-react";
+import OrderDirectionToggle from "./OrderDirectionToggle";
  export const getDefaultExpiry = () => {
     const date = new Date();
     date.setDate(date.getDate() + 30);
@@ -44,6 +45,8 @@ const RangeForm = ({ control, errors, watch }: any) => {
 
   return (
     <div className="space-y-6">
+      {/* Buy/Sell Toggle */}
+      <OrderDirectionToggle control={control} />
 
           <div className="space-y-2">
   <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
@@ -100,7 +103,7 @@ const RangeForm = ({ control, errors, watch }: any) => {
                 {...field}
                 type="number"
                 step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
                 placeholder={'0.00'}
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
@@ -139,7 +142,7 @@ const RangeForm = ({ control, errors, watch }: any) => {
                 {...field}
                 type="number"
                 step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
                 placeholder={'0.00'}
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
@@ -178,7 +181,7 @@ const RangeForm = ({ control, errors, watch }: any) => {
               {/* Background with gradient and glow effect */}
               <div className={`relative p-3 rounded-xl backdrop-blur-sm border transition-all duration-300 ${
                 priceRange === option.value
-                  ? 'bg-gradient-to-br from-primary/80 via-primary/70 to-primary/80 border-primary/50 shadow-lg shadow-primary/25'
+                  ? 'bg-gradient-to-br from-primary/80 via-primary/70 to-primary/80 border-primary/25 shadow-lg shadow-primary/25'
                   : 'bg-black/60 border-slate-600/40 hover:bg-black/80 hover:border-slate-500/60'
               }`}>
                 
@@ -221,11 +224,11 @@ const RangeForm = ({ control, errors, watch }: any) => {
           defaultValue="0.3"
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select step percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {stepOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 
@@ -267,7 +270,7 @@ const RangeForm = ({ control, errors, watch }: any) => {
               <Input
                 {...field}
                 type="datetime-local"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
             </div>

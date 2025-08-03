@@ -2,6 +2,7 @@ import { Controller } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, TrendingDown, Calendar, DollarSign } from "lucide-react";
+import OrderDirectionToggle from "./OrderDirectionToggle";
 
 const StopLimitForm = ({ control, errors }: any) => {
   // Mock spot price - in real app this would come from an API
@@ -21,6 +22,8 @@ const StopLimitForm = ({ control, errors }: any) => {
 
   return (
     <div className="space-y-6">
+      {/* Buy/Sell Toggle */}
+      <OrderDirectionToggle control={control} />
       
           <div className="space-y-2">
   <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">

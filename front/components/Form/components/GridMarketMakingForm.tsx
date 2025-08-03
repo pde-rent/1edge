@@ -182,7 +182,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select step percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {stepOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -231,7 +231,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select multiplier" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {multiplierOptions.map((option) => (
                   <SelectItem
                     key={option.value}
@@ -329,7 +329,7 @@ const GridMarketMakingForm = ({ control, errors }: any) => {
                 <SelectValue placeholder="Select take profit percentage" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-teal-500/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {takeProfitOptions.map((option) => (
                   <SelectItem
                     key={option.value}

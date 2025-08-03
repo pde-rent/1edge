@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DocStructure } from '@/lib/docs';
 import { useRouter } from 'next/router';
+import { Button } from '@/components/ui/button';
 
 interface DocsNavigationProps {
   docStructure: DocStructure[];
@@ -85,12 +86,13 @@ export function DocsNavigation({ docStructure, currentSlug }: DocsNavigationProp
       <div className="grid grid-cols-2 gap-4">
         {/* Previous page */}
         {prevPage ? (
-          <button
+          <Button
+            variant="bordered"
+            size="l"
             onClick={() => handleNavigation(prevPage.path)}
             disabled={navigatingTo === prevPage.path}
             className={cn(
-              "group flex items-center gap-3 p-4 rounded-lg border border-primary/20 bg-background/50 hover:bg-primary/5 hover:border-primary/40 transition-all duration-200 w-full cursor-pointer",
-              "hover:shadow-lg hover:shadow-primary/10",
+              "group h-auto p-4 w-full justify-start",
               navigatingTo === prevPage.path && "opacity-75 cursor-not-allowed"
             )}
           >
@@ -109,19 +111,20 @@ export function DocsNavigation({ docStructure, currentSlug }: DocsNavigationProp
                 {prevPage.title}
               </div>
             </div>
-          </button>
+          </Button>
         ) : (
           <div /> // Empty spacer
         )}
 
         {/* Next page */}
         {nextPage ? (
-          <button
+          <Button
+            variant="bordered"
+            size="l"
             onClick={() => handleNavigation(nextPage.path)}
             disabled={navigatingTo === nextPage.path}
             className={cn(
-              "group flex items-center gap-3 p-4 rounded-lg border border-primary/20 bg-background/50 hover:bg-primary/5 hover:border-primary/40 transition-all duration-200 w-full cursor-pointer",
-              "hover:shadow-lg hover:shadow-primary/10",
+              "group h-auto p-4 w-full justify-between",
               navigatingTo === nextPage.path && "opacity-75 cursor-not-allowed"
             )}
           >
@@ -140,7 +143,7 @@ export function DocsNavigation({ docStructure, currentSlug }: DocsNavigationProp
                 <ChevronRight className="w-4 h-4 text-primary" />
               )}
             </div>
-          </button>
+          </Button>
         ) : (
           <div /> // Empty spacer
         )}

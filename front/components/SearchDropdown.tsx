@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { Search, FileText, Hash, Loader2 } from 'lucide-react';
 import { searchService, SearchResult } from '@/lib/search';
 import { cn } from '@/lib/utils';
@@ -116,11 +117,11 @@ export function SearchDropdown({ query, onQueryChange, onClose, isOpen }: Search
     >
       <Card
         ref={dropdownRef}
-        className="w-full max-w-2xl bg-background/95 border-primary/50 shadow-2xl rounded-xl overflow-hidden"
+        className="w-full max-w-2xl bg-background/95 border-primary/25 shadow-2xl rounded-xl overflow-hidden"
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the card
       >
         {/* Search Input */}
-        <div className="relative border-b border-primary/50">
+        <div className="relative border-b border-primary/25">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5" />
           <input
             ref={inputRef}
@@ -186,12 +187,13 @@ function SearchResultItem({ result, query, isSelected, onClick, onMouseEnter }: 
   const isHeadingResult = result.id.includes('#');
   
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="s"
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       className={cn(
-        'w-full text-left p-3 rounded-md transition-all duration-150 group cursor-pointer',
-        'hover:bg-cyan-400/10 focus:bg-cyan-400/10 focus:outline-none',
+        'w-full text-left p-3 h-auto justify-start hover:bg-cyan-400/10 focus:bg-cyan-400/10',
         isSelected && 'bg-cyan-400/10'
       )}
     >
@@ -213,7 +215,7 @@ function SearchResultItem({ result, query, isSelected, onClick, onMouseEnter }: 
               }}
             />
             {result.category && (
-              <Badge variant="outline" className="text-xs flex-shrink-0 border-primary/50 text-primary">
+              <Badge variant="outline" className="text-xs flex-shrink-0 border-primary/25 text-primary">
                 {result.category}
               </Badge>
             )}
@@ -229,6 +231,6 @@ function SearchResultItem({ result, query, isSelected, onClick, onMouseEnter }: 
           )}
         </div>
       </div>
-    </button>
+    </Button>
   );
 }

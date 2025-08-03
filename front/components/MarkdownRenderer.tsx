@@ -5,6 +5,7 @@ import mermaid from 'mermaid';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { Copy, Check } from 'lucide-react';
 import { THEME } from '../../common/constants';
 
@@ -93,7 +94,9 @@ function CodeBlock({ children, className, ...props }: React.HTMLAttributes<HTMLE
         <Badge variant="outline" className="text-xs">
           {language}
         </Badge>
-        <button
+        <Button
+          variant="bordered"
+          size="s"
           onClick={copyToClipboard}
           className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
           title="Copy code"
@@ -103,7 +106,7 @@ function CodeBlock({ children, className, ...props }: React.HTMLAttributes<HTMLE
           ) : (
             <Copy className="h-4 w-4 text-muted-foreground" />
           )}
-        </button>
+        </Button>
       </div>
       <ScrollArea className="max-h-96">
         <pre className="p-4 overflow-x-auto">

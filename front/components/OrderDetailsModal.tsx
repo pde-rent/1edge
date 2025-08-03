@@ -136,7 +136,7 @@ export function OrderDetailsModal({
               <div className="space-y-1">
                 <ModalKeyValue 
                   label="Type" 
-                  value={<Badge variant="outline" className="bg-primary/10 border-primary/50 text-primary">{order.params?.type || 'Unknown'}</Badge>}
+                  value={<Badge variant="outline" className="bg-primary/10 border-primary/25 text-primary">{order.params?.type || 'Unknown'}</Badge>}
                 />
                 <ModalKeyValue 
                   label="Status" 

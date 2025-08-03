@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { PanelWrapper } from "./common/Panel";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { SimpleButton } from "@/components/ui/simple-button";
 import {
   Tooltip,
   TooltipContent,
@@ -164,7 +164,7 @@ export default function OrdersPanel() {
       OrderType.ICEBERG,
     ];
     if (oneOffTypes.includes(type)) {
-      return "bg-primary/10 border-primary/50 text-primary";
+      return "bg-primary/10 border-primary/25 text-primary";
     }
     return "bg-secondary/10 border-secondary/50 text-secondary";
   };
@@ -208,7 +208,7 @@ export default function OrdersPanel() {
       <PanelWrapper>
         <CardContent className="p-0 flex-1 overflow-hidden flex flex-col bg-background backdrop-blur-xl">
           {/* Table Header */}
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-primary/50 bg-card backdrop-blur-sm flex-shrink-0 text-xs font-medium text-primary uppercase tracking-wide relative">
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-primary/25 bg-card backdrop-blur-sm flex-shrink-0 text-xs font-medium text-primary uppercase tracking-wide relative">
             <div className="absolute inset-0 bg-primary/5"></div>
             <div className="absolute inset-x-0 bottom-0 h-px bg-primary/30"></div>
 
@@ -309,9 +309,9 @@ export default function OrdersPanel() {
                         <div className="col-span-2 flex items-center justify-center gap-1 relative z-10">
                           {order.status === OrderStatus.ACTIVE && (
                             <>
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              <SimpleButton
+                                variant="bordered"
+                                size="s"
                                 className="h-6 px-2 border-warning/50 text-warning hover:bg-warning/10"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -319,10 +319,10 @@ export default function OrdersPanel() {
                                 }}
                               >
                                 <Edit2 className="w-3 h-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              </SimpleButton>
+                              <SimpleButton
+                                variant="bordered"
+                                size="s"
                                 className="h-6 px-2 border-destructive/50 text-destructive hover:bg-destructive/10"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -330,13 +330,13 @@ export default function OrdersPanel() {
                                 }}
                               >
                                 <X className="w-3 h-3" />
-                              </Button>
+                              </SimpleButton>
                             </>
                           )}
                         </div>
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-sm bg-black">
+                    <TooltipContent side="top" className="max-w-sm bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                       <div className="space-y-2">
                         <div className="font-semibold text-primary">
                           {order.type} Order
@@ -381,7 +381,7 @@ export default function OrdersPanel() {
           </div>
 
           {/* Footer */}
-          <div className="px-4 py-3 border-t border-primary/50 bg-background backdrop-blur-md flex-shrink-0 relative">
+          <div className="px-4 py-3 border-t border-primary/25 bg-background backdrop-blur-md flex-shrink-0 relative">
             <div className="absolute inset-x-0 top-0 h-px bg-primary/30"></div>
 
             <div className="flex items-center justify-between text-xs text-slate-300 relative z-10">

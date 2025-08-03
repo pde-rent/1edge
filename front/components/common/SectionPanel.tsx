@@ -14,7 +14,7 @@ interface SectionPanelProps {
  */
 export function SectionPanel({ children, className = "", title }: SectionPanelProps) {
   return (
-    <div className={`bg-background border border-primary/50 rounded-lg ${className}`}>
+    <div className={`bg-background border border-primary/25 rounded-lg ${className}`}>
       <div className="bg-card backdrop-blur-sm rounded-lg">
         <div className="bg-background/80 backdrop-blur-xl border-0 rounded-lg p-4">
           {title && (

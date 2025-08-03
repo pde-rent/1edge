@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DollarSign, TrendingUp, TrendingDown, Calendar, Eye, EyeOff, Hash } from "lucide-react";
+import OrderDirectionToggle from "./OrderDirectionToggle";
 
 const IcebergForm = ({ control, errors }: any) => {
   const spotPrice = 3750; 
@@ -35,6 +36,9 @@ const IcebergForm = ({ control, errors }: any) => {
 
   return (
     <div className="space-y-6">
+      {/* Buy/Sell Toggle */}
+      <OrderDirectionToggle control={control} />
+      
           <div className="space-y-2">
   <Label className="text-sm font-medium text-teal-200 flex items-center gap-2">
     <DollarSign className="w-4 h-4" />
@@ -89,7 +93,7 @@ const IcebergForm = ({ control, errors }: any) => {
                 {...field}
                 type="number"
                 step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
                 placeholder={calculatePriceFromSpot(0)}
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
@@ -128,7 +132,7 @@ const IcebergForm = ({ control, errors }: any) => {
                 {...field}
                 type="number"
                 step="0.01"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white placeholder-slate-400 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
                 placeholder={calculatePriceFromSpot(-0.5)}
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
@@ -160,11 +164,11 @@ const IcebergForm = ({ control, errors }: any) => {
           defaultValue="10"
           render={({ field }) => (
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
+              <SelectTrigger className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none">
                 <SelectValue placeholder="Select number of steps" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
               </SelectTrigger>
-              <SelectContent className="bg-black/95 backdrop-blur-xl border-slate-700/50 shadow-2xl">
+              <SelectContent className="bg-black/95 backdrop-blur-xl border-primary/25 shadow-2xl">
                 {stepOptions.map((option) => (
                   <SelectItem 
                     key={option.value} 
@@ -206,7 +210,7 @@ const IcebergForm = ({ control, errors }: any) => {
               <Input
                 {...field}
                 type="datetime-local"
-                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/50 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
+                className="w-full bg-black/70 backdrop-blur-sm border-slate-600/50 text-white focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-primary/25 shadow-inner transition-all duration-300 hover:bg-black/80 focus:outline-none"
               />
               <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-primary/5 to-transparent pointer-events-none"></div>
             </div>
