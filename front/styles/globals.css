@@ -288,10 +288,8 @@ code:not(pre code) {
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Table styling */
-.table,
-.prose table,
-table {
+/* Table styling - only within prose/docs context */
+.prose table {
   width: 100%;
   border-collapse: separate !important;
   border-spacing: 0 !important;
@@ -302,9 +300,7 @@ table {
   font-family: var(--font-mono) !important;
 }
 
-.table th,
-.prose th,
-th {
+.prose th {
   background: var(--primary-light-30) !important;
   color: var(--text-primary) !important;
   font-weight: 600 !important;
@@ -315,21 +311,15 @@ th {
   border-bottom: 1px solid rgba(0, 184, 212, 0.3) !important;
 }
 
-.table th:first-child,
-.prose th:first-child,
-th:first-child {
+.prose th:first-child {
   border-top-left-radius: 0.5rem;
 }
 
-.table th:last-child,
-.prose th:last-child,
-th:last-child {
+.prose th:last-child {
   border-top-right-radius: 0.5rem;
 }
 
-.table td,
-.prose td,
-td {
+.prose td {
   background: transparent !important;
   color: var(--text-primary) !important;
   padding: 0.5rem 1rem !important;
@@ -338,29 +328,21 @@ td {
   font-size: var(--font-size-sm) !important;
 }
 
-.table tbody tr:last-child td:first-child,
-.prose tbody tr:last-child td:first-child,
-tbody tr:last-child td:first-child {
+.prose tbody tr:last-child td:first-child {
   border-bottom-left-radius: 0.5rem;
   border-bottom: none !important;
 }
 
-.table tbody tr:last-child td:last-child,
-.prose tbody tr:last-child td:last-child,
-tbody tr:last-child td:last-child {
+.prose tbody tr:last-child td:last-child {
   border-bottom-right-radius: 0.5rem;
   border-bottom: none !important;
 }
 
-.table tbody tr:last-child td,
-.prose tbody tr:last-child td,
-tbody tr:last-child td {
+.prose tbody tr:last-child td {
   border-bottom: none !important;
 }
 
-.table tbody tr:hover,
-.prose tbody tr:hover,
-tbody tr:hover {
+.prose tbody tr:hover {
   background: rgba(255, 255, 255, 0.05) !important;
 }
 
