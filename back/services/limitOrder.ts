@@ -28,6 +28,12 @@ function convertToCreateOrderParams(params: OneInchLimitOrderParams): {
   nonce?: bigint;
   partialFillsEnabled?: boolean;
 } {
+  // Convert expiry days to milliseconds if provided
+  let expirationMs = params.expirationMs;
+  if (params.expiry && !expirationMs) {
+    // params.expiry is in days from frontend
+    expirationMs = Date.now() + (params.expiry * 24 * 60 * 60 * 1000);
+  }
   return {
     makerAsset: new Address(params.makerAsset),
     takerAsset: new Address(params.takerAsset),
@@ -36,7 +42,7 @@ function convertToCreateOrderParams(params: OneInchLimitOrderParams): {
     maker: new Address(params.maker),
     receiver: params.receiver ? new Address(params.receiver) : undefined,
     salt: params.salt ? (typeof params.salt === 'string' ? BigInt(params.salt) : params.salt) : undefined,
-    expirationMs: params.expirationMs,
+    expirationMs: expirationMs,
     nonce: params.nonce ? (typeof params.nonce === 'string' ? BigInt(params.nonce) : params.nonce) : undefined,
     partialFillsEnabled: params.partialFillsEnabled,
   };
@@ -89,20 +95,20 @@ export class LimitOrderService {
 
     // Build maker traits exactly like working code
     const nonce = convertedParams.nonce || randBigInt(UINT_40_MAX);
-    
+
     // Set expiration - default to 1 hour from now if not provided
     const expirationMs = convertedParams.expirationMs || (Date.now() + 3600000); // 1 hour default
     const expiration = BigInt(Math.floor(expirationMs / 1000));
-    
+
     let makerTraits = (MakerTraits as any).default()
       .allowPartialFills()    // Required by API for non-RFQ orders
       .allowMultipleFills()   // Required by API for non-RFQ orders
       .withExpiration(expiration)
       .withNonce(nonce);
-    
+
     // For DelegateProxy orders, always use DelegateProxy as maker
     const delegateProxyAddress = this.delegateProxy?.target;
-    const finalMaker = delegateProxyAddress 
+    const finalMaker = delegateProxyAddress
       ? new Address(delegateProxyAddress.toString())
       : convertedParams.maker;
 
@@ -111,7 +117,7 @@ export class LimitOrderService {
       makerTraits = makerTraits
         .enablePreInteraction()   // Required for DelegateProxy JIT fund pulling
         .enablePostInteraction(); // Enable post interactions for DelegateProxy
-      
+
       logger.info(`🔗 DelegateProxy maker traits configured`, {
         delegateProxyAddress: delegateProxyAddress.toString(),
         preInteractionEnabled: true,
@@ -131,9 +137,9 @@ export class LimitOrderService {
         maker: finalMaker,
         receiver: convertedParams.receiver || convertedParams.maker,
       }, makerTraits);
-      
+
     } catch (sdkError: any) {
-      
+
       // Fallback: create basic order without extension (exactly like working test)
       order = new (LimitOrder as any)({
         makerAsset: convertedParams.makerAsset,
@@ -195,7 +201,7 @@ export class LimitOrderService {
     signature: string,
   ): Promise<SubmitOrderResult> {
     const orderHash = order.getOrderHash(this.chainId);
-    
+
     logger.info(`🔄 Submitting order to 1inch API`, {
       orderHash,
       chainId: this.chainId,
@@ -214,10 +220,10 @@ export class LimitOrderService {
       logger.info(`✅ Order successfully submitted to 1inch API`, { orderHash });
       return { orderHash, signature, apiResponse, success: true };
     } catch (error: any) {
-      logger.error(`❌ Failed to submit order to 1inch API`, { 
-        orderHash, 
+      logger.error(`❌ Failed to submit order to 1inch API`, {
+        orderHash,
         error: error.message,
-        stack: error.stack 
+        stack: error.stack
       });
       return { orderHash, signature, success: false, error: error.message };
     }
@@ -233,7 +239,7 @@ export class LimitOrderService {
   ): Promise<SubmitOrderResult> {
     const order = await this.createOrder(params);
     const orderHash = order.getOrderHash(this.chainId);
-    
+
     logger.info(`📋 Creating 1inch limit order`, {
       orderHash,
       shortHash: `${orderHash.slice(0, 10)}...`,
@@ -246,25 +252,25 @@ export class LimitOrderService {
       await this.createOrderOnDelegateProxy(order, userAddress);
     }
 
-    const signature = this.delegateProxy 
+    const signature = this.delegateProxy
       ? '0x' + '00'.repeat(65) // ERC1271 dummy signature
       : await this.signOrder(order, signerWallet || this.keeper!);
 
     const result = await this.submitOrderToAPI(order, signature);
-    
+
     if (result.success) {
-      logger.info(`✅ 1inch order submission successful`, { 
+      logger.info(`✅ 1inch order submission successful`, {
         orderHash,
         shortHash: `${orderHash.slice(0, 10)}...`
       });
     } else {
-      logger.error(`❌ 1inch order submission failed`, { 
+      logger.error(`❌ 1inch order submission failed`, {
         orderHash,
         shortHash: `${orderHash.slice(0, 10)}...`,
         error: result.error
       });
     }
-    
+
     return result;
   }
 }
@@ -295,7 +301,7 @@ export async function createQuickOrder(
     makingAmount: bigint;
     takingAmount: bigint;
     receiverAddress?: string;
-    expirationMinutes?: number;
+    expirationDays?: number; // Changed from expirationMinutes to expirationDays
   },
 ): Promise<SubmitOrderResult> {
   const service = createLimitOrderService(authKey, chainId, makerWallet, provider);
@@ -307,7 +313,7 @@ export async function createQuickOrder(
     takingAmount: params.takingAmount,
     maker: makerWallet.address,
     receiver: params.receiverAddress,
-    expirationMs: params.expirationMinutes ? Date.now() + (params.expirationMinutes * 60 * 1000) : undefined,
+    expirationMs: params.expirationDays ? Date.now() + (params.expirationDays * 24 * 60 * 60 * 1000) : undefined, // Convert days to milliseconds
   };
 
   return service.createAndSubmitOrder(orderParams, makerWallet.address, makerWallet);

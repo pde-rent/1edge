@@ -188,10 +188,11 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
    * Check if order has expired
    */
   protected isExpired(order: Order, expiryDays?: number): boolean {
-    // Check explicit expiry timestamp first (in ms)
+    // Check explicit expiry from order params (in days from frontend)
     if (order.params?.expiry && order.params.expiry > 0) {
       const now = Date.now();
-      return now >= order.params.expiry;
+      const expiryTime = order.createdAt + (order.params.expiry * 24 * 60 * 60 * 1000);
+      return now >= expiryTime;
     }
 
     // Fallback to days-based expiry for backwards compatibility
@@ -403,7 +404,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       // Calculate dynamic taking amount based on limit price
       const makingAmountFloat = parseFloat(makingAmount);
       let dynamicTakingAmount: string;
-      
+
       if (isSell) {
         // Selling WETH for USDT: takingAmount = makingAmount * limitPrice
         const usdtAmount = makingAmountFloat * limitPrice;
@@ -413,7 +414,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         const usdtAmount = makingAmountFloat * limitPrice;
         dynamicTakingAmount = usdtAmount.toFixed(6);
       }
-      
+
       logger.debug(`Calculated takingAmount: ${dynamicTakingAmount} USDT for ${makingAmount} WETH at $${limitPrice}`);
 
       // Parse amounts with proper decimals
@@ -429,7 +430,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         maker: this.delegateProxy.target.toString(), // DelegateProxy as maker
         receiver: order.params!.maker, // User receives the assets
         salt: BigInt(order.params?.salt || this.generateSalt()),
-        expirationMs: order.params?.expiry && order.params.expiry > 0 ? order.params.expiry : undefined,
+        expirationMs: order.params?.expiry && order.params.expiry > 0 ? Date.now() + (order.params.expiry * MS_PER_DAY) : undefined,
         partialFillsEnabled: true, // Enable partial fills by default
       };
 
@@ -437,7 +438,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       const oldTriggerCount = order.triggerCount || 0;
       order.triggerCount = oldTriggerCount + 1;
       order.status = order.status === OrderStatus.PENDING ? OrderStatus.ACTIVE : order.status;
-      
+
       logger.debug(`Updating order: triggerCount ${oldTriggerCount} -> ${order.triggerCount}, status: ${order.status}`);
 
       // Use LimitOrderService to create and submit the order
@@ -452,7 +453,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         order.oneInchOrderHashes = [];
       }
       order.oneInchOrderHashes.push(result.orderHash);
-      
+
       // Store 1inch order details for monitoring
       if (!order.oneInchOrders) {
         order.oneInchOrders = [];
@@ -464,7 +465,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         limitPrice: limitPrice.toString(),
         createdAt: Date.now()
       });
-      
+
       await saveOrder(order);
 
       logger.info(
@@ -484,7 +485,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         - Spot Price: $${priceInfo.price.toFixed(6)}
         - Is Sell: ${isSell}
         - API Success: ${result.success}
-        - Expiry: ${order.params?.expiry ? new Date(order.params.expiry).toISOString() : 'none'}
+        - Expiry: ${order.params?.expiry ? `${order.params.expiry} days (${new Date(order.createdAt + order.params.expiry * 24 * 60 * 60 * 1000).toISOString()})` : 'none'}
         - Chain ID: ${this.chainId || 1}`);
 
       if (!result.success) {
@@ -515,7 +516,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
         - Order Hashes: ${order.oneInchOrderHashes.map(h => h.slice(0, 10) + '...').join(', ')}
         - Remaining Amount: ${order.remainingMakerAmount}
         - Status: ${order.status}`);
-        
+
       // Check if order has expired
       if (this.isExpired(order)) {
         logger.info(
@@ -539,12 +540,12 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Get cached order states
       const cachedOrders = oneInchOrderCache.getOrders(order.oneInchOrderHashes);
-      
+
       // Check if we have data for all orders
       const missingOrders = cachedOrders.filter(o => o === null).length;
       if (missingOrders > 0) {
         logger.warn(`${missingOrders}/${order.oneInchOrderHashes.length} 1inch orders missing from cache for order ${order.id.slice(0, 8)}...`);
-        
+
         // If some orders missing, fallback to blockchain query
         if (missingOrders === order.oneInchOrderHashes.length) {
           logger.debug(`All 1inch orders missing from cache, falling back to blockchain query`);
@@ -554,7 +555,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Calculate aggregated state using cache utility
       const aggregatedState = oneInchOrderCache.calculateAggregatedState(order.oneInchOrderHashes);
-      
+
       logger.debug(`📊 Aggregated 1inch state for order ${order.id.slice(0, 8)}...: 
         - Total Filled: ${aggregatedState.totalFilled}
         - Total Remaining: ${aggregatedState.totalRemaining}
@@ -583,9 +584,9 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
       // Handle invalid orders
       if (!aggregatedState.allOrdersValid && aggregatedState.invalidReasons.length > 0) {
         logger.warn(`⚠️ Order ${order.id.slice(0, 8)}... has invalid 1inch orders: ${aggregatedState.invalidReasons.join(', ')}`);
-        
+
         // If all orders are invalid, mark order as expired/failed
-        if (aggregatedState.invalidReasons.every(reason => 
+        if (aggregatedState.invalidReasons.every(reason =>
           ['order expired', 'order cancelled', 'removed_from_api'].includes(reason)
         )) {
           order.status = OrderStatus.EXPIRED;
@@ -596,7 +597,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Save updated order
       await saveOrder(order);
-      
+
       // Log detailed order states for monitoring
       for (let i = 0; i < order.oneInchOrderHashes.length; i++) {
         const hash = order.oneInchOrderHashes[i];
@@ -606,16 +607,16 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
           const original = parseFloat(cachedOrder.data.makingAmount);
           const filled = Math.max(0, original - remaining);
           const fillPct = original > 0 ? (filled / original) * 100 : 0;
-          
+
           logger.debug(`  📋 1inch Order ${hash.slice(0, 10)}...: ${fillPct.toFixed(1)}% filled (${filled}/${original}) - ${cachedOrder.orderInvalidReason || 'active'}`);
         }
       }
-      
+
     } catch (error) {
       logger.error(
         `Failed to update order ${order.id} from 1inch cache: ${error}`,
       );
-      
+
       // Fallback to blockchain query on cache errors
       logger.debug(`Falling back to blockchain query due to cache error`);
       return this.updateOrderFromBlockchain(order);
@@ -633,7 +634,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
     try {
       logger.debug(`🔗 Updating order ${order.id.slice(0, 8)}... from blockchain (cache fallback)`);
-      
+
       // Check status of all 1inch orders for this order
       const orderData = await this.delegateProxy.getOrderData(
         order.oneInchOrderHashes,
@@ -666,7 +667,7 @@ export abstract class BaseOrderWatcher implements OrderWatcher {
 
       // Check if the total 1edge order makingAmount is completely filled
       const totalOrderFilled = totalFilled >= originalTotal;
-      
+
       if (totalOrderFilled && totalFilled > 0n) {
         order.status = OrderStatus.FILLED;
         order.remainingMakerAmount = 0;
